@@ -116,15 +116,20 @@ def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None, name=None, tilt=N
     return root
 
 
-MINE = ("dormx_", "SIGN_dorm_safety", "SIGN_lname_", "SIGN_forcedev", "IT_lockernote_dorm", "IT_uniform_dorm", "IT_bag_dorm",
+MINE = ("dormx_", "SIGN_dorm_safety", "SIGN_lname_", "SIGN_forcedev", "SIGN_uniform_name", "IT_lockernote_dorm", "IT_uniform_dorm", "IT_bag_dorm",
         "IT_key_dorm", "IT_toolbox_dorm", "IT_torch_dorm", "IT_note2_dorm", "IT_forcedev_dorm", "IT_keypad_dorm")
 
 
 def _cyl(name, x, y, z, r, h, m, axis="y", verts=20):
     """게임 좌표 원기둥 : 중심 (x, y, z), 축 방향 axis ('x' 는 동서로 누운 원기둥)."""
-    bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=r, depth=h, location=_T(x, y, z))
-    o = bpy.context.active_object
-    o.name = name
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=verts, radius1=r, radius2=r, depth=h)
+    bm.to_mesh(me)
+    bm.free()
+    o = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(o)
+    o.location = _T(x, y, z)
     if axis == "x":
         o.rotation_euler[1] = math.radians(90)
     elif axis == "z":
@@ -139,6 +144,51 @@ def _kids(parent, *objs):
     for o in objs:
         o.parent = parent
     return parent
+
+
+def _orient(e, normal, up):
+    """표식 e(판 · 간판 자리)를 앞면이 normal, 글씨 위쪽이 up 방향(둘 다 Blender 좌표)이 되게 돌린다.
+       glTF 로 나가면 Blender 의 -Y 가 판의 앞, +Z 가 글씨 위쪽이 된다."""
+    y = -mathutils.Vector(normal).normalized()
+    z = mathutils.Vector(up).normalized()
+    e.rotation_euler = mathutils.Matrix((y.cross(z), y, z)).transposed().to_euler()
+    return e
+
+
+def _drape_jacket(name, cx, cz, top):
+    """Poly Pizza 점퍼(CC0)를 등이 위로 오게 벤치에 걸친다. 깃은 -x(사물함 쪽), 몸판은 벤치 폭을 넘어 양옆으로 늘어진다.
+       원래 모델 : 등 -X · 깃 +Z · 소매 ±Y. (cx, cz) 는 게임 좌표 중심, top 은 벤치 윗면 높이. 등 위 중심 높이를 돌려준다."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(_B, "source", "polypizza", "jacket.glb"))
+    new = [o for o in bpy.data.objects if o not in before]
+    o = next(x for x in new if x.type == "MESH")
+    o.data.transform(o.matrix_world)
+    for x in new:
+        if x is not o:
+            bpy.data.objects.remove(x, do_unlink=True)
+    o.parent, o.matrix_world, o.name = None, mathutils.Matrix.Identity(4), name
+    bm = bmesh.new()
+    bm.from_mesh(o.data)
+    c = sum((v.co for v in bm.verts), mathutils.Vector()) / len(bm.verts)
+    s, half = 0.78, 0.2                                              # 크기 · 벤치 폭의 절반
+    for v in bm.verts:
+        p = v.co - c
+        v.co = mathutils.Vector((-p.z * s, -p.y * s, -p.x * s * 0.28))   # 등이 위, 깃이 -x, 두께는 납작하게
+    low = min(v.co.z for v in bm.verts)
+    for v in bm.verts:
+        v.co.z += top + 0.01 - low
+        d = abs(v.co.x) - half
+        if d > 0:                                                   # 벤치 밖으로 나간 부분은 아래로 처진다
+            v.co.z = max(0.06, v.co.z - d * 1.7)
+            v.co.x -= (1 if v.co.x > 0 else -1) * d * 0.45
+        v.co.x += cx
+        v.co.y += -cz
+    hi = max(v.co.z for v in bm.verts if abs(v.co.x - cx) < 0.1 and abs(v.co.y + cz) < 0.1)
+    bm.to_mesh(o.data)
+    bm.free()
+    for p in o.data.polygons:
+        p.use_smooth = True
+    return o, hi
 
 
 def _hollow_locker(n, dark, steel):
@@ -232,7 +282,7 @@ def dress_dorm():
 
     # ---------------- 방 1 퍼즐 소품 (rooms/room1_dorm.js 가 IT_ 이름으로 읽는다) ----------------
     M = bpy.data.materials
-    paper, dark, navy = M["paper"], M["locker_dark"], _mat("dormx_navy", "#26304a", 0.85)
+    paper, dark = M["paper"], M["locker_dark"]
     # 8) 사물함 이름표 : 번호판 바로 아래 (글씨는 엔진이 ROOM1.names 로 붙인다)
     for n in range(1, 11):
         if n <= 6:
@@ -241,11 +291,9 @@ def dress_dorm():
             _empty(f"SIGN_lname_{n}", -54.6 + (n - 7) * 0.6 + 0.3, 1.46, 0.805, 0, w=0.32, h=0.075)
     # 9) 3번 사물함 문에 붙은 쪽지
     _box("IT_lockernote_dorm", -56.205, -56.198, 1.02, 1.26, 2.98, 3.2, paper)
-    # 10) 벤치 위 이전 근무자의 근무복 (개어 둔 남색 점퍼 · 반사띠 · 명찰)
-    u = _box("IT_uniform_dorm", -54.86, -54.54, 0.47, 0.53, 2.55, 2.95, navy)
-    _kids(u, _box("dormx_uni_stripe", -54.865, -54.535, 0.5, 0.532, 2.66, 2.7, M["paint_yellow"]),
-          _box("dormx_uni_tag", -54.82, -54.68, 0.53, 0.534, 2.8, 2.88, M["paint_white"]),
-          _box("dormx_uni_collar", -54.86, -54.54, 0.53, 0.55, 2.55, 2.6, navy))
+    # 10) 벤치 위 이전 근무자의 근무복 : 점퍼를 등이 위로 오게 걸쳐 두고, 등판에 이름을 찍는다 (글씨는 엔진의 SIGNS.uniform_name)
+    _, back = _drape_jacket("IT_uniform_dorm", -54.7, 3.2, 0.47)
+    _orient(_empty("SIGN_uniform_name", -54.63, back + 0.006, 3.2, w=0.44, h=0.15), (0, 0, 1), (-1, 0, 0))
     # 11) 사물함 속 (3번 · 6번) : 통짜 몸통을 지우고 속이 빈 철제 함(뒤 · 옆 · 위 · 바닥 · 선반)으로 바꾼다
     for n in (3, 6):
         _hollow_locker(n, dark, M["locker"])

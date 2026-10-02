@@ -404,6 +404,7 @@ zone("dorm", -52, 4, "직원 숙소", 5)
 empty("SPAWN_dorm_door", -44.5, 0, 4.0, -90)
 dress_dorm()       # blender/parts/dorm_dress.py : 두 색 벽 · 체크 바닥 · 휴게 구석 · Poly Haven 소품 · 방 1 퍼즐 소품
 build_booth()      # blender/parts/carousel_booth.py : 회전목마 조작실
+fix_carousel()     # 같은 파일 : 울타리 · 무대 충돌, 구역 번호 1~8, 쓰러진 말
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)
 build_kiosk()      # blender/parts/icecream_kiosk.py
