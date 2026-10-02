@@ -26,6 +26,11 @@ const AUDIO={ctx:null,
  err(){ this.tone(300,.25,'square',.18); this.tone(240,.25,'square',.18,.12); },
  ok(){ this.tone(900,.1,'sine',.2); this.tone(1350,.18,'sine',.2,.1); },
  tick(){ this.tone(2000,.02,'square',.05); },
+ // 문이 쾅 닫힘 : 낮은 쿵(나무 문짝) + 짧은 울림 + 걸쇠 찰칵
+ slam(){ const c=this.ctx; if(!c) return; this.noise(.35,.9,0,160); this.noise(.12,.5,0,900); this.tone(62,.5,'sine',.55,0,-30); this.tone(110,.18,'triangle',.25,0,-50);
+   this.noise(.6,.12,.05,400); this.tone(1800,.03,'square',.06,.16); this.tone(1200,.04,'square',.05,.19); },
+ // 걸쇠가 풀림 : 철컥 + 끼익
+ unlatch(){ this.tone(1500,.03,'square',.08); this.tone(900,.05,'square',.08,.05); this.noise(.08,.3,0,2500); this.tone(380,.9,'sawtooth',.03,.25,140); },
  // 바람 소리 (계속 재생)
  // 안내 방송 차임 (딩-동-댕-동)
  chime(broken){ [784,659,523,392].forEach((f,i)=>this.tone(broken?f*(0.94+Math.random()*.1):f,.7,'sine',.16,i*.32)); },
@@ -121,7 +126,7 @@ $('#interact').addEventListener('pointerdown',e=>{ e.stopPropagation(); AUDIO.in
 
 /* --- UI 도우미 --- */
 let toastT=null; function toast(s,ms=2200){ const t=$('#toast'); t.textContent=s; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),ms); }
-function objective(s){ $('#objtext').textContent=s; }
+function objective(s){ $('#objtext').textContent=s; $('#objective').classList.toggle('on',!!s&&s!=='…'); }   // 할 일이 없으면 쪽지를 숨긴다
 function ov(id,on){ const el=$(id); el.classList.toggle('on',on); if(!on) S.lastClose=performance.now(); S.busy=!!document.querySelector('.ov.on:not(#start)')||$('#mono').classList.contains('on'); if(S.busy){ stick.dx=stick.dy=0; } }
 document.querySelectorAll('.ov .close').forEach(b=>b.addEventListener('click',()=>{ ov('#'+b.parentElement.id,false); AUDIO.click(); }));
 function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
@@ -229,7 +234,7 @@ function setLightsClosed(){ LIGHTS.forEach((o,i)=>{ if(o.keep) return; if(i%2===
 
 /* 손전등 */
 const torch=new THREE.SpotLight(0xfff2dc,0,28,0.42,0.45,1.4); torch.position.set(0,0,0); camera.add(torch); torch.target.position.set(0,0,-1); camera.add(torch.target); scene.add(camera);
-function toggleLight(){ S.torch=!S.torch; torch.intensity=S.torch?1.6:0; AUDIO.click(); $('#lightBtn').style.borderColor=S.torch?'var(--amber)':''; }
+function toggleLight(){ if(!S.flags.torch){ toast('손전등이 없다'); return; } S.torch=!S.torch; torch.intensity=S.torch?1.6:0; AUDIO.click(); $('#lightBtn').style.borderColor=S.torch?'var(--amber)':''; }
 $('#lightBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); AUDIO.init(); toggleLight(); });
 
 /* ============================================================
@@ -258,7 +263,7 @@ for(let i=1;i<=10;i++) SIGNS['locker_'+i]=[String(i),'','#e8e4da','#1a1a1a'];
 const GATES={dorm:'숙소 문', coaster:'롤러코스터 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
 const GATE_TAP={};   // 방 스크립트가 문마다 동작을 붙인다 : GATE_TAP.dorm=()=>{…}
 function openGate(k){ S.flags['open_'+k]=true; }
-const PARK={mats:[],mat:{},items:{},spawns:{},spots:{},lights:{},zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
+const PARK={mats:[],mat:{},items:{},signs:{},spawns:{},spots:{},lights:{},zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
 
 async function buildPark(){
   const root=await loadGLB('park'); WORLD.add(root); root.updateMatrixWorld(true);
@@ -278,7 +283,7 @@ async function buildPark(){
     if(/^SIGN_/.test(n)){ const k=n.slice(5), u=o.userData, s=SIGNS[k]; if(k==='map') return addMapBoard(o,u); if(!s) return;
       const tex=TEX.sign(s.slice(0,2).filter(Boolean),s[2],s[3],1024,Math.round(1024*u.h/u.w)||256);
       const m=new THREE.Mesh(new THREE.PlaneGeometry(u.w,u.h),new THREE.MeshStandardMaterial({map:tex,roughness:.8,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.08}));
-      o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); return; }
+      o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); PARK.signs[k]=m; return; }
     if(/^ZONE_/.test(n)){ o.getWorldPosition(v); PARK.zones.push({id:n.slice(5),title:o.userData.title||n,r:o.userData.r||8,x:v.x,z:v.z}); return; }
     if(n==='SPAWN'){ o.getWorldPosition(v); PARK.spawn={x:v.x,z:v.z,yaw:0}; return; }
     if(/^(SPAWN|SPOT)_/.test(n)){ o.getWorldPosition(v); o.getWorldQuaternion(q); const e=new THREE.Euler().setFromQuaternion(q,'YXZ');

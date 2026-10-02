@@ -223,7 +223,7 @@ M["k_pink"] = mat("kiosk_pink", "#f2b3c4", 0.7)
 M["k_mint"] = mat("kiosk_mint", "#a8dcc8", 0.7)
 
 # ---------------------------------------------------------------- 부품 파일 (blender/parts/*.py)
-for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress"):
+for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress", "carousel_booth"):
     exec(open(os.path.join(HERE, "parts", part + ".py"), encoding="utf-8").read())
 
 # ---------------------------------------------------------------- 1. 폐허 소품 정리
@@ -402,7 +402,8 @@ box("dorm_path", DX2 + 1.0, -38.6, 0, 0.02, 3.3, 4.7, M["paving"], uv=0.5)
 sign("dorm_rule", DX2 + .02, 1.5, 6.2, 90, 0.9, 1.2)
 zone("dorm", -52, 4, "직원 숙소", 5)
 empty("SPAWN_dorm_door", -44.5, 0, 4.0, -90)
-dress_dorm()       # blender/parts/dorm_dress.py : 두 색 벽 · 체크 바닥 · 휴게 구석 · Poly Haven 소품
+dress_dorm()       # blender/parts/dorm_dress.py : 두 색 벽 · 체크 바닥 · 휴게 구석 · Poly Haven 소품 · 방 1 퍼즐 소품
+build_booth()      # blender/parts/carousel_booth.py : 회전목마 조작실
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)
 build_kiosk()      # blender/parts/icecream_kiosk.py

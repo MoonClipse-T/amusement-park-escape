@@ -30,9 +30,10 @@ button{font-family:inherit;cursor:pointer;}
 #clock.late{color:#ff5a4a;border-color:#4a1712;} #clock.late .hm{text-shadow:0 0 10px rgba(255,60,40,.9);}
 #clock.warn .hm{animation:blink 1s steps(2) infinite;}
 /* 할 일 : 찢어진 팸플릿 조각 */
-#objective{position:absolute;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));max-width:min(300px,42vw);
- background:var(--cream);color:#2a2018;padding:8px 12px 9px;font-size:13px;line-height:1.45;transform:rotate(-1.2deg);
+#objective{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));max-width:min(300px,42vw);
+ background:var(--cream);color:#2a2018;padding:8px 12px 15px;font-size:13px;line-height:1.45;transform:rotate(-1.2deg);
  box-shadow:0 3px 10px rgba(0,0,0,.45);clip-path:polygon(0 0,100% 0,100% 88%,96% 100%,90% 90%,84% 100%,76% 92%,68% 100%,60% 91%,50% 100%,40% 92%,30% 100%,20% 91%,10% 100%,4% 92%,0 100%);}
+#objective.on{display:block;}
 #objective b{display:block;font-size:10px;letter-spacing:2px;color:var(--red);font-weight:900;margin-bottom:1px;}
 /* 구역 이름 : 철제 안내판 */
 #zone{position:absolute;top:calc(84px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));font-size:11px;letter-spacing:2px;
@@ -230,3 +231,24 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .lockpad .keys .fn{font:700 13px/1 "Noto Sans KR",sans-serif;background:linear-gradient(#b9b4a8,#9a9488);}
 .lockpad .keys .ok{background:linear-gradient(#7fd08f,#4fa060);color:#062a10;}
 .lockpad .kh{margin-top:12px;font-size:12px;line-height:1.6;color:#a9adb4;}
+
+/* ---------------- 힘 장치 (장력 평형 잠금장치) ---------------- */
+.fpad{position:relative;width:min(560px,94vw);max-height:94vh;overflow:auto;background:linear-gradient(#2b2d31,#18191c);border:2px solid #44474d;border-radius:8px;padding:0 0 18px;
+ box-shadow:0 14px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);color:#e9e2d2;text-align:center;}
+.fhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;background:repeating-linear-gradient(-45deg,#f2c230 0 14px,#1b1b1b 14px 28px);}
+.fhead .ft{font:400 20px/1.2 var(--sign);letter-spacing:3px;color:#111;background:#f2c230;padding:2px 8px;}
+.fhead .fsub{font:700 10px/1 var(--led);letter-spacing:3px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
+#fcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
+.fq{margin:12px 18px 6px;font-size:14px;line-height:1.6;color:#d8cfbd;text-align:left;}
+.fq b{color:#f2c230;}
+.frow{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 14px 0;}
+.frow .fl{min-width:84px;font-size:12px;letter-spacing:2px;color:#8a8d93;text-align:right;}
+.fdir,.fstep{min-height:44px;padding:0 14px;border:1px solid #55585e;border-radius:4px;background:#24262a;color:#cfc8b8;font-size:14px;}
+.fdir.on{border-color:var(--amber);color:var(--amber);background:#2e2616;box-shadow:0 0 10px rgba(255,179,64,.25);}
+.fstep{width:52px;font-size:22px;}
+.fval{min-width:110px;font:700 30px/44px var(--led);color:var(--amber);background:#07080a;border:1px solid #3a3d42;border-radius:4px;text-shadow:0 0 8px rgba(255,179,64,.6);}
+.fgo{margin-top:16px;min-height:48px;padding:0 42px;border:none;border-radius:24px;background:var(--red);color:#fff;font:400 18px/1 var(--sign);letter-spacing:4px;box-shadow:0 4px 0 #6a1612;}
+.fgo:active{transform:translateY(2px);box-shadow:0 2px 0 #6a1612;}
+.fgo:disabled{opacity:.5;}
+.fmsg{min-height:44px;margin:12px 18px 0;font-size:13px;line-height:1.6;color:#d9b0a8;}
+.fmsg.ok{color:#9be0a8;}

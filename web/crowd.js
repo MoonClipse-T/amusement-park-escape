@@ -21,21 +21,69 @@ const CROWD=(()=>{
   const TINT={woman:{top:/^White$/,bottom:/^Orange$/,hair:/^Hair_/}, dress:{top:/^LimeGreen$/,hair:/^Red$/},
     man:{top:/^White$/,bottom:/^LightBlue$/,hair:/^Hair$/}, suit:{hair:/^Hair$/}, hoodie:{top:/^Purple$/,bottom:/^LightBlue$/,hair:/^Hair$/}};
   const KINDS=Object.keys(TINT);
-  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  // 얼굴 부위 재질 (모델마다 이름이 다르다). dress 는 눈썹이 눈과 한 덩어리라 눈썹은 손대지 않는다
+  const FACEMAT={woman:{eye:/^Brown$/,brow:/^Hair_Brown$/}, dress:{eye:/^Brown$/}, man:{eye:/^Eye$/,brow:/^Eyebrows$/},
+    suit:{eye:/^Eye$/,brow:/^Eyebrows$/}, hoodie:{eye:/^Eye$/,brow:/^Eyebrows$/}};
+  const SKINS=['#f3d6bd','#efcdb0','#e8c09d','#e2b48e','#d6a47c','#c08a62','#9a6544'];   // 밝은 톤이 많게
+  const GREYS=['#b9b4ac','#8f8a84','#d8d4cc'];
+  const pick=a=>a[Math.floor(Math.random()*a.length)], rnd=(a,b)=>a+Math.random()*(b-a);
   const MAT={}; const matOf=c=>MAT[c]||(MAT[c]=new THREE.MeshStandardMaterial({color:new THREE.Color(c).convertSRGBToLinear(),roughness:.85}));
-  const proto={}, clips={}, H={}, G={}; let list=[], root=null, ready=false;
+  const proto={}, clips={}, H={}, G={}, FACE={}; let list=[], root=null, ready=false;
 
   async function build(){ root=new THREE.Group(); WORLD.add(root);
     try{
       const scenes=await Promise.all(KINDS.map(k=>loadGLB('people_'+k)));
-      KINDS.forEach((k,i)=>{ const g=scenes[i], an=g.userData.animations, by=n=>an.find(c=>c.name===n);
+      // 동작의 크기(scale) 트랙은 뺀다 — 남겨 두면 아이 머리를 키운 배율을 매 프레임 되돌려 버린다
+      const clean=c=>new THREE.AnimationClip(c.name,c.duration,c.tracks.filter(t=>!t.name.endsWith('.scale')));
+      KINDS.forEach((k,i)=>{ const g=scenes[i], an=g.userData.animations, by=n=>clean(an.find(c=>c.name===n));
         proto[k]=g; clips[k]={walk:by('Walk'),idle:by('Idle'),wave:by('Wave')};
         // 원래 키 : 머리 뼈 높이로 잰다 (r128 은 뼈대 있는 메시의 경계 상자를 잘못 계산한다)
-        g.updateMatrixWorld(true); const v=new THREE.Vector3(); g.getObjectByName('Head').getWorldPosition(v); H[k]=v.y*1.12; });
+        g.updateMatrixWorld(true); const v=new THREE.Vector3(); g.getObjectByName('Head').getWorldPosition(v); H[k]=v.y*1.12; FACE[k]=measureFace(k,g,v); });
       G.ear=new THREE.SphereGeometry(1,14,10); G.str=new THREE.CylinderGeometry(.004,.004,1,4); G.balloon=new THREE.SphereGeometry(.22,16,12);
       G.cone=new THREE.ConeGeometry(.045,.13,14); G.scoop=new THREE.SphereGeometry(.05,12,10);
+      const arc=Math.PI*.7; G.smile=new THREE.TorusGeometry(.017,.0032,6,14,arc); G.smile.rotateZ(-Math.PI/2-arc/2); G.smile.translate(0,.012,0);
+      G.grin=new THREE.CircleGeometry(.017,14,Math.PI,Math.PI); G.flat=new THREE.BoxGeometry(.026,.0038,.004); G.oh=new THREE.TorusGeometry(.008,.003,6,12);
+      G.cheek=new THREE.CircleGeometry(.013,12); G.lens=new THREE.TorusGeometry(.02,.0028,6,18); G.bridge=new THREE.BoxGeometry(.022,.003,.003);
+      G.cap=new THREE.SphereGeometry(1,18,8,0,Math.PI*2,0,Math.PI/2); G.brim=new THREE.CylinderGeometry(1,1,.01,18,1,false,-Math.PI/2,Math.PI);
       ready=true;
     }catch(e){ console.warn('손님 모델을 읽지 못했다',e); } }
+
+  /* 얼굴 재기 : 모델 메시 좌표(m)는 x 좌우 · y 위 · z 앞 이다.
+     눈 · 입 · 정수리 위치를 머리 뼈 기준(월드 m) 차이로 바꿔 둔다 → 입 · 안경 · 모자를 붙일 때 쓴다 */
+  function measureFace(k,g,headPos){ const F=FACEMAT[k], meshes=[]; g.traverse(o=>{ if(o.isMesh) meshes.push(o); });
+    const verts=re=>{ const out=[]; meshes.filter(o=>re.test(o.material.name)&&/Head/.test(o.name)).forEach(o=>{ const p=o.geometry.attributes.position; for(let i=0;i<p.count;i++) out.push([p.getX(i),p.getY(i),p.getZ(i)]); }); return out; };
+    const eye=verts(F.eye), skin=verts(/^Skin$/), hair=verts(/^(Hair|Hair_Blond|Red)$/);
+    const ex=Math.max(...eye.map(v=>Math.abs(v[0]))), ef=Math.max(...eye.map(v=>v[2])), ey=(Math.min(...eye.map(v=>v[1]))+Math.max(...eye.map(v=>v[1])))/2;
+    const my=ey-ex*1.25;                                                      // 입 높이 : 눈 아래로 눈 사이 거리만큼
+    const near=skin.filter(v=>Math.abs(v[0])<.02&&Math.abs(v[1]-my)<.015), front=near.length?Math.max(...near.map(v=>v[2])):ef;
+    const top=Math.max(...(hair.length?hair:skin).map(v=>v[1]));
+    const w=Math.max(...skin.filter(v=>Math.abs(v[1]-ey)<.03).map(v=>Math.abs(v[0])));
+    const W=(x,y,z)=>new THREE.Vector3(x,y-headPos.y,z-headPos.z);           // 메시 좌표 → 머리 뼈 기준 차이
+    return {eyeX:ex*.62, eye:W(0,ey,ef), mouth:W(0,my,front+.003), top:W(0,top,0), headW:w}; }
+
+  // 눈썹 · 눈 모양 바꾸기 (메시 좌표에서) : 눈썹은 올리고 안쪽 끝을 들어 부드럽게, 눈은 크기를 바꾼다
+  function shapeFace(g,kind,{browLift,browInner,eyeScale}){ const F=FACEMAT[kind];
+    g.traverse(o=>{ if(!o.isMesh||!/Head/.test(o.name)) return; const isBrow=F.brow&&F.brow.test(o.material.name), isEye=F.eye.test(o.material.name); if(!isBrow&&!isEye) return;
+      o.geometry=o.geometry.clone(); const p=o.geometry.attributes.position, c={};
+      for(const s of [-1,1]){ let n=0,x=0,y=0; for(let i=0;i<p.count;i++) if(Math.sign(p.getX(i))===s){ x+=p.getX(i); y+=p.getY(i); n++; } c[s]=[x/n,y/n]; }
+      for(let i=0;i<p.count;i++){ const s=Math.sign(p.getX(i))||1, [cx,cy]=c[s];
+        if(isBrow){ const inner=1-Math.min(1,Math.abs(p.getX(i))/Math.abs(cx)/1.6), y=p.getY(i)+browLift+inner*browInner; p.setY(i,cy+browLift+(y-cy-browLift)*.75); }
+        else { p.setX(i,cx+(p.getX(i)-cx)*eyeScale); p.setY(i,cy+(p.getY(i)-cy)*eyeScale); } }
+      p.needsUpdate=true; }); }
+
+  // 머리 뼈에 얼굴 소품 붙이기 (사람 크기를 바꾸기 전에 붙여서 함께 커지고 작아지게)
+  function onHead(head,mesh,off){ mesh.position.copy(off); return attach(head,mesh); }
+  function dressFace(head,kind,kid,adultOld){ const F=FACE[kind], dark=matOf('#5a2622');
+    const mouth=new THREE.Mesh(G[kid?pick(['grin','grin','smile','oh']):pick(['smile','smile','flat','grin'])],dark);
+    onHead(head,mouth,F.mouth.clone().add(new THREE.Vector3(0,0,.004)));
+    if(kid) [-1,1].forEach(s=>{ const ch=new THREE.Mesh(G.cheek,new THREE.MeshStandardMaterial({color:0xf08a96,transparent:true,opacity:.45,roughness:1}));
+      onHead(head,ch,F.mouth.clone().add(new THREE.Vector3(s*F.eyeX*1.25,.022,-.012))); ch.rotation.y=s*.45; });
+    if(!kid&&Math.random()<(adultOld?.6:.2)){ const m=matOf(pick(['#1d1d22','#4a2c1a','#8a7a6a']));
+      [-1,1].forEach(s=>onHead(head,new THREE.Mesh(G.lens,m),F.eye.clone().add(new THREE.Vector3(s*F.eyeX,0,.014))));
+      onHead(head,new THREE.Mesh(G.bridge,m),F.eye.clone().add(new THREE.Vector3(0,.004,.016))); }
+    if(/man|hoodie/.test(kind)&&Math.random()<(kid?.35:.22)){ const m=matOf(pick(['#c8463c','#2a3a6a','#e0b33a','#2a2a30','#4f8a5a'])), r=F.headW*1.12;
+      const cap=new THREE.Mesh(G.cap,m); cap.scale.set(r,r*.62,r*1.05); onHead(head,cap,F.top.clone().add(new THREE.Vector3(0,-r*.42,0)));
+      const brim=new THREE.Mesh(G.brim,m); brim.scale.set(r*.9,1,r*1.5); onHead(head,brim,F.top.clone().add(new THREE.Vector3(0,-r*.4,r*.3))); } }
 
   // 뼈에 장식을 붙일 때 : 모델 크기(배율)를 되돌려서 월드 기준 크기로 맞춘다
   function attach(b,mesh){ b.updateWorldMatrix(true,false); const s=new THREE.Vector3(); b.getWorldScale(s); mesh.scale.divide(s); mesh.position.divide(s); b.add(mesh); return mesh; }
@@ -43,21 +91,27 @@ const CROWD=(()=>{
   // 사람 하나 : kind, kid(아이), ears(토끼 머리띠), balloon(풍선), cloth(상의 색)
   function person({kind,kid=false,ears=false,balloon=false,cloth}={}){
     kind=kind||pick(kid?['woman','man','hoodie','dress']:KINDS);
-    const g=THREE.SkeletonUtils.clone(proto[kind]), T=TINT[kind];
-    const col={top:cloth||pick(TOPS),bottom:pick(BOTTOMS),hair:pick(HAIRS)};
+    const g=THREE.SkeletonUtils.clone(proto[kind]), old=!kid&&Math.random()<.18;
+    const T={...TINT[kind],skin:/^Skin$/,skin2:/^Skin_Darker$/};
+    const sk=new THREE.Color(pick(SKINS)), col={top:cloth||pick(TOPS),bottom:pick(BOTTOMS),hair:old?pick(GREYS):pick(HAIRS),skin:sk,skin2:sk.clone().multiplyScalar(.82)};
     g.traverse(o=>{ if(!o.isMesh) return; o.frustumCulled=false; o.castShadow=false;
       const mats=(Array.isArray(o.material)?o.material:[o.material]).map(m=>{ for(const k in T) if(T[k].test(m.name)){ m=m.clone(); m.color.set(col[k]).convertSRGBToLinear(); } return m; });
       o.material=Array.isArray(o.material)?mats:mats[0]; });
-    const h=kid?1.12+Math.random()*.15:(/woman|dress/.test(kind)?1.62:1.74)+(Math.random()-.5)*.12;
+    // 얼굴 : 사람마다 눈썹 · 눈 크기 · 입 표정 · 안경 · 모자가 다르다. 아이는 머리가 크고 눈이 크다
+    shapeFace(g,kind,{browLift:rnd(.002,.009),browInner:rnd(.003,.011),eyeScale:kid?rnd(1.25,1.4):rnd(.88,1.12)});
+    const head=g.getObjectByName('Head'), hand=g.getObjectByName('Wrist.R');
+    g.updateMatrixWorld(true); dressFace(head,kind,kid,old);
+    // 토끼 머리띠 : 정수리 기준으로 붙여서 아이 머리를 키워도 함께 따라간다
+    if(ears){ const w=matOf('#f6f0e6'), p=matOf('#f3aebd'), t=FACE[kind].top;
+      [-1,1].forEach(k=>{ const e=new THREE.Mesh(G.ear,w); e.scale.set(.03,.11,.018); onHead(head,e,t.clone().add(new THREE.Vector3(k*.055,.07,-.01))).rotation.z=-k*.18;
+        const n=new THREE.Mesh(G.ear,p); n.scale.set(.017,.085,.011); onHead(head,n,t.clone().add(new THREE.Vector3(k*.055,.07,0))).rotation.z=-k*.18; }); }
+    if(kid) head.scale.setScalar(rnd(1.28,1.4));
+    const h=kid?rnd(1.05,1.3):(/woman|dress/.test(kind)?1.62:1.74)+(Math.random()-.5)*.12-(old?.05:0);
     g.scale.multiplyScalar(h/H[kind]);
     const wrap=new THREE.Group(); wrap.add(g); root.add(wrap);
     const mixer=new THREE.AnimationMixer(g), C=clips[kind], walk=mixer.clipAction(C.walk), idle=mixer.clipAction(C.idle), wave=mixer.clipAction(C.wave);
     [walk,idle,wave].forEach(a=>{ a.play(); a.setEffectiveWeight(0); }); idle.setEffectiveWeight(1); idle.time=Math.random()*C.idle.duration;
-    const head=g.getObjectByName('Head'), hand=g.getObjectByName('Wrist.R');
     g.updateMatrixWorld(true);
-    if(ears&&head){ const w=matOf('#f6f0e6'), p=matOf('#f3aebd');
-      [-1,1].forEach(k=>{ const e=new THREE.Mesh(G.ear,w); e.scale.set(.035,.13,.02); e.position.set(k*.07,.34,0); e.rotation.z=-k*.18; attach(head,e);
-        const i=new THREE.Mesh(G.ear,p); i.scale.set(.02,.1,.012); i.position.set(k*.07,.34,.012); i.rotation.z=-k*.18; attach(head,i); }); }
     if(balloon&&hand){ const b=new THREE.Mesh(G.balloon,matOf(pick(['#e8453c','#f2c230','#3b8fd9','#e86fb5']))); b.position.set(0,.85,0); b.scale.y=1.2; attach(hand,b);
       const st=new THREE.Mesh(G.str,matOf('#dddddd')); st.position.set(0,.4,0); st.scale.y=.8; attach(hand,st); }
     return {wrap,g,mixer,walk,idle,wave,hand,h,w:0,wv:0}; }

@@ -85,18 +85,24 @@ def _checker():
     return im
 
 
-def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None):
-    """Poly Haven 소품 하나를 바닥 중심 기준으로 (x, y, z) 에 놓는다. height 를 주면 그 높이로 맞춘다."""
+def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None, name=None, tilt=None):
+    """소품 하나를 바닥 중심 기준으로 (x, y, z) 에 놓는다. height 를 주면 그 높이로 맞춘다.
+       key : Poly Haven 이름 (source/polyhaven/<key>/) 또는 'polypizza/<이름>.glb' · name : 뿌리 이름 (IT_… 로 주면 엔진이 조사 대상으로 읽는다)
+       tilt : (x, y) 도 단위로 눕히기 (Blender 축)"""
     before = set(bpy.data.objects)
-    bpy.ops.import_scene.gltf(filepath=os.path.join(PH, key, key + ".gltf"))
+    path = os.path.join(_B, "source", key) if key.endswith(".glb") else os.path.join(PH, key, key + ".gltf")
+    bpy.ops.import_scene.gltf(filepath=path)
+    key = os.path.basename(key).split(".")[0]
     new = [o for o in bpy.data.objects if o not in before]
     meshes = [o for o in new if o.type == "MESH"]
     pts = [o.matrix_world @ mathutils.Vector(c) for o in meshes for c in o.bound_box]
     mn = mathutils.Vector([min(p[i] for p in pts) for i in range(3)])
     mx = mathutils.Vector([max(p[i] for p in pts) for i in range(3)])
     s = height / (mx.z - mn.z) if height else 1.0
-    root = _empty(f"dormx_{key}", x, y, z, rot)
+    root = _empty(name or f"dormx_{key}", x, y, z, rot)
     root.scale = (s, s, s)
+    if tilt:
+        root.rotation_euler[0], root.rotation_euler[1] = math.radians(tilt[0]), math.radians(tilt[1])
     piv = mathutils.Matrix.Translation(-mathutils.Vector(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)))
     for o in new:
         if o.parent is None:
@@ -110,8 +116,79 @@ def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None):
     return root
 
 
+MINE = ("dormx_", "SIGN_dorm_safety", "SIGN_lname_", "SIGN_forcedev", "IT_lockernote_dorm", "IT_uniform_dorm", "IT_bag_dorm",
+        "IT_key_dorm", "IT_toolbox_dorm", "IT_torch_dorm", "IT_note2_dorm", "IT_forcedev_dorm", "IT_keypad_dorm")
+
+
+def _cyl(name, x, y, z, r, h, m, axis="y", verts=20):
+    """게임 좌표 원기둥 : 중심 (x, y, z), 축 방향 axis ('x' 는 동서로 누운 원기둥)."""
+    bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=r, depth=h, location=_T(x, y, z))
+    o = bpy.context.active_object
+    o.name = name
+    if axis == "x":
+        o.rotation_euler[1] = math.radians(90)
+    elif axis == "z":
+        o.rotation_euler[0] = math.radians(90)
+    o.data.materials.append(m)
+    for p in o.data.polygons:
+        p.use_smooth = True
+    return o
+
+
+def _kids(parent, *objs):
+    for o in objs:
+        o.parent = parent
+    return parent
+
+
+def _hollow_locker(n, dark, steel):
+    """서쪽 벽 사물함 n (1~6) 을 속이 빈 함으로 : 몸통 상자를 지우고 얇은 판 6장으로 다시 짓는다.
+       build 스크립트 안에서는 locker_n_body 가 따로 있고, 이미 재질별로 합쳐진 .blend 에서는 v2_locker 에서 그 면만 지운다."""
+    x1, x2, z1 = -56.79, -56.24, 1.6 + (n - 1) * 0.6
+    z2, e = z1 + 0.6, 0.005
+    body = bpy.data.objects.get(f"locker_{n}_body")
+    if body:
+        bpy.data.objects.remove(body, do_unlink=True)
+    elif "v2_locker" in bpy.data.objects:
+        o = bpy.data.objects["v2_locker"]
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        inside = lambda v: x1 - e <= v.x <= x2 + e and z1 - e <= -v.y <= z2 + e and v.z <= 2.06   # Blender 좌표 (y = -z)
+        kill = [f for f in bm.faces if all(inside(o.matrix_world @ v.co) for v in f.verts)]
+        bmesh.ops.delete(bm, geom=kill, context="FACES")
+        bm.to_mesh(o.data)
+        bm.free()
+    # 문짝의 통풍구 · 손잡이는 따로 붙어 있어서 문이 열려도 제자리에 남는다 → 문짝(IT_locker_n)의 자식으로 다시 단다
+    door = bpy.data.objects.get(f"IT_locker_{n}")
+    parts = [o for o in bpy.data.objects if o.name.startswith((f"locker_{n}_vent", f"locker_{n}_handle"))]
+    if parts:
+        _kids(door, *parts)
+    else:
+        for name in ("v2_locker_dark", "v2_iron"):
+            o = bpy.data.objects.get(name)
+            if not o:
+                continue
+            bm = bmesh.new()
+            bm.from_mesh(o.data)
+            on_door = lambda v: x2 + .02 <= v.x <= x2 + .08 and z1 <= -v.y <= z2 and 0.95 <= v.z <= 1.95
+            bmesh.ops.delete(bm, geom=[f for f in bm.faces if all(on_door(o.matrix_world @ v.co) for v in f.verts)], context="FACES")
+            bm.to_mesh(o.data)
+            bm.free()
+        LH = 2.05
+        _kids(door, *[_box(f"dormx_l{n}_vent{k}", x2 + .03, x2 + .035, LH - .35 + k * .05, LH - .33 + k * .05, z1 + .15, z2 - .15, dark) for k in range(4)],
+              _box(f"dormx_l{n}_handle", x2 + .03, x2 + .07, 1.0, 1.2, z2 - .12, z2 - .08, bpy.data.materials["iron"]))
+    t = 0.02
+    _box(f"dormx_l{n}_back", x1, x1 + t, 0.03, 2.05, z1, z2, dark)
+    _box(f"dormx_l{n}_sa", x1, x2, 0.03, 2.05, z1, z1 + t, steel)
+    _box(f"dormx_l{n}_sb", x1, x2, 0.03, 2.05, z2 - t, z2, steel)
+    _box(f"dormx_l{n}_top", x1, x2, 2.03, 2.05, z1, z2, steel)
+    _box(f"dormx_l{n}_bot", x1, x2, 0.03, 0.12, z1, z2, steel)
+    _box(f"dormx_l{n}_shelf", x1 + t, x2 - .03, 1.64, 1.66, z1 + t, z2 - t, steel)
+    _box(f"dormx_l{n}_inside", x1 + t, x1 + t + .002, 0.12, 2.03, z1 + t, z2 - t, dark)
+
+
 def dress_dorm():
-    for o in [o for o in bpy.data.objects if o.name.startswith(("dormx_", "SIGN_dorm_safety"))]:
+    for o in [o for o in bpy.data.objects if o.name.startswith(MINE)]:
         bpy.data.objects.remove(o, do_unlink=True)
 
     # 1) 벽 : 아래 1m 는 회녹색 페인트, 그 위에 나무 띠 (오래된 직원 건물 느낌)
@@ -146,11 +223,50 @@ def dress_dorm():
         _prop("cardboard_box_01", x, z, r, y=y, height=0.34, decimate=0.08)
     _prop("plastic_broom", -54.7, 7.55, 180, decimate=0.2)
 
-    # 6) 문 옆 소화기 · 남동쪽 화분 · 책상 위 손전등
+    # 6) 문 옆 소화기 · 남동쪽 화분
     _prop("korean_fire_extinguisher_01", -47.55, 2.95, -90, decimate=0.4)
     _prop("potted_plant_02", -47.75, 7.35, 0, height=0.9, decimate=0.15)
-    _prop("signal_flashlight", -52.55, 7.25, 70, y=0.785, decimate=0.3)
 
     # 7) 안전 수칙 포스터 (남쪽 벽, 서쪽 창가) — 글씨는 엔진(SIGNS.dorm_safety)이 붙인다
     _empty("SIGN_dorm_safety", -55.0, 1.7, WZ2 - .02, 180, w=1.1, h=0.8)
-    print("DORM_DRESS_OK", len([o for o in bpy.data.objects if o.name.startswith("dormx_")]))
+
+    # ---------------- 방 1 퍼즐 소품 (rooms/room1_dorm.js 가 IT_ 이름으로 읽는다) ----------------
+    M = bpy.data.materials
+    paper, dark, navy = M["paper"], M["locker_dark"], _mat("dormx_navy", "#26304a", 0.85)
+    # 8) 사물함 이름표 : 번호판 바로 아래 (글씨는 엔진이 ROOM1.names 로 붙인다)
+    for n in range(1, 11):
+        if n <= 6:
+            _empty(f"SIGN_lname_{n}", -56.195, 1.46, 1.6 + (n - 1) * 0.6 + 0.3, 90, w=0.32, h=0.075)
+        else:
+            _empty(f"SIGN_lname_{n}", -54.6 + (n - 7) * 0.6 + 0.3, 1.46, 0.805, 0, w=0.32, h=0.075)
+    # 9) 3번 사물함 문에 붙은 쪽지
+    _box("IT_lockernote_dorm", -56.205, -56.198, 1.02, 1.26, 2.98, 3.2, paper)
+    # 10) 벤치 위 이전 근무자의 근무복 (개어 둔 남색 점퍼 · 반사띠 · 명찰)
+    u = _box("IT_uniform_dorm", -54.86, -54.54, 0.47, 0.53, 2.55, 2.95, navy)
+    _kids(u, _box("dormx_uni_stripe", -54.865, -54.535, 0.5, 0.532, 2.66, 2.7, M["paint_yellow"]),
+          _box("dormx_uni_tag", -54.82, -54.68, 0.53, 0.534, 2.8, 2.88, M["paint_white"]),
+          _box("dormx_uni_collar", -54.86, -54.54, 0.53, 0.55, 2.55, 2.6, navy))
+    # 11) 사물함 속 (3번 · 6번) : 통짜 몸통을 지우고 속이 빈 철제 함(뒤 · 옆 · 위 · 바닥 · 선반)으로 바꾼다
+    for n in (3, 6):
+        _hollow_locker(n, dark, M["locker"])
+    #   6번 (김근수) : 가방 · 고리에 걸린 열쇠
+    _prop("polypizza/backpack.glb", -56.52, 4.9, 90, y=0.12, height=0.46, name="IT_bag_dorm")
+    _cyl("dormx_l6_hook", -56.62, 1.5, 4.9, 0.006, 0.3, M["iron"], axis="x", verts=8)
+    _prop("polypizza/key.glb", -56.5, 4.9, 90, y=1.36, height=0.11, name="IT_key_dorm")
+    #   3번 (이해권 · 나) : 공구함 · 선반 위 손전등 · 뒷벽에 붙은 지시서 #2
+    _prop("metal_toolbox", -56.5, 3.1, 90, y=0.12, height=0.22, decimate=0.3, name="IT_toolbox_dorm")
+    _prop("signal_flashlight", -56.5, 3.1, 90, y=1.68, decimate=0.3, name="IT_torch_dorm")
+    _box("IT_note2_dorm", -56.765, -56.76, 1.12, 1.44, 2.98, 3.22, paper)
+    # 12) 문 옆 '장력 평형 잠금장치' (번호 자물쇠 자리를 대신한다) : 패널 · 눈금판 · 바늘 · 손잡이 바퀴 · 줄
+    dev = _box("IT_forcedev_dorm", -47.29, -47.2, 0.98, 1.62, 4.76, 5.2, M["locker_dark"])
+    _kids(dev,
+          _cyl("dormx_fd_dial", -47.3, 1.44, 4.98, 0.11, 0.02, M["paint_white"], axis="x", verts=28),
+          _cyl("dormx_fd_rim", -47.295, 1.44, 4.98, 0.122, 0.015, M["brass"], axis="x", verts=28),
+          _box("dormx_fd_needle", -47.315, -47.31, 1.44, 1.53, 4.975, 4.985, M["paint_red"]),
+          _cyl("dormx_fd_wheel", -47.31, 1.12, 4.98, 0.075, 0.025, M["iron"], axis="x", verts=20),
+          _cyl("dormx_fd_knob", -47.34, 1.17, 5.02, 0.012, 0.06, M["paint_red"], axis="x", verts=10),
+          _cyl("dormx_fd_cable_v", -47.24, 2.0, 4.98, 0.006, 0.76, M["iron"], verts=6),
+          _cyl("dormx_fd_cable_h", -47.24, 2.38, 4.18, 0.006, 1.6, M["iron"], axis="z", verts=6),
+          _cyl("dormx_fd_pulley", -47.24, 2.38, 4.98, 0.04, 0.02, M["brass"], axis="x", verts=16))
+    _empty("SIGN_forcedev", -47.198, 1.73, 4.98, -90, w=0.5, h=0.13)
+    print("DORM_DRESS_OK", len([o for o in bpy.data.objects if o.name.startswith(MINE)]))

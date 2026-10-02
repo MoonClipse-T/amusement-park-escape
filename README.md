@@ -16,7 +16,8 @@
 | `web/game.js` | 엔진 : 이동 · 충돌 · 조사 · 화면 · 공원 시계 · 하늘(보름달) · 맵 읽기 · 번호 자물쇠 · 목적지 화살표 |
 | `web/crowd.js` | 저녁 손님 NPC |
 | `web/story.js` | 인트로(아이스크림 판매) · 22:00 마감 · 자정 등 밤의 사건 |
-| `web/rooms/room1_dorm.js` | 방 1 : 직원 숙소 (퍼즐 내용은 맨 위 `ROOM1` 에서 고친다) |
+| `web/rooms/room1_dorm.js` | 방 1 : 직원 숙소 — 사물함 · 열쇠 · 장력 평형 잠금장치 (글 · 정답은 맨 위 `ROOM1`) |
+| `web/rooms/room2_carousel.js` | 방 2 : 회전목마 조작실 — 점검 방법 (다음 문제 자리, `ROOM2`) |
 | `web/main.js` | 시작 |
 | `web/vendor/` | three.js r128, GLTFLoader |
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
@@ -36,7 +37,7 @@
 **개발 중** (파일을 고치면서 바로 확인) — `web/` 폴더에서 로컬 서버를 띄운다.
 ```
 cd web
-python -m http.server 8000
+python ../tools/serve.py      # 캐시를 끈 개발 서버 (python -m http.server 8000 도 되지만 고친 파일이 늦게 반영될 수 있다)
 ```
 브라우저에서 http://localhost:8000 을 연다. (`index.html` 을 더블클릭하면 맵을 못 읽는다.)
 
@@ -89,7 +90,8 @@ ROOMS.push({ id:'haunted',
 ## 에셋 출처
 
 - 사람 : Quaternius 'Ultimate Animated Character Pack' (CC0) — https://poly.pizza (Animated Woman · Casual Character · Business Man · Hoodie Character · Animated Woman 드레스)
-- 숙소 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등
+- 숙소 · 조작실 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등 · 공구함 · 플라스틱 의자
+- 가방 : Quaternius "Backpack" (CC0) · 열쇠 : iPoly3D "Key" (CC0) — poly.pizza
 - 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
 - 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
 - 배포 전에 각 에셋의 이용 조건을 한 번 확인할 것
