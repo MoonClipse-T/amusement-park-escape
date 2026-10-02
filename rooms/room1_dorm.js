@@ -3,7 +3,7 @@
    흐름 : 숙소에 들어서면 문이 쾅 닫히고 잠긴다 → 책상 위 지시서 #1 (내 사물함은 3번)
         → 3번 사물함(이해권 · 나)은 잠김, 문에 쪽지 "열쇠는 이전 근무자의 사물함 안에"
         → 벤치에 걸쳐 둔 근무복 등판의 이름 '김근수' → 이름표가 김근수인 6번 사물함 → 가방 · 열쇠
-        → 열쇠로 3번 사물함 → 점검 공구함(용수철저울 · 고무줄 · 마찰력 측정 장치 · 윤활유) · 손전등 · 지시서 #2
+        → 열쇠로 3번 사물함 → 점검 공구함(용수철저울 · 고무줄 · 마찰력 측정 장치 · 윤활유 · 추) · 손전등 · 지시서 #2
         → 문 옆 '장력 평형 잠금장치' : 바깥 용수철이 당기는 힘과 평형이 되게 당기면 문이 열린다 [9과05-01 힘의 표현과 평형]
         → 회전목마 조작실로 (rooms/room2_carousel.js)
    지시서 · 쪽지 · 물건은 소지품(오른쪽 위, I 키)에 들어가 언제든 다시 볼 수 있다
@@ -23,11 +23,12 @@ const ROOM1={
   lockerNote:'3번 사물함 열쇠는<br><b>이전 근무자의 사물함</b> 안에 있다.<br><br><span style="opacity:.6">— 관리실</span>',
   bag:'김근수 씨의 가방. 구겨진 근무 일지가 꽂혀 있다.<br><br><i>“22:40 숙소 문 장치, 바깥 용수철이 또 문을 당기고 있다.<br>23:50 절구 소리. 점점 가까워진다. 혹시 이걸 읽는다면 —”</i><br><br>뒷장은 찢겨 나갔다.',
   items:{key:['3번 사물함 열쇠','김근수 씨 사물함 고리에 걸려 있던 열쇠. 꼬리표 「3」'],
-    toolbox:['점검 공구함','야간 점검조 공구함. 용수철저울 · 고무줄 · 마찰력 측정 장치 · 윤활유가 들어 있다.'],
+    toolbox:['점검 공구함','야간 점검조 공구함. 용수철저울 · 고무줄 · 마찰력 측정 장치 · 윤활유 · 추가 들어 있다.'],
     scale:['용수철저울','용수철이 늘어난 길이로 힘의 크기를 잰다. 걸어 둔 물체가 무거울수록 많이 늘어난다.'],
     rubber:['고무줄','잡아당기면 늘어났다가, 놓으면 원래대로 돌아간다.'],
     gauge:['마찰력 측정 장치','물체에 걸고 천천히 당긴다. 물체가 움직이기 시작할 때의 눈금(N)을 읽는다.'],
     oil:['윤활유','바닥에 뿌리면 접촉면이 매끄러워져 마찰력이 작아진다.'],
+    weight:['추','묵직한 쇠 추 여러 개. 물체 위에 올리면 그만큼 무거워진다.'],
     torch:['손전등','F 키(또는 손전등 버튼)로 켜고 끈다.']},
   note2:{title:'야간 점검 지시서 #2',
     body:`장비를 챙겼다면 점검을 시작한다.<br><br>
@@ -85,8 +86,8 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
   async function takeKey(){ S.flags.key=true; show(['key_dorm'],false); AUDIO.ok(); give('key');
     await mono(['열쇠 고리에 작은 꼬리표 — 「3」.']); objective(`열쇠로 내 사물함(${ROOM1.me}번)을 열자`); }
   async function takeTorch(){ S.flags.torch=true; show(['torch_dorm'],false); $('#lightBtn').classList.add('on'); AUDIO.ok(); give('torch'); afterTools(); }
-  async function takeToolbox(){ S.flags.toolbox=true; show(['toolbox_dorm'],false); AUDIO.ok(); give('toolbox'); give('scale'); give('rubber'); give('gauge'); give('oil');
-    await mono(['공구함을 챙겼다.','용수철저울, 고무줄, 마찰력 측정 장치, 윤활유… 점검할 때 쓰라는 거겠지.']); afterTools(); }
+  async function takeToolbox(){ S.flags.toolbox=true; show(['toolbox_dorm'],false); AUDIO.ok(); give('toolbox'); give('scale'); give('rubber'); give('gauge'); give('oil'); give('weight');
+    await mono(['공구함을 챙겼다.','용수철저울, 고무줄, 마찰력 측정 장치, 윤활유, 추… 점검할 때 쓰라는 거겠지.']); afterTools(); }
   async function readNote2(){ AUDIO.click(); await showMsg(ROOM1.note2.title,ROOM1.note2.body);
     if(!S.flags.note2){ S.flags.note2=true; INV.note('note2',ROOM1.note2.title,ROOM1.note2.body); show(['note2_dorm'],false);
       await mono(['아, 첫 번째 점검은 회전목마구나.','그럼 우선 이 숙소부터 나가 보자.']); } afterTools(); }

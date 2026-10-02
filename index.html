@@ -46,6 +46,11 @@
   <h3>지시서 · 쪽지</h3><div class="bnotes"></div>
   <h3>물건</h3><div class="bitems"></div></div></div>
 
+<!-- 도구 고르기 -->
+<div id="tools" class="ov"><button class="close">✕</button><div class="bag">
+  <div class="bhead"><span>점검 공구함</span><small>무엇을 쓸까?</small></div>
+  <p class="tq"></p><div class="tlist"></div></div></div>
+
 <!-- 쪽지 · 단서 -->
 <div id="msg" class="ov"><div class="note"><i class="tape"></i><h2 id="msgT"></h2><p id="msgP"></p><button id="msgOk">접기</button></div></div>
 
@@ -76,7 +81,7 @@
 <!-- 쓰러진 말 다시 걸기 : 용수철저울 · 리프트 (방 2) -->
 <div id="lift" class="ov"><button class="close">✕</button><div class="fpad">
   <div class="fhead"><span class="ft">말의 무게 재기</span><span class="fsub">SPRING SCALE · N</span></div>
-  <canvas id="lcv" width="720" height="380"></canvas>
+  <canvas id="lcv" width="720" height="440"></canvas>
   <p class="fq"></p>
   <div class="frow"><span class="fl">말에 작용하는 중력</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
   <button class="fgo">확인</button><p class="fmsg"></p></div></div>
@@ -96,7 +101,8 @@
   <p class="fq"></p>
   <div class="ftab"></div>
   <div class="frow"><button class="fgo">누르고 있으면 당기기</button></div>
-  <div class="frow"><button class="fdir foil">윤활유 조금 뿌리기</button><button class="fdir fwipe">걸레로 닦아 내기</button></div>
+  <div class="frow"><button class="fdir foil">윤활유 뿌리기</button><button class="fdir fwipe">걸레로 닦기</button><button class="fdir fwt">추 올리기</button><button class="fdir fwt0">추 내리기</button></div>
+  <p class="finfo"></p>
   <p class="fmsg"></p></div></div>
 
 <!-- 일시 정지 (놀이기구 조작반) -->

@@ -153,6 +153,11 @@ const INV={notes:[],items:[],
     it.innerHTML=this.items.length?this.items.map(x=>`<div><b>${x.name}</b>${x.desc}</div>`).join(''):'<p class="empty">아직 없다</p>'; ov('#inv',true); AUDIO.click(); } };
 $('#invBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); if(S.phase==='play'&&!S.busy) INV.open(); });
 
+/* 도구 고르기 : 소지품의 물건 이름만 보여 주고 하나를 고르게 한다 → Promise<고른 물건 id | null> (학생이 알맞은 도구를 스스로 추론) */
+function chooseTool(q,skip=['toolbox']){ return new Promise(res=>{ const el=$('#tools .tlist'); $('#tools .tq').textContent=q; el.innerHTML='';
+  INV.items.filter(it=>!skip.includes(it.id)).forEach(it=>{ const b=document.createElement('button'); b.textContent=it.name; b.onclick=()=>{ ov('#tools',false); AUDIO.click(); res(it.id); }; el.appendChild(b); });
+  $('#tools .close').onclick=()=>{ ov('#tools',false); res(null); }; ov('#tools',true); AUDIO.click(); }); }
+
 /* 독백창 */
 const monoQ={lines:[],i:0,res:null,typing:null,full:'',pend:[]};
 function mono(lines,who='나'){ return new Promise(res=>{ if(monoQ.res){ monoQ.pend.push([lines,who,res]); return; } monoStart(lines,who,res); }); }
