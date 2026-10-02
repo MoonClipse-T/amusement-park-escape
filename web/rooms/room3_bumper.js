@@ -9,8 +9,9 @@
           · 뻑뻑한 차 : 바닥에 윤활유 → 접촉면이 매끄러워져 마찰력이 작아진다 (너무 많이 뿌리면 걸레로 닦아 낸다)
           · 잘 밀리는 차 : 좌석에 추를 올린다 → 무거워져 마찰력이 커진다 (너무 많으면 추를 내린다)
         → 6대 모두 20 N → 규칙대로 전원을 끈다
-        → (공포) 전원을 끄자 등 뒤에서 '쿵' — 안쪽에 있던 2번 범퍼카가 입구까지 굴러와 이쪽을 보고 있고,
-          빨간 램프가 저절로 켜져 있으며, 보닛 위에 아까는 없던 단추 눈 토끼 인형이 앉아 있다
+        → 다음은 롤러코스터. 조작실을 나와 범퍼카장을 바라보는 순간 (공포) 화면이 잠깐 꺼지며 '쿵' —
+          안쪽에 있던 2번 범퍼카가 입구까지 와서 이쪽을 보고 있고, 빨간 램프가 저절로 켜져 있으며,
+          보닛 위에 아까는 없던 단추 눈 토끼 인형이 앉아 있다 (뒤돌아보지 않고 멀어지면 등 뒤에서 '쿵' 소리로 돌아보게 한다)
    ★ 글 · 숫자는 아래 ROOM3 에서 고친다
    ============================================================ */
 'use strict';
@@ -54,7 +55,7 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
   async function power(){ if(st.busy) return; const m=$('#bctrl .fmsg'); m.className='fmsg';
     if(st.power){ st.power=false; st.lit=0; AUDIO.tone(300,.15,'square',.08); drawCtrl();
       if(S.flags.bumper_equal&&!S.flags.bumper_done){ S.flags.bumper_done=true; m.className='fmsg ok'; m.textContent='전원을 껐다. 범퍼카 점검 끝.';
-        await sleep(1200); ov('#bctrl',false); await mono(['범퍼카 점검도 끝. 전원도 껐다.']); scare(); }
+        await sleep(1200); ov('#bctrl',false); await mono(['범퍼카 점검도 끝. 전원도 껐다.','다음 점검 장소는 롤러코스터. 거기 조작실로 가 보자.']); toCoaster(); }
       else m.textContent='전원이 꺼졌다.';
       return; }
     st.busy=true; st.power=true; st.lit=0; AUDIO.tone(120,.4,'sawtooth',.06,0,60); drawCtrl(); m.textContent='범퍼카에 전기를 보내는 중…'; await sleep(500);
@@ -135,19 +136,28 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
   $('#bctrl .cpbtn').onclick=power;
   $('#bctrl .cgrid').innerHTML=Array.from({length:N},(_,i)=>`<div class="cl off" data-n="${i+1}"><i></i><b>${i+1}</b></div>`).join('');
 
-  /* ---------- 공포 : 전원을 끄자 등 뒤에서 '쿵' — 2번 범퍼카가 혼자 굴러와 있다. 좌석엔 아까 없던 토끼 인형 ---------- */
-  async function scare(){ const car=PARK.items.bcar_2, plush=PARK.items.bplush; if(!car){ objective('다음 점검 : 롤러코스터 (준비 중)'); return; }
-    P.free=false; setGoal(null); await sleep(1400);
-    const to=new THREE.Vector3(-36,0,34.3), from=car.position.clone(), q0=car.quaternion.clone(), q1=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.PI,0));
-    car.parent.updateMatrixWorld(true); const local=car.parent.worldToLocal(to.clone());
-    if(plush){ plush.visible=true; plush.position.set(0,.84,.42); plush.scale.multiplyScalar(1.35); }   // 좌석이 아니라 보닛 위에 앉아 이쪽을 본다
-    AUDIO.noise(.5,.2,0,300); for(let t=0;t<=1.0001;t+=.06){ car.position.lerpVectors(from,local,t*t); car.quaternion.copy(q0).slerp(q1,t); await sleep(16); }
+  /* ---------- 공포 : 조작실을 나와 범퍼카장을 바라보면 — 화면이 잠깐 꺼지며 '쿵', 2번 범퍼카가 입구에서 이쪽을 보고 있다 ---------- */
+  const SPOT=new THREE.Vector3(-36,0,34.3);          // 범퍼카장 입구 바로 안쪽
+  function toCoaster(){ objective('롤러코스터 조작실로 가자'); const b=PARK.spots.booth_coaster; if(b) setGoal(b.x,b.z,'롤러코스터 조작실'); }
+  function looking(){ const dx=SPOT.x-P.x, dz=SPOT.z-P.z, d=Math.hypot(dx,dz); return { d, dot:(-Math.sin(P.yaw)*dx-Math.cos(P.yaw)*dz)/d }; }
+  async function scare(){ const car=PARK.items.bcar_2, plush=PARK.items.bplush; S.flags.bumper_scare=true; if(!car) return;
+    P.free=false; setGoal(null); const f=$('#fade'); f.style.transition='none'; f.classList.remove('clear');     // 한순간 깜깜
     AUDIO.noise(.45,1,0,180); AUDIO.tone(48,.8,'sine',.6,0,-20); AUDIO.noise(.15,.5,.05,1500);
+    car.parent.updateMatrixWorld(true); car.position.copy(car.parent.worldToLocal(SPOT.clone()));
+    const pq=car.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+    car.quaternion.copy(pq.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,Math.atan2(P.x-SPOT.x,P.z-SPOT.z),0))));   // 앞(+z)이 나를 본다
+    if(plush){ plush.visible=true; plush.position.set(0,.84,.42); plush.scale.multiplyScalar(1.35); }   // 좌석이 아니라 보닛 위에 앉아 이쪽을 본다
     glow(PARK.items.bcarlamp_2,true,0xff2a1a);
-    await camTo({yaw:Math.atan2(-(to.x-P.x),-(to.z-P.z)),pitch:-.08},.5); AUDIO.music('dead');
+    await sleep(160); f.classList.add('clear'); await sleep(30); f.style.transition='';
+    await camTo({yaw:yawTo(SPOT.x,SPOT.z),pitch:-.06},.35); AUDIO.music('dead');
+    const fov=camera.fov; zoom(fov*Math.max(.3,Math.min(.7,6/Math.hypot(SPOT.x-P.x,SPOT.z-P.z))),700);   // 멀리서 봐도 차가 크게 보이게
     await mono(['…!','2번 범퍼카…? 방금까지 저 안쪽에 있었는데.','전원도 꺼져 있는데, 불이 켜져 있다.','…저 인형은 뭐야. 아까는 분명히 없었어.','…눈이 하나 없다.']);
-    P.free=true; await mono(['…여기 오래 있으면 안 될 것 같다. 다음 점검 장소로 가자.']);
-    objective('다음 점검 : 롤러코스터 (준비 중)'); }
+    await zoom(fov,500); P.free=true; await mono(['…여기 오래 있으면 안 될 것 같다. 롤러코스터로 가자.']); toCoaster(); }
+  function tickScare(){ if(!S.flags.bumper_done||S.flags.bumper_scare||S.busy||!P.free||IN(P.x,P.z)) return;
+    const {d,dot}=looking();
+    if(P.z<33&&d>3.5&&d<(S.flags.bumper_lure?30:14)&&dot>.9) return scare();
+    if(!S.flags.bumper_lure&&d>14){ S.flags.bumper_lure=true; AUDIO.noise(.35,.6,0,160); AUDIO.tone(55,.5,'sine',.35,0,-15);     // 뒤돌아보지 않고 멀어지면 등 뒤에서
+      mono('…방금 뒤에서, 범퍼카 쪽에서 무슨 소리가?'); } }
 
   /* ---------- 디버그 바로 가기 (Shift+7 ~ 9) ---------- */
   function prep(n){ room2Done(); S.flags.ghost_carousel=true; S.flags.bumper_booth_in=true;
@@ -155,11 +165,12 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     if(n>=9){ for(const k in R.start){ const v=R.start[k]; if(v>R.base) oil[k]=Math.ceil((v-R.base)/R.oilStep); else wt[k]=Math.ceil((R.base-v)/R.weightStep); syncBells(k); }
       for(let k=1;k<=N;k++) meas[k]=R.base; Object.assign(S.flags,{saw_stiff:true,saw_slip:true,bumper_equal:true}); }
     sync3d(); }
+  window.room3Done=()=>{ prep(9); st.power=false; st.lit=0; sync3d(); Object.assign(S.flags,{bumper_done:true,bumper_scare:true,bumper_lure:true}); };
   const inBooth=()=>{ const m=itemPos('manual_bumper'); warp(-39.6,31.2,m?m.x:-38.3,m?m.z:31.3); };
   CHECKPOINTS.push(
     {key:'7',name:'범퍼카 조작실 (점검 방법 · 전원)',go(){ prep(7); inBooth(); objective('범퍼카 조작실에서 점검 방법을 찾자'); }},
     {key:'8',name:'범퍼카 마찰력 측정 (4번 · 5번)',go(){ prep(8); const c=itemPos('bcar_4')||{x:-41.8,z:43.6}; warp(-38.6,41.2,c.x,c.z); objective('범퍼카를 하나씩 당겨 보며 확인하자 (0/6)'); }},
-    {key:'9',name:'범퍼카 전원 끄기 (범퍼카 공포 직전)',go(){ prep(9); const c=itemPos('console_bumper'); warp(-39.4,31.0,c?c.x:-39.5,c?c.z:32.2); objective('점검 끝 — 범퍼카 조작반 전원을 끄자'); }});
+    {key:'9',name:'범퍼카 전원 끄기 → 나와서 범퍼카장 보기 (공포)',go(){ prep(9); const c=itemPos('console_bumper'); warp(-39.4,31.0,c?c.x:-39.5,c?c.z:32.2); objective('점검 끝 — 범퍼카 조작반 전원을 끄자'); }});
 
   ROOMS.push({id:'room3', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };
@@ -174,5 +185,6 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     sync3d();
   },
   tick(){ if(S.stage==='night'&&S.flags.carousel_off&&!S.flags.bumper_booth_in&&IN(P.x,P.z)){ S.flags.bumper_booth_in=true; setGoal(null);
-      mono(['범퍼카 조작실. 여기에도 점검 방법이 붙어 있겠지.']); objective('범퍼카 조작실에서 점검 방법을 찾자'); } }});
+      mono(['범퍼카 조작실. 여기에도 점검 방법이 붙어 있겠지.']); objective('범퍼카 조작실에서 점검 방법을 찾자'); }
+    tickScare(); }});
 })();

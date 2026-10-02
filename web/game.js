@@ -239,6 +239,8 @@ function keypad({title='번호 자물쇠',len=4,hint='',check}){ return new Prom
 
 /* 카메라 연출 */
 let camAnim=null;
+// 지점(x,z)을 바라보는 yaw — 지금 yaw 에서 가까운 쪽으로 돈다
+function yawTo(x,z){ const a=Math.atan2(-(x-P.x),-(z-P.z)); return P.yaw+Math.atan2(Math.sin(a-P.yaw),Math.cos(a-P.yaw)); }
 function camTo(to,dur){ return new Promise(res=>{ camAnim={from:{x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch},to,t:0,dur,res}; }); }
 function tickCam(dt){ if(!camAnim) return; camAnim.t+=dt; const k=Math.min(1,camAnim.t/camAnim.dur), e=k<.5?2*k*k:-1+(4-2*k)*k; const f=camAnim.from,t=camAnim.to;
   P.x=lerp(f.x,t.x??f.x,e); P.z=lerp(f.z,t.z??f.z,e); P.y=lerp(f.y,t.y??f.y,e); P.yaw=lerp(f.yaw,t.yaw??f.yaw,e); P.pitch=lerp(f.pitch,t.pitch??f.pitch,e);
@@ -472,9 +474,9 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   else if(hot){ hot=null; $('#label').classList.remove('on'); $('#cross').classList.remove('hot'); $('#interact').classList.remove('on'); }
   ROOMS.forEach(r=>r.tick&&r.tick(dt)); if(typeof CROWD!=='undefined') CROWD.tick(dt);
   renderer.render(scene,camera);
-  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+1~9 방 바로 가기 · Shift+0 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
+  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+1~0 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+1~9 방(퍼즐) 바로 가기 · Shift+0 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+1~9 · 0 방(퍼즐) 바로 가기 · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
@@ -499,7 +501,8 @@ function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
   if(e.code==='KeyN'){ DBG.bright=!DBG.bright; tickSky(0,true); }
   if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
   if(e.code==='KeyK'&&typeof skipIntro==='function') skipIntro();
-  if(d===undefined) return; e.preventDefault(); if(d==='0') checkpointList(); else jumpTo(d); }
+  if(e.code==='KeyL') checkpointList();
+  if(d===undefined) return; e.preventDefault(); jumpTo(d); }
 
 /* 불러오기 : 입장권이 발권기에서 조금씩 나온다 */
 function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px'; $('#lpct').textContent=pct+'%'; if(msg) $('#lmsg').textContent=msg; }

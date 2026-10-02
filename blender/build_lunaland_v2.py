@@ -223,7 +223,7 @@ M["k_pink"] = mat("kiosk_pink", "#f2b3c4", 0.7)
 M["k_mint"] = mat("kiosk_mint", "#a8dcc8", 0.7)
 
 # ---------------------------------------------------------------- 부품 파일 (blender/parts/*.py)
-for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress", "carousel_booth", "bumper_cars"):
+for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress", "carousel_booth", "bumper_cars", "flume_ride"):
     exec(open(os.path.join(HERE, "parts", part + ".py"), encoding="utf-8").read())
 
 # ---------------------------------------------------------------- 1. 폐허 소품 정리
@@ -407,6 +407,7 @@ build_booth()      # blender/parts/carousel_booth.py : 회전목마 조작실
 fix_carousel()     # 같은 파일 : 울타리 · 무대 충돌, 구역 번호 1~8, 쓰러진 말
 build_bumper_booth()   # 같은 파일 : 범퍼카 조작실
 build_bumper_cars()    # blender/parts/bumper_cars.py : 범퍼카 6대
+build_flume()          # blender/parts/flume_ride.py : 후룸라이드 물길 · 스플래시 풀 · 잠긴 조작실 (방 4)
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)
 build_kiosk()      # blender/parts/icecream_kiosk.py
