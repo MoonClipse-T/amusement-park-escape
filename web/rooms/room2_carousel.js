@@ -2,20 +2,22 @@
    방 2 : 회전목마 (첫 번째 점검 장소)
    흐름 : 입구 옆 조작실 → 벽의 '회전목마 야간 점검 방법'
         → 조작반 전원(ON/OFF) : 버튼 8개(가로 4 × 세로 2)에 하나씩 불이 들어오는데 5번만 빨간불
-        → 버튼 번호 = 무대 구역 번호. 무대(높이 0.5 m)에 점프해서 올라가 5번 구역 → 말 한 마리가 기둥에서 빠져 쓰러져 있다
-        → 용수철저울로 말의 무게(중력)를 잰다 : 저울 표 '100 N → 5 cm', 늘어난 길이 15 cm → 300 N   [9과05-02 중력 · 탄성력]
-        → 기둥 리프트가 말을 위로 당기는 힘을 중력과 같게(위로 300 N) → 힘의 평형으로 말이 제자리에 걸린다 [9과05-01]
-        → 5번도 초록불 → 레버를 내리면 회전목마가 돈다 → 다음 점검 (범퍼카, 준비 중)
+        → 버튼 번호 = 무대 구역 번호. 무대(높이 0.5 m)에 점프해서 올라가 5번 구역 → 말 한 마리가 기둥에서 빠져 바닥에 내려앉아 있다
+        → 용수철저울 : 고정대에 매달린 용수철 끝 고리에 말을 끌어다 건다 → 줄자로 늘어난 길이(15 cm)를 읽고
+          기준 '5 cm 늘어나면 100 N' 으로 말에 작용하는 중력(300 N)을 추정한다   [9과05-02 탄성력 · 중력]
+        → 5번도 초록불 → 레버를 내리면 회전목마가 돈다 → 규칙대로 전원을 끈다 → 다음 점검 : 범퍼카
+        → (공포) 범퍼카 앞에 도착하면, 꺼 둔 회전목마가 혼자 돌기 시작한다
    ★ 글 · 정답은 아래 ROOM2 에서 고친다
    ============================================================ */
 'use strict';
 const ROOM2={
   manual:{title:'회전목마 야간 점검 방법',
     body:`1. 조작반 왼쪽의 <b>전원(ON / OFF)</b> 버튼을 눌러 전원이 들어오는지 확인한다.<br>
-2. 버튼 8개에 모두 불이 들어오는지 확인한다.<br>&nbsp;&nbsp;&nbsp;<b>8개가 모두 초록색</b>이면 레버를 아래로 내려 회전목마를 작동시킨다.<br><br>
+2. 버튼 8개에 모두 불이 들어오는지 확인한다.<br>&nbsp;&nbsp;&nbsp;<b>8개가 모두 초록색</b>이면 레버를 아래로 내려 회전목마를 작동시킨다.<br>
+<b class="red">3. 점검이 끝나면 반드시 전원을 끈다.</b><br><br>
 ※ 버튼 번호는 회전목마 무대의 <b>구역 번호(1~8)</b>와 같다.<br>&nbsp;&nbsp;&nbsp;초록색이 아닌 버튼이 있으면 그 번호 구역을 먼저 점검할 것.`},
   bad:5,                                   // 고장 난 구역 (Blender 쪽 fix_carousel 의 FALLEN 과 같아야 한다)
-  // 용수철저울 : 표에 적힌 기준(refN 일 때 refCm 늘어남), 말을 걸었을 때 늘어난 길이 cm → 무게 = refN × cm / refCm
+  // 용수철저울 : 기준(refN 일 때 refCm 늘어남), 말을 걸었을 때 늘어난 길이 cm → 중력 = refN × cm / refCm
   scale:{refN:100, refCm:5, cm:15},
 };
 SIGNS.booth_carousel=['회전목마 조작실','CAROUSEL CONTROL · 관계자 외 출입금지','#8e231c','#f2ede2'];
@@ -24,22 +26,30 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
 
 (function(){
   const IN=(x,z)=>x>-20.5&&x<-18.3&&z>12.7&&z<14.9;          // 조작실 안
-  const C={x:-30,z:10}, weight=()=>ROOM2.scale.refN*ROOM2.scale.cm/ROOM2.scale.refCm;
+  const C={x:-30,z:10}, BUMPER={x:-36,z:33}, weight=()=>ROOM2.scale.refN*ROOM2.scale.cm/ROOM2.scale.refCm;
   const st={power:false,lit:0,lever:false,busy:false}, lamp=k=>!st.power||k>st.lit?'off':(k===ROOM2.bad&&!S.flags.horse_fixed?'bad':'on');
   let horseAnim=null, hintT=0;
+  const booth=()=>PARK.spots.booth_carousel||{x:-19.05,z:11.9};
 
   /* ---------- 3D 조작반 : 버튼 불 · 전원 버튼 · 레버 ---------- */
   const COL={off:[0x2c312c,0],on:[0x3ddc84,1.1],bad:[0xff3b30,1.3]};
   function sync3d(){ const I=PARK.items;
     for(let k=1;k<=8;k++){ const m=I['cbtn_'+k]; if(!m) continue; const [c,e]=COL[lamp(k)]; m.traverse(o=>{ if(!o.material) return; o.material.color.setHex(c); o.material.emissive.setHex(c); o.material.emissiveIntensity=e; }); }
-    if(I.cpower) I.cpower.traverse(o=>{ if(o.material){ o.material.emissive.setHex(0xff2a1a); o.material.emissiveIntensity=st.power?1.2:0; } }); }
+    if(I.cpower) I.cpower.traverse(o=>{ if(o.material){ o.material.emissive.setHex(0xff2a1a); o.material.emissiveIntensity=st.power?1.2:0; } });
+    if(I.clever) I.clever.rotation.z=st.lever?-0.8:0; }
 
   /* ---------- 조작반 화면 ---------- */
   function drawCtrl(){ $('#ctrl .cpbtn').classList.toggle('on',st.power); $('#ctrl .cslot').classList.toggle('down',st.lever);
     document.querySelectorAll('#ctrl .cl').forEach(el=>{ el.className='cl '+lamp(+el.dataset.n); }); sync3d(); }
   function openCtrl(){ AUDIO.click(); const m=$('#ctrl .fmsg'); m.className='fmsg'; m.textContent=S.flags.manual_carousel?'':'…버튼이 잔뜩이다. 함부로 누르기 전에 점검 방법부터 찾자.'; drawCtrl(); ov('#ctrl',true); }
   async function power(){ if(st.busy) return; const m=$('#ctrl .fmsg'); m.className='fmsg';
-    if(st.power){ st.power=false; st.lit=0; st.lever=false; AUDIO.tone(300,.15,'square',.08); drawCtrl(); m.textContent='전원이 꺼졌다.'; return; }
+    if(st.power){ st.power=false; st.lit=0; st.lever=false; AUDIO.tone(300,.15,'square',.08); drawCtrl();
+      if(S.carouselRun){ S.carouselRun=false; AUDIO.stopMusic(); }
+      if(S.flags.carousel_done&&!S.flags.carousel_off){ S.flags.carousel_off=true; m.className='fmsg ok'; m.textContent='전원을 껐다. 회전목마가 천천히 멈춘다.';
+        await sleep(1200); ov('#ctrl',false); await mono(['회전목마 점검 끝. 전원도 껐다.','다음은 범퍼카. 점검 순서대로 가자.']);
+        objective('범퍼카로 가서 조작실을 찾자'); const b=PARK.spots.booth_bumper; setGoal(b?b.x:-41.3,b?b.z:30.9,'범퍼카 조작실'); }
+      else m.textContent='전원이 꺼졌다.';
+      return; }
     st.busy=true; st.power=true; st.lit=0; AUDIO.tone(120,.4,'sawtooth',.06,0,60); drawCtrl(); m.textContent='전원이 들어왔다…'; await sleep(500);
     for(let k=1;k<=8;k++){ st.lit=k; AUDIO.tone(k===ROOM2.bad&&!S.flags.horse_fixed?260:1400,.05,'square',.08); AUDIO.noise(.03,.15,0,3000); drawCtrl(); await sleep(260); }
     st.busy=false;
@@ -51,64 +61,87 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
   async function pullLever(){ if(st.busy||st.lever) return; const m=$('#ctrl .fmsg'); m.className='fmsg';
     if(!st.power){ AUDIO.err(); m.textContent='전원이 꺼져 있어서 레버가 움직이지 않는다.'; return; }
     if(st.lit<8||!S.flags.horse_fixed){ AUDIO.err(); AUDIO.tone(90,.5,'square',.12); m.textContent='삐— 레버가 잠겨 있다. 버튼 8개가 모두 초록색일 때만 내려간다.'; return; }
-    st.lever=true; drawCtrl(); AUDIO.tone(200,.3,'sawtooth',.06,0,-80); AUDIO.noise(.4,.3,0,600); const L=PARK.items.clever; if(L) L.rotation.z=-0.8;
+    st.lever=true; drawCtrl(); AUDIO.tone(200,.3,'sawtooth',.06,0,-80); AUDIO.noise(.4,.3,0,600);
     m.className='fmsg ok'; m.textContent='레버를 내렸다. 회전목마가 돌기 시작한다!'; S.carouselRun=true; AUDIO.music('open'); await sleep(1600); ov('#ctrl',false);
-    S.flags.carousel_done=true; await mono(['…돈다. 음악도 나온다.','회전목마 점검 끝. 다음은 범퍼카다.']); objective('다음 점검 : 범퍼카 (준비 중)'); setGoal(null);
-    setTimeout(()=>{ S.carouselRun=false; AUDIO.stopMusic(); },12000); }
+    if(S.flags.carousel_done) return; S.flags.carousel_done=true; setGoal(null);
+    await mono(['…돈다. 음악도 나온다. 고장 난 곳은 이제 없다.','점검 방법 3번 — 점검이 끝나면 반드시 전원을 끈다.']); objective('점검 끝 — 조작반 전원(ON/OFF)을 끄자'); }
 
-  /* ---------- 쓰러진 말 : 용수철저울로 무게 재기 → 리프트 ---------- */
-  const lift={dir:'up',busy:false};
-  function drawLift(t=0){ const c=$('#lcv'), g=c.getContext('2d'), W=c.width, H=c.height, sc=ROOM2.scale; g.clearRect(0,0,W,H);
-    // 왼쪽 : 용수철저울 (자 눈금 0~20 cm, 1 cm = 12 px)
-    const x0=150, top=30, px=12, len=sc.cm*px*Math.min(1,t);
-    g.fillStyle='#c9a23e'; g.fillRect(x0-40,top-14,120,10); g.fillStyle='#444a52'; g.fillRect(x0-34,top-4,108,20*px+40);
-    g.fillStyle='#e8e2d6'; g.fillRect(x0-30,top+20,100,20*px+12);
-    g.strokeStyle='#1a1a1a'; g.fillStyle='#1a1a1a'; g.font='700 12px "Noto Sans KR",sans-serif'; g.textAlign='left';
-    for(let k=0;k<=20;k++){ const y=top+26+k*px; g.lineWidth=k%5?1:2; g.beginPath(); g.moveTo(x0+14,y); g.lineTo(x0+(k%5?22:28),y); g.stroke(); if(k%5===0) g.fillText(k+' cm',x0+31,y+4); }
-    // 용수철 · 바늘
-    g.strokeStyle='#7d858e'; g.lineWidth=2.5; g.beginPath(); const sy=top+26, ey=sy+len; g.moveTo(x0-8,sy-6);
-    for(let i=0;i<=12;i++) g.lineTo(x0-8+(i%2?-8:8)*(i&&i<12?1:0),sy+(ey-sy)*i/12); g.stroke();
-    g.fillStyle='#ff5a3a'; g.fillRect(x0-14,ey-2,28,4); g.beginPath(); g.moveTo(x0+12,ey); g.lineTo(x0+2,ey-6); g.lineTo(x0+2,ey+6); g.fill();
-    g.strokeStyle='#c9a23e'; g.lineWidth=3; g.beginPath(); g.moveTo(x0-8,ey); g.lineTo(x0-8,ey+24); g.arc(x0-2,ey+30,6,Math.PI,0,true); g.stroke();
-    // 저울에 붙은 표
-    g.fillStyle='#fff6d6'; g.fillRect(x0-130,top+70,92,58); g.strokeStyle='#8e231c'; g.lineWidth=2; g.strokeRect(x0-130,top+70,92,58);
-    g.fillStyle='#8e231c'; g.font='700 13px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('저울 표',x0-84,top+88); g.fillStyle='#1a1a1a'; g.font='700 14px "Noto Sans KR",sans-serif';
-    g.fillText(`${sc.refN} N → ${sc.refCm} cm`,x0-84,top+112);
-    // 오른쪽 : 말과 힘 화살표 (중력 · 리프트)
-    const hx=520, hy=190; g.fillStyle='#e9e2d6'; g.beginPath(); g.ellipse(hx,hy,70,34,0,0,7); g.fill(); g.fillRect(hx+40,hy-70,26,60); g.beginPath(); g.ellipse(hx+62,hy-78,26,16,-.4,0,7); g.fill();
-    [-50,-20,25,52].forEach(lx=>g.fillRect(hx+lx,hy+20,10,50)); g.fillStyle='#ffe08a'; g.beginPath(); g.arc(hx,hy,6,0,7); g.fill();
-    const arr=(dy,col,label)=>{ const y1=hy+dy; g.strokeStyle=col; g.fillStyle=col; g.lineWidth=6; g.beginPath(); g.moveTo(hx,hy); g.lineTo(hx,y1-Math.sign(dy)*14); g.stroke();
-      g.beginPath(); g.moveTo(hx,y1); g.lineTo(hx-11,y1-Math.sign(dy)*18); g.lineTo(hx+11,y1-Math.sign(dy)*18); g.fill(); g.font='700 14px "Noto Sans KR",sans-serif'; g.textAlign='left'; g.fillText(label,hx+16,(hy+y1)/2); };
-    arr(110,'#ff5a3a','중력 ? N'); if(lift.F>0) arr(lift.dir==='up'?-Math.min(150,lift.F/weight()*110):Math.min(150,lift.F/weight()*110)*0.8,'#ffb340',`리프트 ${lift.F} N`);
-    g.fillStyle='#b9bcc2'; g.font='600 13px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('작용점 (말의 무게 중심)',hx,hy-110); }
-  function readL(){ const v=$('#lift .fnum').value.trim(); lift.F=/^\d{1,4}$/.test(v)?+v:0; return v; }
+  /* ---------- 쓰러진 말 : 고정대에 매달린 용수철에 말을 끌어다 걸고, 줄자로 늘어난 길이를 읽는다 ---------- */
+  const SC={stand:120, arm:40, sx:290, top:56, hook0:136, px:10, rx:340};   // 그림 위치 : 고정대 · 용수철 위 끝 · 처음 고리 높이 · 1 cm = 10 px · 줄자 x
+  const lift={hooked:false, stretch:0, drag:null, hx:560, hy:150, busy:false};
+  function horse(g,x,y,s=1){ g.save(); g.translate(x,y); g.scale(s,s);       // (x, y) = 등의 고리
+    g.strokeStyle='#c9a23e'; g.lineWidth=4; g.beginPath(); g.arc(0,-6,7,0,7); g.stroke(); g.fillStyle='#c9a23e'; g.fillRect(-2,-2,4,14);
+    g.fillStyle='#ece6da'; g.strokeStyle='#8a7f70'; g.lineWidth=2;
+    g.beginPath(); g.ellipse(0,40,56,26,0,0,7); g.fill(); g.stroke();                                   // 몸
+    g.beginPath(); g.moveTo(34,30); g.quadraticCurveTo(58,-6,70,-16); g.lineTo(84,-10); g.quadraticCurveTo(70,10,58,40); g.closePath(); g.fill(); g.stroke();   // 목
+    g.beginPath(); g.ellipse(80,-14,18,10,-.5,0,7); g.fill(); g.stroke();                              // 머리
+    g.fillStyle='#d8312a'; g.fillRect(-30,16,46,10);                                                    // 안장
+    g.fillStyle='#ece6da'; [[-40,58,-48,96],[-20,62,-22,100],[22,62,30,98],[40,56,58,86]].forEach(([a,b,c,d])=>{ g.beginPath(); g.moveTo(a-6,b); g.lineTo(a+6,b); g.lineTo(c+5,d); g.lineTo(c-5,d); g.closePath(); g.fill(); g.stroke(); });
+    g.strokeStyle='#bfb6a6'; g.lineWidth=6; g.beginPath(); g.moveTo(-54,34); g.quadraticCurveTo(-78,44,-72,74); g.stroke();   // 꼬리
+    g.restore(); }
+  function drawLift(){ const c=$('#lcv'), g=c.getContext('2d'), W=c.width, H=c.height, sc=ROOM2.scale, hookY=SC.hook0+lift.stretch*SC.px;
+    g.clearRect(0,0,W,H);
+    // 고정대
+    g.fillStyle='#55585e'; g.fillRect(60,H-24,200,14); g.fillRect(SC.stand-6,SC.arm,12,H-24-SC.arm); g.fillRect(SC.stand,SC.arm,SC.sx-SC.stand+20,12);
+    g.fillStyle='#8a8d93'; g.font='600 12px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('고정대',SC.stand,H-30);
+    // 줄자 (0 = 처음 고리 높이)
+    g.fillStyle='#f2d24a'; g.fillRect(SC.rx,SC.hook0-8,38,22*SC.px+16); g.strokeStyle='#1a1a1a'; g.fillStyle='#1a1a1a';
+    for(let k=0;k<=22;k++){ const y=SC.hook0+k*SC.px; g.lineWidth=k%5?1:2; g.beginPath(); g.moveTo(SC.rx,y); g.lineTo(SC.rx+(k%5?9:16),y); g.stroke();
+      if(k%5===0){ g.font='700 12px "Noto Sans KR",sans-serif'; g.textAlign='left'; g.fillText(k,SC.rx+19,y+4); } }
+    g.font='700 11px "Noto Sans KR",sans-serif'; g.fillText('cm',SC.rx+19,SC.hook0+22*SC.px+14);
+    // 용수철 · 고리
+    g.strokeStyle='#9aa3ad'; g.lineWidth=3; g.beginPath(); g.moveTo(SC.sx,SC.arm+12); g.lineTo(SC.sx,SC.top); const n=16;
+    for(let i=1;i<n;i++) g.lineTo(SC.sx+(i%2?-12:12),SC.top+(hookY-12-SC.top)*i/n); g.lineTo(SC.sx,hookY-12); g.lineTo(SC.sx,hookY); g.stroke();
+    g.strokeStyle='#c9a23e'; g.lineWidth=3; g.beginPath(); g.arc(SC.sx,hookY+6,6,-Math.PI/2,Math.PI*1.1); g.stroke();
+    // 고리 높이 표시선 (줄자 쪽으로)
+    g.strokeStyle='#ff5a3a'; g.lineWidth=2; g.setLineDash([5,4]); g.beginPath(); g.moveTo(SC.sx+8,hookY); g.lineTo(SC.rx,hookY); g.stroke(); g.setLineDash([]);
+    if(!lift.hooked){ g.fillStyle='rgba(255,90,58,.18)'; g.beginPath(); g.arc(SC.sx,hookY+6,26,0,7); g.fill(); }
+    // 기준표
+    g.fillStyle='#fff6d6'; g.fillRect(W-210,18,190,62); g.strokeStyle='#8e231c'; g.lineWidth=2; g.strokeRect(W-210,18,190,62);
+    g.fillStyle='#8e231c'; g.font='700 13px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('이 용수철저울의 기준',W-115,38);
+    g.fillStyle='#1a1a1a'; g.font='700 16px "Noto Sans KR",sans-serif'; g.fillText(`${sc.refCm} cm 늘어나면 ${sc.refN} N`,W-115,64);
+    // 말 (걸려 있으면 고리 아래, 아니면 끌 수 있는 자리)
+    if(lift.hooked) horse(g,SC.sx,hookY+14,.72); else horse(g,lift.hx,lift.hy,.9);
+    if(!lift.hooked){ g.fillStyle='#d8cfbd'; g.font='600 14px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('← 말을 끌어다 용수철 끝 고리에 걸자',560,H-14); } }
+  function canvasXY(e){ const c=$('#lcv'), r=c.getBoundingClientRect(); return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]; }
+  $('#lcv').addEventListener('pointerdown',e=>{ if(lift.hooked||lift.busy) return; const [x,y]=canvasXY(e); if(Math.abs(x-lift.hx-10)<90&&y>lift.hy-30&&y<lift.hy+110){ lift.drag=[x-lift.hx,y-lift.hy]; $('#lcv').setPointerCapture(e.pointerId); AUDIO.tick(); } });
+  $('#lcv').addEventListener('pointermove',e=>{ if(!lift.drag) return; const [x,y]=canvasXY(e); lift.hx=x-lift.drag[0]; lift.hy=y-lift.drag[1]; drawLift(); });
+  $('#lcv').addEventListener('pointerup',()=>{ if(!lift.drag) return; lift.drag=null;
+    if(Math.hypot(lift.hx-SC.sx,lift.hy-(SC.hook0+6))<60) hang(); else { lift.hx=560; lift.hy=150; drawLift(); } });
+  async function hang(){ lift.hooked=true; lift.busy=true; AUDIO.tone(500,.4,'sine',.05,0,-250); AUDIO.noise(.2,.2,0,1200);
+    const to=ROOM2.scale.cm; for(let t=0;t<=1.0001;t+=.04){ const e=1-Math.pow(1-t,3), wob=Math.sin(t*14)*(1-t)*1.2; lift.stretch=to*e+wob; drawLift(); await sleep(28); }
+    lift.stretch=to; drawLift(); lift.busy=false;
+    const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='용수철이 늘어났다. 줄자에서 늘어난 길이를 읽어 보자.'; if(!IS_TOUCH) $('#lift .fnum').focus(); }
   async function openLift(){ if(S.flags.horse_fixed) return;
-    if(!S.flags.horse_seen){ S.flags.horse_seen=true; setGoal(null); await mono(['…말 하나가 기둥에서 빠져서 무대 바닥에 내려앉아 있다!','다시 기둥에 걸려면, 이 말을 들어 올릴 힘이 얼마나 필요한지 알아야 한다.','공구함에 용수철저울이 있었지.']); }
+    if(!S.flags.horse_seen){ S.flags.horse_seen=true; setGoal(null); await mono(['…말 하나가 기둥에서 빠져서 무대 바닥에 내려앉아 있다!','다시 걸려면, 이 말에 작용하는 중력이 얼마인지 알아야 리프트를 맞출 수 있다.','아, 용수철저울을 꺼내야겠다.']); }
     if(!INV.has('scale')){ await mono('…잴 도구가 없다. 숙소 공구함을 챙겨 오자.'); return; }
-    lift.dir='up'; lift.F=0; $('#lift .fnum').value=''; const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='';
-    $('#lift .fq').innerHTML=`용수철저울을 말에 걸어 살짝 들어 올렸다. 저울에 붙은 표와 눈금을 읽어 <b>말에 작용하는 중력</b>의 크기를 구하자.<br>기둥 리프트가 말을 당기는 힘이 중력과 <b>평형</b>을 이루면 말이 제자리에 걸린다.`;
-    document.querySelectorAll('#lift .fdir').forEach(b=>b.classList.toggle('on',b.dataset.d==='up')); ov('#lift',true); AUDIO.click();
-    for(let t=0;t<=1.001;t+=.05){ drawLift(t); await sleep(25); } AUDIO.tone(500,.3,'sine',.05,0,-200); }
-  async function runLift(){ if(lift.busy) return; const raw=readL(), m=$('#lift .fmsg'), w=weight();
-    if(!/^\d{1,4}$/.test(raw)){ AUDIO.err(); m.className='fmsg'; m.textContent='힘의 크기를 숫자로 입력하자 (단위 N).'; return; }
-    lift.busy=true; drawLift(1); AUDIO.tone(160,.6,'sawtooth',.05,0,80);
-    if(lift.dir==='up'&&lift.F===w){ m.className='fmsg ok'; m.innerHTML=`위로 당기는 힘 <b>${w} N</b> = 말에 작용하는 중력 <b>${w} N</b> — 크기가 같고 방향이 반대, <b>힘의 평형</b>!<br>말이 기둥에 다시 걸렸다.`;
-      AUDIO.unlatch(); await sleep(1800); ov('#lift',false); fixHorse(); }
-    else { AUDIO.err(); m.className='fmsg'; m.innerHTML=lift.dir==='down'?'아래로 당기면 중력과 같은 방향이다 — 말이 무대에 더 세게 눌릴 뿐이다.'
-      :lift.F<w?'리프트가 끙 하고 버티지만 말이 무대에서 떨어지지 않는다. 힘이 중력보다 작다.':'말이 휙 솟구쳤다가 덜컹 — 힘이 중력보다 커서 제자리에 멈추지 않는다.'; }
-    lift.busy=false; }
+    Object.assign(lift,{hooked:false,stretch:0,drag:null,hx:560,hy:150,busy:false}); $('#lift .fnum').value=''; const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='';
+    $('#lift .fq').innerHTML='고정대에 용수철저울을 매달았다. <b>말을 끌어다 용수철 끝 고리에 걸고</b>, 줄자로 용수철이 늘어난 길이를 읽자.<br>기준을 이용해 <b>말에 작용하는 중력의 크기</b>를 구하자.';
+    ov('#lift',true); AUDIO.click(); drawLift(); }
+  async function checkLift(){ if(lift.busy) return; const m=$('#lift .fmsg'), v=$('#lift .fnum').value.trim(), w=weight();
+    if(!lift.hooked){ AUDIO.err(); m.className='fmsg'; m.textContent='먼저 말을 용수철 끝 고리에 걸어 보자.'; return; }
+    if(!/^\d{1,4}$/.test(v)){ AUDIO.err(); m.className='fmsg'; m.textContent='중력의 크기를 숫자로 입력하자 (단위 N).'; return; }
+    if(+v===w){ m.className='fmsg ok'; m.innerHTML=`용수철이 <b>${ROOM2.scale.cm} cm</b> 늘어났다 — ${ROOM2.scale.refCm} cm에 ${ROOM2.scale.refN} N 이니 말에 작용하는 중력은 <b>${w} N</b>!<br>기둥 리프트를 ${w} N 으로 맞추자, 말이 제자리에 걸렸다.`;
+      AUDIO.unlatch(); lift.busy=true; await sleep(2200); ov('#lift',false); lift.busy=false; fixHorse(); }
+    else { AUDIO.err(); m.className='fmsg'; m.innerHTML='리프트가 덜컹 — 맞지 않는다. 줄자에서 늘어난 길이를 다시 읽고, 기준과 비교해 보자.<br>(용수철이 늘어난 길이는 걸어 둔 물체의 무게에 비례한다)'; } }
   async function fixHorse(){ const f=PARK.items.horse_5, h=PARK.items.horsehome_5; S.flags.horse_fixed=true;
     if(f&&h) horseAnim={f,h,t:0,p0:f.position.clone(),q0:f.quaternion.clone()};
     if(st.power) drawCtrl(); else sync3d(); AUDIO.ok();
     await sleep(1400); await mono(['됐다, 말이 제자리에 걸렸다.','이제 조작실로 돌아가서 버튼을 다시 확인하고, 레버를 내려 보자.']);
-    objective('조작실에서 버튼 8개를 확인하고 레버를 내리자'); setGoal(-19.05,11.9,'회전목마 조작실'); }
-
-  document.querySelectorAll('#lift .fdir').forEach(b=>b.onclick=()=>{ AUDIO.tick(); lift.dir=b.dataset.d; document.querySelectorAll('#lift .fdir').forEach(x=>x.classList.toggle('on',x===b)); readL(); drawLift(1); });
-  $('#lift .fnum').addEventListener('input',()=>{ readL(); drawLift(1); });
-  $('#lift .fnum').addEventListener('keydown',e=>{ if(e.key==='Enter') runLift(); });
-  $('#lift .fgo').onclick=runLift;
+    objective('조작실에서 버튼 8개를 확인하고 레버를 내리자'); const b=booth(); setGoal(b.x,b.z,'회전목마 조작실'); }
+  $('#lift .fnum').addEventListener('keydown',e=>{ if(e.key==='Enter') checkLift(); });
+  $('#lift .fgo').onclick=checkLift;
   $('#ctrl .cpbtn').onclick=power; $('#ctrl .cslot').onclick=pullLever;
   $('#ctrl .cgrid').innerHTML=[1,2,3,4,5,6,7,8].map(n=>`<div class="cl off" data-n="${n}"><i></i><b>${n}</b></div>`).join('');
+
+  /* ---------- 공포 : 범퍼카 앞에 오면, 꺼 둔 회전목마가 혼자 돈다 ---------- */
+  async function ghostRide(){ S.flags.ghost_carousel=true; const yaw0=P.yaw; P.free=false;
+    AUDIO.noise(1.2,.25,0,200); AUDIO.tone(55,1.6,'sine',.3,0,-15); await sleep(400);
+    S.ridesGhost=true; AUDIO.music('dead');
+    await camTo({yaw:Math.atan2(-(C.x-P.x),-(C.z-P.z)),pitch:.06},1.3);
+    await mono(['…?','음악 소리…','회전목마가… 돌고 있다. 분명히 전원을 껐는데.']);
+    await camTo({yaw:yaw0,pitch:0},.9); P.free=true;
+    await mono(['…누가 장난치는 거겠지. 일단 범퍼카 점검부터 끝내자.']); }
 
   ROOMS.push({id:'room2', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };
@@ -118,7 +151,7 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     add('manual_carousel','회전목마 야간 점검 방법',async()=>{ AUDIO.click(); await showMsg(ROOM2.manual.title,ROOM2.manual.body);
       if(!S.flags.manual_carousel){ S.flags.manual_carousel=true; INV.note('manual_carousel',ROOM2.manual.title,ROOM2.manual.body); setGoal(null);
         await mono(['전원부터 켜 보라는 거구나. 조작반은 창가 책상 위에 있다.']); objective('조작반의 전원(ON/OFF)을 켜 보자'); } });
-    add('console_carousel','조작반',openCtrl);
+    add('console_carousel','회전목마 조작반',openCtrl);
     add('mic_carousel','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 마이크 테스트.',{ms:1600}); await mono('…텅 빈 공원에 내 목소리만 울린다.'); });
     add('horse_5','기둥에서 빠진 회전목마 말',openLift,2.8,()=>!S.flags.horse_fixed);
     sync3d();
@@ -129,6 +162,7 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     // 무대 가장자리에서 한 번 : 점프 안내
     if(S.flags.saw_bad&&!S.flags.jump_hint&&P.y<.2){ const d=Math.hypot(P.x-C.x,P.z-C.z); if(d>7.7&&d<9){ S.flags.jump_hint=true;
       $('#hint').textContent=IS_TOUCH?'점프 버튼으로 무대에 올라가자':'Space 키로 점프해서 무대에 올라가자'; clearTimeout(hintT); hintT=setTimeout(()=>$('#hint').textContent='',6000); } }
+    if(S.flags.carousel_off&&!S.flags.ghost_carousel&&P.free&&!S.busy&&Math.hypot(P.x-BUMPER.x,P.z-BUMPER.z)<7) ghostRide();
     if(horseAnim){ const a=horseAnim; a.t=Math.min(1,a.t+dt/1.4); const e=a.t<.5?2*a.t*a.t:-1+(4-2*a.t)*a.t;
       a.f.position.lerpVectors(a.p0,a.h.position,e); a.f.quaternion.copy(a.q0).slerp(a.h.quaternion,e); if(a.t>=1){ a.f.visible=false; a.h.visible=true; horseAnim=null; } } }});
 })();

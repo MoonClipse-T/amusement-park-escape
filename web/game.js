@@ -212,9 +212,15 @@ const EVENTS=[];
 
 /* 목적지 화살표 : setGoal(x,z,'이름') / setGoal(null) */
 const GOAL={on:false};
-function setGoal(x,z,name){ if(x===null||x===undefined){ GOAL.on=false; $('#goal').classList.remove('on'); return; } Object.assign(GOAL,{on:true,x,z,name}); $('#goal').classList.add('on'); }
+function setGoal(x,z,name){ if(x===null||x===undefined){ GOAL.on=false; $('#goal').classList.remove('on'); BEACON.visible=false; return; } Object.assign(GOAL,{on:true,x,z,name}); $('#goal').classList.add('on'); BEACON.visible=true; }
+// 목적지 표시 (3D) : 목적지 위에 떠서 위아래로 움직이는 빛기둥 + 아래를 가리키는 화살표
+const BEACON=(()=>{ const g=new THREE.Group(), m=new THREE.MeshBasicMaterial({color:0xffb340,transparent:true,opacity:.9,depthWrite:false,fog:false});
+  const head=new THREE.Mesh(new THREE.ConeGeometry(.28,.5,4),m); head.rotation.x=Math.PI; head.position.y=1.0; const shaft=new THREE.Mesh(new THREE.BoxGeometry(.12,.55,.12),m); shaft.position.y=1.5;
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,8,8,1,true),new THREE.MeshBasicMaterial({color:0xffb340,transparent:true,opacity:.18,depthWrite:false,fog:false})); beam.position.y=4;
+  g.add(head,shaft,beam); g.visible=false; g.renderOrder=5; scene.add(g); return g; })();
 function tickGoal(){ if(!GOAL.on) return; const dx=GOAL.x-P.x, dz=GOAL.z-P.z, d=Math.hypot(dx,dz);
-  const rel=Math.atan2(-dx,-dz)-P.yaw; $('#goal i').style.transform=`rotate(${-rel}rad)`; $('#goal span').textContent=`${GOAL.name||''} ${d<2?'도착':Math.round(d)+'m'}`; }
+  const rel=Math.atan2(-dx,-dz)-P.yaw; $('#goal svg').style.transform=`rotate(${-rel}rad)`; $('#goal span').textContent=`${GOAL.name||''} · ${d<2?'도착':Math.round(d)+' m'}`; $('#goal').classList.toggle('here',d<2);
+  BEACON.position.set(GOAL.x,floorAt(GOAL.x,GOAL.z)+1.2+Math.sin(S.t*3)*.15,GOAL.z); BEACON.rotation.y+=.03; BEACON.visible=d>1.5; }
 
 /* 번호 자물쇠 : keypad({title, len, hint, check:(code)=>bool}) → Promise<성공 여부> */
 function keypad({title='번호 자물쇠',len=4,hint='',check}){ return new Promise(res=>{ const el=$('#keypad'), scr=el.querySelector('.scr'); let code='';

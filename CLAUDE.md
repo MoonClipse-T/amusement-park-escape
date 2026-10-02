@@ -19,14 +19,16 @@
 
 - 맵을 바꾸면 `web/assets/park.glb` 를 다시 내보내고 커밋한다. 엔진은 GLB 만 읽는다.
 - `blender/build_lunaland_v2.py` 는 v1 맵에서 전부 다시 만든다. Blender 화면에서 직접 고친 뒤에는 스크립트를 다시 돌리지 말거나, 고친 내용을 스크립트에 옮긴다.
+- 소품은 직접 상자로 쌓지 말고 Poly Pizza · Poly Haven(가능하면 Sketchfab) 모델을 먼저 쓴다. 없으면 Blender 로 둥글게(Bevel · Torus · Subdivision) 모델링한다.
+- 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용).
 - 맵 부품은 `blender/parts/*.py` 에 나눠 둔다. 새 소품은 도형을 직접 쌓기 전에 카탈로그 · 기존 모델을 먼저 찾고, 직접 만들 땐 모서리 깎기 · 매끈한 음영을 쓴다.
 - 손님은 Quaternius CC0 캐릭터 (`blender/source/people/q_*.glb`, 같은 뼈대) → `blender/build_people.py` 로 Walk · Idle · Wave 만 남긴다. 옷 색은 crowd.js `TINT` 가 재질 이름으로 바꾼다. 사람 GLB 는 압축(quantize)하지 않는다.
 - 맵 GLB 는 quantize 되어 있어서 r128 레이캐스트가 빗나간다. 엔진이 조사 대상(`IT_`)만 좌표를 풀어 둔다 (game.js `dequant`). 조사할 물체는 꼭 `IT_` 로 이름 짓는다.
 - 방은 `web/rooms/roomN_*.js` 로 하나씩 추가하고 `web/index.html` 의 script 목록(main.js 앞)에 넣는다.
 - Blender 오브젝트 이름 규칙을 지킨다 (엔진이 이름으로 읽음):
-  `COL_`(사각 충돌) · `COLC_`(원기둥 충돌) · `COL_GATE_<key>`(잠긴 문) · `FLOOR_`(밟는 바닥 높이) ·
+  `COL_`(사각 충돌) · `COLC_`(원기둥 충돌) · `COL_GATE_<key>`(잠긴 문) · `FLOOR_`(밟는 바닥 높이) · `FLOORC_`(원형 바닥, 점프해야 오름) ·
   `LAMP_`/`LIGHT_`(점광원, 속성 color·i·d) · `SIGN_<key>`(간판, 속성 w·h) · `ZONE_<id>`(구역, 속성 title·r) ·
-  `SPAWN` · `SPAWN_<id>`(시작 위치) · `SPOT_<id>`(NPC 위치) · `IT_<id>`(조사 대상) · `ANIM_<id>`(움직이는 축: carousel, wheel, dormdoor, rabbithead) · `GONDOLA_`
+  `SPAWN` · `SPAWN_<id>`(시작 위치) · `SPOT_<id>`(NPC · 목적지 위치, 예: SPOT_booth_bumper) · `IT_<id>`(조사 대상) · `ANIM_<id>`(움직이는 축: carousel, wheel, dormdoor, rabbithead) · `GONDOLA_`
 - glTF 내보낼 때 Custom Properties(extras) 포함.
 - `.blend` 는 PC 의 Blender 5.2 로 저장되어 있다 (클라우드의 4.0.2 로는 열리지 않을 수 있음). 맵을 고친 뒤 : `.blend` 저장 → `park.glb` 내보내기(extras 포함, 모디파이어 적용) → `python tools/optimize_glb.py web/assets/park.glb`
 - Git LFS 는 쓰지 않는다 (클라우드에서 LFS 서버가 막혀 있음). 파일 하나 100MB 미만 유지.

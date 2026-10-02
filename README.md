@@ -17,13 +17,14 @@
 | `web/crowd.js` | 저녁 손님 NPC |
 | `web/story.js` | 인트로(아이스크림 판매) · 22:00 마감 · 자정 등 밤의 사건 |
 | `web/rooms/room1_dorm.js` | 방 1 : 직원 숙소 — 사물함 · 열쇠 · 장력 평형 잠금장치 (글 · 정답은 맨 위 `ROOM1`) |
-| `web/rooms/room2_carousel.js` | 방 2 : 회전목마 조작실 — 점검 방법 (다음 문제 자리, `ROOM2`) |
+| `web/rooms/room2_carousel.js` | 방 2 : 회전목마 — 조작반 · 용수철저울로 말의 중력 재기 (`ROOM2`) |
+| `web/rooms/room3_bumper.js` | 방 3 : 범퍼카 — 마찰력 측정 · 윤활유 (`ROOM3`) |
 | `web/main.js` | 시작 |
 | `web/vendor/` | three.js r128, GLTFLoader |
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
 | `tools/build.py` | 전부 묶어서 `dist/lunaland.html` 한 파일로 만든다 |
 | `blender/build_lunaland_v2.py` | 맵 만드는 스크립트 : v1 맵(`blender/source/park_v1.glb`) + 숙소 · 판매대 · 달토끼 동상 · 전구 줄 · 나무 등 → `web/assets/park.glb` |
-| `blender/parts/` | 맵 부품 : `rabbit_plush.py`(달토끼 봉제인형) · `icecream_kiosk.py`(판매대) · `trees.py`(Sapling 나무) · `catalog_props.py`(카탈로그 소품 배치) · `dorm_dress.py`(숙소 벽 · 바닥 · 소품) |
+| `blender/parts/` | 맵 부품 : `rabbit_plush.py`(달토끼 봉제인형) · `icecream_kiosk.py`(판매대) · `trees.py`(Sapling 나무) · `catalog_props.py`(카탈로그 소품 배치) · `dorm_dress.py`(숙소 벽 · 바닥 · 소품) · `carousel_booth.py`(조작실 · 회전목마 고치기) · `bumper_cars.py`(범퍼카 6대) |
 | `blender/source/` | 원본 : v1 맵 · `catalog_props.glb`(Higgsfield 3D 카탈로그 소품) · `people/`(사람 모델) · `polyhaven/`(숙소 소품) |
 | `blender/build_people.py` | 손님 모델 → `web/assets/people_*.glb` |
 | `tools/optimize_glb.py` | GLB 압축 (glTF-Transform, Node.js 필요) |
