@@ -4,6 +4,8 @@
   모서리는 Bevel · 둥근 부분은 Torus · Subdivision 으로 매끈하게.
   dorm_dress.py 의 도우미(_box · _cyl · _empty · _mat · _kids · _orient)를 쓴다.
   엔진이 읽는 이름 : IT_bcar_<n>(범퍼카, 조사 대상) · IT_bcarlamp_<n>(기둥 꼭대기 전기 램프) · SIGN_bcar_<n>(앞 번호판) · COLC_bcar_<n>
+            IT_bplush(공포 연출 : 2번 범퍼카 좌석의 토끼 인형, 처음엔 숨김) · IT_bweight(추 : 엔진이 복제해 범퍼카에 올린다)
+  Sketchfab (CC BY) : rabbit_plush_button_eye.glb — "Rabbit plush / Conejo Peluche" by afzmtm · kettlebell_old_iron.glb — "Old Iron Kettlebell" by tomarranskinner
   범퍼카장 : 난간 안쪽 x[-45,-27] z[33,47], 입구(광장 쪽) x[-37.7,-34.3]
 """
 import bpy, bmesh, math, mathutils
@@ -79,7 +81,7 @@ def _remove_old_cars():
 
 
 def build_bumper_cars():
-    for o in [o for o in bpy.data.objects if o.name.startswith(("IT_bcar", "bcarx_", "SIGN_bcar_", "COLC_bcar_"))]:
+    for o in [o for o in bpy.data.objects if o.name.startswith(("IT_bcar", "bcarx_", "SIGN_bcar_", "COLC_bcar_", "IT_bplush", "IT_bweight"))]:
         bpy.data.objects.remove(o, do_unlink=True)
     removed = _remove_old_cars()
     M = bpy.data.materials
@@ -118,4 +120,11 @@ def build_bumper_cars():
         s.parent = root
         s.location = (0, -0.84, 0.66)                          # 판의 앞(Blender -Y) = 차 앞
         _cyl(f"COLC_bcar_{n}", x, 1.0, z, 0.95, 2.0, M["collider"], verts=12)
+    # 공포 연출용 토끼 인형 : 2번 범퍼카 좌석에 앉혀 둔다 (엔진이 마지막에 보여 준다)
+    car2 = bpy.data.objects["IT_bcar_2"]
+    plush = _prop("sketchfab/rabbit_plush_button_eye.glb", 0, 0, 0, height=0.55, decimate=0.35, name="IT_bplush", child="bcarx_")
+    plush.parent = car2
+    plush.location, plush.rotation_euler = (0, 0.3, 0.69), (0, 0, 0)
+    # 추 (엔진이 복제해서 범퍼카 좌석에 올린다) : 조작실 바닥 구석에 하나
+    _prop("sketchfab/kettlebell_old_iron.glb", -38.55, 30.45, 0, y=0.04, height=0.28, name="IT_bweight", child="bcarx_")
     print("BUMPER_CARS_OK removed_faces", removed)

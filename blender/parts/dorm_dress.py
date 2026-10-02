@@ -85,10 +85,10 @@ def _checker():
     return im
 
 
-def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None, name=None, tilt=None):
+def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None, name=None, tilt=None, child="dormx_"):
     """소품 하나를 바닥 중심 기준으로 (x, y, z) 에 놓는다. height 를 주면 그 높이로 맞춘다.
        key : Poly Haven 이름 (source/polyhaven/<key>/) 또는 'polypizza/<이름>.glb' · name : 뿌리 이름 (IT_… 로 주면 엔진이 조사 대상으로 읽는다)
-       tilt : (x, y) 도 단위로 눕히기 (Blender 축)"""
+       tilt : (x, y) 도 단위로 눕히기 (Blender 축) · child : 안쪽 메시 이름 앞머리 (다시 지을 때 지우는 기준)"""
     before = set(bpy.data.objects)
     path = os.path.join(_B, "source", key) if key.endswith(".glb") else os.path.join(PH, key, key + ".gltf")
     bpy.ops.import_scene.gltf(filepath=path)
@@ -109,7 +109,7 @@ def _prop(key, x, z, rot=0, y=0.0, height=None, decimate=None, name=None, tilt=N
             o.matrix_world = piv @ o.matrix_world
             o.parent = root
     for o in meshes:
-        o.name = f"dormx_{key}_{o.name}"
+        o.name = f"{child}{key}_{o.name}"
         if decimate:
             d = o.modifiers.new("dec", "DECIMATE")
             d.ratio = decimate

@@ -91,8 +91,8 @@ async function startNight(quick){ if(S.stage==='night') return; P.free=false; S.
   startTimer(); tickSky(0,true);
   if(!quick) await card('22:00','영업 마감','손님이 모두 돌아갔다. 지금부터 아침까지 공원을 점검한다.','closing',4200);
   $('#fade').classList.add('clear'); await sleep(600);
-  if(!quick){ await mono(['수고했어요, 신입. 지금부터는 야간 점검조예요.','첫 번째 점검 지시서는 직원 숙소 책상 위에 뒀어요. 숙소는 회전목마 옆 건물이에요.','…아, 그리고. 자정 넘어서는 혼자 다니지 마요.'],'무전 · 매니저');
-    await mono(['…혼자 다니지 말라니. 점검조는 나 혼자인데.']); }
+  if(!quick){ await mono(['수고했어요, 신입. 지금부터는 야간 점검조예요.','첫 번째 점검 지시서는 직원 숙소 책상 위에 뒀어요. 숙소는 회전목마 옆 건물이에요.','…아, 그리고. 아침 6시가 되기 전까지 점검은 반드시 끝내야 돼요.'],'무전 · 매니저');
+    await mono(['아침 6시까지… 서두르자.']); }
   P.free=true; objective('직원 숙소에서 점검 지시서를 찾자 (화살표를 따라가자)');
   const d=PARK.spawns.dorm_door; setGoal(d?d.x:-45,d?d.z:4,'직원 숙소');
   $('#hint').textContent=IS_TOUCH?'':'M 지도 · E 조사'; setTimeout(()=>$('#hint').textContent='',8000); }

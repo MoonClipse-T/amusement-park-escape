@@ -301,3 +301,12 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .ftab div b{color:#cfc8b8;font-size:12px;} .ftab div span{font:700 15px/1.2 var(--led);color:#e9e2d2;}
 .ftab div.cur{border-color:var(--amber);} .ftab div.odd span{color:#ff6a50;}
 #fric .fgo{user-select:none;-webkit-user-select:none;touch-action:none;}
+
+/* ---------------- 도구 고르기 ---------------- */
+#tools .tq{margin:14px 16px 10px;font-size:15px;line-height:1.6;font-weight:700;}
+.tlist{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:0 16px;}
+.tlist button{min-height:52px;padding:0 12px;border:1.5px solid #2a1a14;border-radius:4px;background:#fffaf0;color:#2a1a14;font-size:15px;font-weight:700;}
+.tlist button:hover{background:#ffe9b8;}
+
+.finfo{margin:8px 0 0;font-size:12px;color:#8a8d93;letter-spacing:1px;}
+#fric .frow{flex-wrap:wrap;}

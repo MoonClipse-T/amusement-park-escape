@@ -49,7 +49,7 @@ class _Booth:
 
     def prop(self, key, x, z, rot=0, **k):
         wx, wz = self.P(x, z)
-        return _prop(key, wx, wz, rot - self.rot, **k)
+        return _prop(key, wx, wz, rot - self.rot, child=self.p, **k)
 
 
 def _booth_shell(b):
@@ -88,6 +88,7 @@ def _booth_shell(b):
     man = b.box(f"IT_manual_{tag}", .85, 1.55, 1.15, 1.85, s - t - .006, s - t, M["paper"])
     _kids(man, b.box(p + "manual_clip", 1.1, 1.3, 1.83, 1.88, s - t - .012, s - t, M["brass"]),
           b.box(p + "manual_head", .88, 1.52, 1.72, 1.8, s - t - .008, s - t - .006, M["paint_red"]))
+    b.emp(f"SIGN_manual_{tag}", 1.2, 1.5, s - t - .03, 180, w=0.66, h=0.66)          # 점검 방법 종이의 제목 (글씨는 엔진)
     b.box(p + "paper2", 1.65, 2.05, 1.3, 1.6, s - t - .005, s - t, M["paper"])
     b.emp(f"LIGHT_booth_{tag}", 1.2, 2.25, 1.2, color="#ffd9a0", i=0.9, d=5.5)
     b.box(p + "lamp", 1.0, 1.4, BH - .26, BH - .25, 1.1, 1.3, M["bulb"])
@@ -115,7 +116,7 @@ def _lamp(b, name, x, y, z, key):
 def build_booth():
     """회전목마 조작실 : 입구(광장 쪽) 바로 옆. 조작반 = 조작하는 사람(창을 봄)의 왼쪽부터 전원(ON/OFF) · 레버 · 버튼 8개(가로 4 × 세로 2)"""
     _clear(("boothx_", "COL_booth_", "bxcarousel_", "COL_bcarousel_", "IT_manual_carousel", "IT_console_carousel", "IT_mic_carousel",
-            "LIGHT_booth_carousel", "SIGN_booth_carousel", "SPOT_booth_carousel", "IT_cpower", "IT_clever", "IT_cbtn_", "SIGN_cpower", "SIGN_cnum_"))
+            "LIGHT_booth_carousel", "SIGN_booth_carousel", "SIGN_manual_carousel", "SPOT_booth_carousel", "IT_cpower", "IT_clever", "IT_cbtn_", "SIGN_cpower", "SIGN_cnum_"))
     b = _Booth("carousel", -20.6, 12.6, 0)
     _booth_shell(b)
     M, p, iron, top, up = bpy.data.materials, b.p, bpy.data.materials["iron"], 0.9, (0, 0, 1)
@@ -137,7 +138,7 @@ def build_booth():
 
 def build_bumper_booth():
     """범퍼카 조작실 : 입구 옆, 큰 창이 범퍼카장 쪽. 조작반 = 전원(ON/OFF) · 범퍼카 전기 램프 6개(가로 3 × 세로 2)"""
-    _clear(("bxbumper_", "COL_bbumper_", "IT_manual_bumper", "IT_console_bumper", "IT_mic_bumper", "LIGHT_booth_bumper", "SIGN_booth_bumper",
+    _clear(("bxbumper_", "COL_bbumper_", "IT_manual_bumper", "IT_console_bumper", "IT_mic_bumper", "LIGHT_booth_bumper", "SIGN_booth_bumper", "SIGN_manual_bumper",
             "SPOT_booth_bumper", "IT_bpower", "IT_bbtn_", "SIGN_bpower", "SIGN_bnum_"))
     b = _Booth("bumper", -40.6, 32.5, 270)
     _booth_shell(b)

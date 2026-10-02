@@ -22,6 +22,7 @@ const ROOM2={
 };
 SIGNS.booth_carousel=['회전목마 조작실','CAROUSEL CONTROL · 관계자 외 출입금지','#8e231c','#f2ede2'];
 SIGNS.cpower=['ON / OFF','','#1b1b1b','#f2ede2'];
+SIGNS.manual_carousel=['점검 방법','회전목마 · 야간 점검','#fbf6e8','#8e231c'];
 for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGNS['cfloor_'+k]=[String(k),'','#8e231c','#f2ede2']; SIGNS['cnum_'+k]=[String(k),'','#1b1b1b','#e8e2d6']; }
 
 (function(){
@@ -67,8 +68,11 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     await mono(['…돈다. 음악도 나온다. 고장 난 곳은 이제 없다.','점검 방법 3번 — 점검이 끝나면 반드시 전원을 끈다.']); objective('점검 끝 — 조작반 전원(ON/OFF)을 끄자'); }
 
   /* ---------- 쓰러진 말 : 고정대에 매달린 용수철에 말을 끌어다 걸고, 줄자로 늘어난 길이를 읽는다 ---------- */
-  const SC={stand:120, arm:40, sx:290, top:56, hook0:136, px:10, rx:340};   // 그림 위치 : 고정대 · 용수철 위 끝 · 처음 고리 높이 · 1 cm = 10 px · 줄자 x
-  const lift={hooked:false, stretch:0, drag:null, hx:560, hy:150, busy:false};
+  const SC={stand:120, arm:40, sx:290, top:56, hook0:110, px:9, rx:340};   // 그림 위치 : 고정대 · 용수철 위 끝 · 처음 고리 높이 · 1 cm = 9 px · 줄자 x (바닥 = 캔버스 아래 24 px)
+  const TOOL_NO={rubber:'고무줄도 늘어나긴 하지만… 눈금이 없어서 몇 N 인지 정확히 읽을 수 없다.',gauge:'마찰력 측정 장치는 바닥에 놓인 물체를 옆으로 당길 때 쓰는 거다. 말을 매달아 무게를 잴 도구가 따로 있었는데.',
+    oil:'윤활유로는 무게를 잴 수 없다.',weight:'추를 올려 봤자 무게를 알 수는 없다.',torch:'손전등으로 무게를 잴 수는 없지.',key:'열쇠로는… 아니지.'};
+  const HOME={x:560}; let homeY=0;   // 말이 처음 서 있는 자리 (바닥 위)
+  const lift={hooked:false, stretch:0, drag:null, hx:560, hy:0, busy:false};
   function horse(g,x,y,s=1){ g.save(); g.translate(x,y); g.scale(s,s);       // (x, y) = 등의 고리
     g.strokeStyle='#c9a23e'; g.lineWidth=4; g.beginPath(); g.arc(0,-6,7,0,7); g.stroke(); g.fillStyle='#c9a23e'; g.fillRect(-2,-2,4,14);
     g.fillStyle='#ece6da'; g.strokeStyle='#8a7f70'; g.lineWidth=2;
@@ -80,10 +84,11 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     g.strokeStyle='#bfb6a6'; g.lineWidth=6; g.beginPath(); g.moveTo(-54,34); g.quadraticCurveTo(-78,44,-72,74); g.stroke();   // 꼬리
     g.restore(); }
   function drawLift(){ const c=$('#lcv'), g=c.getContext('2d'), W=c.width, H=c.height, sc=ROOM2.scale, hookY=SC.hook0+lift.stretch*SC.px;
-    g.clearRect(0,0,W,H);
+    g.clearRect(0,0,W,H); const ground=H-24; homeY=ground-92;
+    g.fillStyle='#3a332b'; g.fillRect(0,ground,W,H-ground); g.fillStyle='#8a8d93'; g.font='600 12px "Noto Sans KR",sans-serif'; g.textAlign='left'; g.fillText('바닥',W-44,H-8);
     // 고정대
-    g.fillStyle='#55585e'; g.fillRect(60,H-24,200,14); g.fillRect(SC.stand-6,SC.arm,12,H-24-SC.arm); g.fillRect(SC.stand,SC.arm,SC.sx-SC.stand+20,12);
-    g.fillStyle='#8a8d93'; g.font='600 12px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('고정대',SC.stand,H-30);
+    g.fillStyle='#55585e'; g.fillRect(60,H-38,200,14); g.fillRect(SC.stand-6,SC.arm,12,H-38-SC.arm); g.fillRect(SC.stand,SC.arm,SC.sx-SC.stand+20,12);
+    g.fillStyle='#8a8d93'; g.font='600 12px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('고정대',SC.stand,H-44);
     // 줄자 (0 = 처음 고리 높이)
     g.fillStyle='#f2d24a'; g.fillRect(SC.rx,SC.hook0-8,38,22*SC.px+16); g.strokeStyle='#1a1a1a'; g.fillStyle='#1a1a1a';
     for(let k=0;k<=22;k++){ const y=SC.hook0+k*SC.px; g.lineWidth=k%5?1:2; g.beginPath(); g.moveTo(SC.rx,y); g.lineTo(SC.rx+(k%5?9:16),y); g.stroke();
@@ -101,22 +106,25 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     g.fillStyle='#8e231c'; g.font='700 13px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('이 용수철저울의 기준',W-115,38);
     g.fillStyle='#1a1a1a'; g.font='700 16px "Noto Sans KR",sans-serif'; g.fillText(`${sc.refCm} cm 늘어나면 ${sc.refN} N`,W-115,64);
     // 말 (걸려 있으면 고리 아래, 아니면 끌 수 있는 자리)
-    if(lift.hooked) horse(g,SC.sx,hookY+14,.72); else horse(g,lift.hx,lift.hy,.9);
-    if(!lift.hooked){ g.fillStyle='#d8cfbd'; g.font='600 14px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('← 말을 끌어다 용수철 끝 고리에 걸자',560,H-14); } }
+    if(lift.hooked) horse(g,SC.sx,hookY+14,.72); else horse(g,lift.hx,lift.hy||homeY,.9);
+    if(!lift.hooked){ g.fillStyle='#d8cfbd'; g.font='600 14px "Noto Sans KR",sans-serif'; g.textAlign='center'; g.fillText('← 말을 끌어다 용수철 끝 고리에 걸자',540,120); } }
   function canvasXY(e){ const c=$('#lcv'), r=c.getBoundingClientRect(); return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]; }
-  $('#lcv').addEventListener('pointerdown',e=>{ if(lift.hooked||lift.busy) return; const [x,y]=canvasXY(e); if(Math.abs(x-lift.hx-10)<90&&y>lift.hy-30&&y<lift.hy+110){ lift.drag=[x-lift.hx,y-lift.hy]; $('#lcv').setPointerCapture(e.pointerId); AUDIO.tick(); } });
+  $('#lcv').addEventListener('pointerdown',e=>{ if(lift.hooked||lift.busy) return; const [x,y]=canvasXY(e); const hy=lift.hy||homeY; if(Math.abs(x-lift.hx-10)<90&&y>hy-30&&y<hy+110){ lift.hy=hy; lift.drag=[x-lift.hx,y-lift.hy]; $('#lcv').setPointerCapture(e.pointerId); AUDIO.tick(); } });
   $('#lcv').addEventListener('pointermove',e=>{ if(!lift.drag) return; const [x,y]=canvasXY(e); lift.hx=x-lift.drag[0]; lift.hy=y-lift.drag[1]; drawLift(); });
   $('#lcv').addEventListener('pointerup',()=>{ if(!lift.drag) return; lift.drag=null;
-    if(Math.hypot(lift.hx-SC.sx,lift.hy-(SC.hook0+6))<60) hang(); else { lift.hx=560; lift.hy=150; drawLift(); } });
+    if(Math.hypot(lift.hx-SC.sx,lift.hy-(SC.hook0+6))<60) hang(); else { lift.hx=HOME.x; lift.hy=homeY; drawLift(); } });
   async function hang(){ lift.hooked=true; lift.busy=true; AUDIO.tone(500,.4,'sine',.05,0,-250); AUDIO.noise(.2,.2,0,1200);
     const to=ROOM2.scale.cm; for(let t=0;t<=1.0001;t+=.04){ const e=1-Math.pow(1-t,3), wob=Math.sin(t*14)*(1-t)*1.2; lift.stretch=to*e+wob; drawLift(); await sleep(28); }
     lift.stretch=to; drawLift(); lift.busy=false;
     const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='용수철이 늘어났다. 줄자에서 늘어난 길이를 읽어 보자.'; if(!IS_TOUCH) $('#lift .fnum').focus(); }
   async function openLift(){ if(S.flags.horse_fixed) return;
-    if(!S.flags.horse_seen){ S.flags.horse_seen=true; setGoal(null); await mono(['…말 하나가 기둥에서 빠져서 무대 바닥에 내려앉아 있다!','다시 걸려면, 이 말에 작용하는 중력이 얼마인지 알아야 리프트를 맞출 수 있다.','아, 용수철저울을 꺼내야겠다.']); }
-    if(!INV.has('scale')){ await mono('…잴 도구가 없다. 숙소 공구함을 챙겨 오자.'); return; }
-    Object.assign(lift,{hooked:false,stretch:0,drag:null,hx:560,hy:150,busy:false}); $('#lift .fnum').value=''; const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='';
-    $('#lift .fq').innerHTML='고정대에 용수철저울을 매달았다. <b>말을 끌어다 용수철 끝 고리에 걸고</b>, 줄자로 용수철이 늘어난 길이를 읽자.<br>기준을 이용해 <b>말에 작용하는 중력의 크기</b>를 구하자.';
+    if(!S.flags.horse_seen){ S.flags.horse_seen=true; setGoal(null); await mono(['…말 하나가 기둥에서 빠져서 무대 바닥에 내려앉아 있다!','이 말의 무게를 정확히 알아야 다시 매달 수 있을 것 같다.']); }
+    if(!S.flags.horse_tool){ if(!INV.has('toolbox')){ await mono('…잴 도구가 없다. 숙소 공구함을 챙겨 오자.'); return; }
+      const t=await chooseTool('점검 공구함에서 무엇으로 이 말의 무게를 재야 할까?'); if(!t) return;
+      if(t!=='scale'){ AUDIO.err(); await mono(TOOL_NO[t]||'…그걸로는 무게를 잴 수 없다.'); return; }
+      S.flags.horse_tool=true; await mono(['용수철저울. 매달아서 늘어난 길이로 무게를 잴 수 있다.']); }
+    Object.assign(lift,{hooked:false,stretch:0,drag:null,hx:HOME.x,hy:0,busy:false}); $('#lift .fnum').value=''; const m=$('#lift .fmsg'); m.className='fmsg'; m.textContent='';
+    $('#lift .fq').innerHTML='고정대에 용수철저울을 매달았다. <b>말을 끌어다 용수철 끝 고리에 걸어 바닥에서 띄우고</b>, 줄자로 용수철이 늘어난 길이를 읽자.<br>기준을 이용해 <b>말에 작용하는 중력의 크기</b>를 구하자.';
     ov('#lift',true); AUDIO.click(); drawLift(); }
   async function checkLift(){ if(lift.busy) return; const m=$('#lift .fmsg'), v=$('#lift .fnum').value.trim(), w=weight();
     if(!lift.hooked){ AUDIO.err(); m.className='fmsg'; m.textContent='먼저 말을 용수철 끝 고리에 걸어 보자.'; return; }
@@ -134,6 +142,11 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
   $('#ctrl .cpbtn').onclick=power; $('#ctrl .cslot').onclick=pullLever;
   $('#ctrl .cgrid').innerHTML=[1,2,3,4,5,6,7,8].map(n=>`<div class="cl off" data-n="${n}"><i></i><b>${n}</b></div>`).join('');
 
+  /* 밤이 되면 회전목마를 멈춘 자리에서 돌려, 고장 난 구역이 조작실의 반대편에 오게 한다 (저녁 운행 동안 돈 각도와 상관없이) */
+  function alignCarousel(){ const A=PARK.anim.carousel, s=PARK.signs['cfloor_'+ROOM2.bad], b=booth(); S.flags.carousel_aligned=true; if(!A||!s) return;
+    A.updateMatrixWorld(true); const p=s.getWorldPosition(new THREE.Vector3()), a=Math.atan2(p.z-C.z,p.x-C.x), want=Math.atan2(b.z-C.z,b.x-C.x)+Math.PI;
+    A.rotation.y-=Math.atan2(Math.sin(want-a),Math.cos(want-a)); }
+
   /* ---------- 공포 : 범퍼카 앞에 오면, 꺼 둔 회전목마가 혼자 돈다 ---------- */
   async function ghostRide(){ S.flags.ghost_carousel=true; const yaw0=P.yaw; P.free=false;
     AUDIO.noise(1.2,.25,0,200); AUDIO.tone(55,1.6,'sine',.3,0,-15); await sleep(400);
@@ -141,7 +154,7 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     await camTo({yaw:Math.atan2(-(C.x-P.x),-(C.z-P.z)),pitch:.06},1.3);
     await mono(['…?','음악 소리…','회전목마가… 돌고 있다. 분명히 전원을 껐는데.']);
     await camTo({yaw:yaw0,pitch:0},.9); P.free=true;
-    await mono(['…누가 장난치는 거겠지. 일단 범퍼카 점검부터 끝내자.']); }
+    await mono(['…일단 빨리 점검을 마무리하자.']); }
 
   ROOMS.push({id:'room2', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };
@@ -152,11 +165,12 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
       if(!S.flags.manual_carousel){ S.flags.manual_carousel=true; INV.note('manual_carousel',ROOM2.manual.title,ROOM2.manual.body); setGoal(null);
         await mono(['전원부터 켜 보라는 거구나. 조작반은 창가 책상 위에 있다.']); objective('조작반의 전원(ON/OFF)을 켜 보자'); } });
     add('console_carousel','회전목마 조작반',openCtrl);
-    add('mic_carousel','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 마이크 테스트.',{ms:1600}); await mono('…텅 빈 공원에 내 목소리만 울린다.'); });
+    add('mic_carousel','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 마이크 테스트.',{ms:1600,voice:'mic_test'}); await mono('…텅 빈 공원에 내 목소리만 울린다.'); });
     add('horse_5','기둥에서 빠진 회전목마 말',openLift,2.8,()=>!S.flags.horse_fixed);
     sync3d();
   },
   tick(dt){
+    if(S.stage==='night'&&!S.flags.carousel_aligned) alignCarousel();
     if(S.stage==='night'&&S.flags.door_open&&!S.flags.booth_in&&IN(P.x,P.z)){ S.flags.booth_in=true;
       mono(['회전목마 조작실. 창 너머로 말들이 보인다.','점검 방법이 어딘가 붙어 있을 텐데.']); objective('조작실 안에서 점검 방법을 찾자'); }
     // 무대 가장자리에서 한 번 : 점프 안내

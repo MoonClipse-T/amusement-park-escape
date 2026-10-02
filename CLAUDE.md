@@ -19,7 +19,7 @@
 
 - 맵을 바꾸면 `web/assets/park.glb` 를 다시 내보내고 커밋한다. 엔진은 GLB 만 읽는다.
 - `blender/build_lunaland_v2.py` 는 v1 맵에서 전부 다시 만든다. Blender 화면에서 직접 고친 뒤에는 스크립트를 다시 돌리지 말거나, 고친 내용을 스크립트에 옮긴다.
-- 소품은 직접 상자로 쌓지 말고 Poly Pizza · Poly Haven(가능하면 Sketchfab) 모델을 먼저 쓴다. 없으면 Blender 로 둥글게(Bevel · Torus · Subdivision) 모델링한다.
+- 소품은 직접 상자로 쌓지 말고 **Sketchfab**(Blender MCP 에 API 키 연결됨, CC BY 는 SOURCES.md 에 작가 표기) · Poly Pizza · Poly Haven 모델을 먼저 쓴다. 받은 모델은 blender/source/sketchfab/ 에 GLB 로 저장하고 optimize_glb.py 로 줄인다. 없으면 Blender 로 둥글게(Bevel · Torus · Subdivision) 모델링한다.
 - 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용).
 - 맵 부품은 `blender/parts/*.py` 에 나눠 둔다. 새 소품은 도형을 직접 쌓기 전에 카탈로그 · 기존 모델을 먼저 찾고, 직접 만들 땐 모서리 깎기 · 매끈한 음영을 쓴다.
 - 손님은 Quaternius CC0 캐릭터 (`blender/source/people/q_*.glb`, 같은 뼈대) → `blender/build_people.py` 로 Walk · Idle · Wave 만 남긴다. 옷 색은 crowd.js `TINT` 가 재질 이름으로 바꾼다. 사람 GLB 는 압축(quantize)하지 않는다.
