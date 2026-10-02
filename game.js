@@ -444,7 +444,7 @@ function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px
 
 async function boot(){ try{
     loadStep(8,'공원 불을 켜는 중…'); await buildSky(); loadStep(30,'근무표 확인 중…'); await sleep(30);
-    await buildPark(); loadStep(80,'손님 맞을 준비 중…'); if(typeof CROWD!=='undefined') CROWD.build();
+    await buildPark(); loadStep(80,'손님 맞을 준비 중…'); if(typeof CROWD!=='undefined'){ loadStep(84,'손님 입장 중…'); await CROWD.build(); }
     for(const r of ROOMS) if(r.build) await r.build();
     PARK.zones.sort((a,b)=>b.z-a.z);   // 남쪽(정문) → 북쪽 순서 = 디버그 단축키 순서
     loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(500);
