@@ -87,7 +87,9 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
     await mono(['열쇠 고리에 작은 꼬리표 — 「3」.']); objective(`열쇠로 내 사물함(${ROOM1.me}번)을 열자`); }
   async function takeTorch(){ S.flags.torch=true; show(['torch_dorm'],false); $('#lightBtn').classList.add('on'); AUDIO.ok(); give('torch'); afterTools(); }
   async function takeToolbox(){ S.flags.toolbox=true; show(['toolbox_dorm'],false); AUDIO.ok(); give('toolbox'); give('scale'); give('rubber'); give('gauge'); give('oil'); give('weight');
-    await mono(['공구함을 챙겼다.','용수철저울, 고무줄, 마찰력 측정 장치, 윤활유, 추… 점검할 때 쓰라는 거겠지.']); afterTools(); }
+    await mono(['공구함을 챙겼다.','용수철저울, 고무줄, 마찰력 측정 장치, 윤활유, 추… 점검할 때 쓰라는 거겠지.']);
+    INV.ping('오른쪽 위 [소지품] 에서 공구함 물건을 볼 수 있다');
+    await mono(['공구함에 든 물건은 앞으로 오른쪽 위 소지품에서 언제든 꺼내 볼 수 있다.']); afterTools(); }
   async function readNote2(){ AUDIO.click(); await showMsg(ROOM1.note2.title,ROOM1.note2.body);
     if(!S.flags.note2){ S.flags.note2=true; INV.note('note2',ROOM1.note2.title,ROOM1.note2.body); show(['note2_dorm'],false);
       await mono(['아, 첫 번째 점검은 회전목마구나.','그럼 우선 이 숙소부터 나가 보자.']); } afterTools(); }
@@ -177,8 +179,8 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
     // 숙소 안으로 충분히 들어오면 문이 쾅 닫힌다 (22:00 이후 한 번)
     if(S.stage==='night'&&!S.flags.room1_in&&IN(P.x,P.z)&&P.x<-48.4){
       S.flags.room1_in=true; S.flags.open_dorm=false; door.target=0; setGoal(null);
-      setTimeout(()=>{ AUDIO.slam(); lightFlick=1.4; },180);
-      setTimeout(async()=>{ await mono(['…!','문이 저절로 닫혔다. 잠겼다.','…바람이겠지. 지시서부터 찾자.']); objective('책상 위 점검 지시서를 읽자');
+      P.free=false; setTimeout(()=>{ AUDIO.slam(); lightFlick=1.4; camTo({yaw:yawTo(-47.1,4.0),pitch:0.04},0.35); },180);   // 쾅 소리에 문 쪽으로 홱 돌아본다
+      setTimeout(async()=>{ await mono(['…!','문이 저절로 닫혔다. 잠겼다.','…바람이겠지. 지시서부터 찾자.']); P.free=true; objective('책상 위 점검 지시서를 읽자');
         const d=it().note_dorm; if(d){ const p=new THREE.Box3().setFromObject(d).getCenter(new THREE.Vector3()); setGoal(p.x,p.z,'지시서'); } },900); }
     const D=PARK.anim.dormdoor; if(D){ D.rotation.y+=(door.target-D.rotation.y)*Math.min(1,dt*(door.target===0?16:2.5)); }
     swings.forEach(s=>{ s.pv.rotation.y+=(s.to-s.pv.rotation.y)*Math.min(1,dt*5); });
