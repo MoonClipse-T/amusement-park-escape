@@ -22,6 +22,10 @@
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
 | `tools/build.py` | 전부 묶어서 `dist/lunaland.html` 한 파일로 만든다 |
 | `blender/build_lunaland_v2.py` | 맵 만드는 스크립트 : v1 맵(`blender/source/park_v1.glb`) + 숙소 · 판매대 · 달토끼 동상 · 전구 줄 · 나무 등 → `web/assets/park.glb` |
+| `blender/parts/` | 맵 부품 : `rabbit_plush.py`(달토끼 봉제인형) · `icecream_kiosk.py`(판매대) · `trees.py`(Sapling 나무) · `catalog_props.py`(카탈로그 소품 배치) |
+| `blender/source/` | 원본 : v1 맵 · `catalog_props.glb`(Higgsfield 3D 카탈로그 소품) · `people/`(사람 모델) |
+| `blender/build_people.py` | 손님 모델 → `web/assets/people_*.glb` |
+| `tools/optimize_glb.py` | GLB 압축 (glTF-Transform, Node.js 필요) |
 | `blender/lunaland_v2.blend` | 위 스크립트 결과 (Blender 로 열어 볼 수 있음) |
 | `docs/` | 기획 문서 |
 
@@ -43,6 +47,7 @@ python tools/build.py      # → dist/lunaland.html
 
 ```
 blender -b --python blender/build_lunaland_v2.py
+python tools/optimize_glb.py web/assets/park.glb      # 선택 : 17MB → 13MB
 ```
 - 이 스크립트는 **v1 맵에서 처음부터 다시** 만든다. Blender 화면에서 직접 고친 내용은 덮어쓰므로,
   직접 고칠 때는 `blender/lunaland_v2.blend` 를 열어 고치고 `web/assets/park.glb` 로 내보낸 뒤 스크립트는 다시 돌리지 않는다
@@ -78,3 +83,10 @@ ROOMS.push({ id:'haunted',
 - Git LFS 는 쓰지 않는다 (클라우드 세션에서 LFS 서버 접속이 막혀 있다). 파일 하나가 100MB 를 넘으면 GitHub 에 올라가지 않으니, `.blend` 는 텍스처를 외부 파일로 빼서 가볍게 유지한다.
 - `.blend` 는 합칠 수 없으니, 한쪽 PC 에서 push 하기 전에 다른 PC 에서 같은 파일을 고치지 않는다.
 - 저장소 폴더는 OneDrive 밖(예: `C:\dev\`)에 두는 것을 권장한다.
+
+## 에셋 출처
+
+- 사람 : three.js 저장소 예제 모델 (`Michelle.glb` · `readyplayer.me.glb` · 동작은 `Soldier.glb` 의 Walk · Idle) — https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf
+- 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
+- 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
+- 배포 전에 각 에셋의 이용 조건을 한 번 확인할 것

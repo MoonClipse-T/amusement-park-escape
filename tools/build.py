@@ -7,7 +7,7 @@ import base64, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WEB, DIST = ROOT / "web", ROOT / "dist"
-ASSETS = {"park": "park.glb", "sky": "sky.jpg"}
+ASSETS = {"park": "park.glb", "sky": "sky.jpg", "people_michelle": "people_michelle.glb", "people_rpm": "people_rpm.glb", "people_anims": "people_anims.glb"}
 
 def read(p): return (WEB / p).read_text(encoding="utf-8")
 

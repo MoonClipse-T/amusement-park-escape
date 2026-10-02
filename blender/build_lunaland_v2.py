@@ -7,9 +7,11 @@
 
   추가하는 것
    - 직원 숙소 (방 1) : 긴 사물함 10개, 책상, 의자, 벤치, 게시판, 벽시계, 창문, 형광등, 문
-   - 달토끼 아이스크림 판매대 (인트로 근무지)
-   - 달토끼 동상 (절구 · 공이)
-   - 메인 스트리트 전구 줄, 나무 · 화단 · 쓰레기통 · 풍선 수레 · 팝콘 수레 · 파라솔 테이블
+   - 달토끼 아이스크림 판매대 (parts/icecream_kiosk.py)
+   - 달토끼 봉제인형 (parts/rabbit_plush.py) : 광장 받침대 위 큰 인형 · 판매대 · 기념품 노점의 작은 인형
+   - 나무 (parts/trees.py : Blender Sapling), 카탈로그 소품 (parts/catalog_props.py : Higgsfield 3D 카탈로그)
+   - 메인 스트리트 전구 줄, 화단 · 풍선 수레 · 팝콘 수레
+  모든 상자는 모서리를 깎고, 원기둥 · 구는 매끈한 음영으로 만든다
   치우는 것 (운영 중인 공원이므로)
    - 죽은 나무 → 살아 있는 나무, 쓰레기봉투 삭제, 셔터 낙서 → 깨끗한 셔터
 """
@@ -66,7 +68,7 @@ def link(obj, detail=True):
     return obj
 
 
-def box(name, x1, x2, y1, y2, z1, z2, material, detail=True, uv=1.0):
+def box(name, x1, x2, y1, y2, z1, z2, material, detail=True, uv=1.0, bevel=0.02):
     """게임 좌표 상자. 면마다 월드 크기 기준 UV(1m = uv 타일)."""
     me = bpy.data.meshes.new(name)
     bm = bmesh.new()
@@ -95,6 +97,11 @@ def box(name, x1, x2, y1, y2, z1, z2, material, detail=True, uv=1.0):
         except ValueError:
             pass
     bm.normal_update()
+    # 모서리 깎기 : 각진 상자 대신 빛을 받는 둥근 모서리 (아주 얇은 판은 건너뛴다)
+    mind = min(abs(x2 - x1), abs(y2 - y1), abs(z2 - z1))
+    if bevel and mind > 0.02:
+        bmesh.ops.bevel(bm, geom=list(bm.edges), offset=min(bevel, mind * 0.3), segments=1, profile=0.5, affect="EDGES", clamp_overlap=True)
+        bm.normal_update()
     lay = bm.loops.layers.uv.new()
     for f in bm.faces:
         n = f.normal
@@ -109,23 +116,33 @@ def box(name, x1, x2, y1, y2, z1, z2, material, detail=True, uv=1.0):
     return link(bpy.data.objects.new(name, me), detail)
 
 
-def cyl(name, x, y1, y2, z, r, material, verts=16, detail=True, r2=None):
+def cyl(name, x, y1, y2, z, r, material, verts=24, detail=True, r2=None):
     bpy.ops.mesh.primitive_cone_add(vertices=verts, radius1=r, radius2=r if r2 is None else r2, depth=y2 - y1,
                                     location=T(x, (y1 + y2) / 2, z))
     o = bpy.context.object
     o.name = name
     o.data.materials.append(material)
+    smooth(o, 40)
     if detail:
         DETAIL.append(o)
     return o
 
 
-def sphere(name, x, y, z, r, material, sx=1, sy=1, sz=1, seg=12, ring=8, detail=True):
+def smooth(o, angle=40):
+    """매끈하게 (각진 면 대신 부드러운 음영). 각이 큰 모서리는 그대로 둔다"""
+    for p in o.data.polygons:
+        p.use_smooth = True
+    o.data.use_auto_smooth = True
+    o.data.auto_smooth_angle = math.radians(angle)
+
+
+def sphere(name, x, y, z, r, material, sx=1, sy=1, sz=1, seg=20, ring=14, detail=True):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=seg, ring_count=ring, radius=r, location=T(x, y, z))
     o = bpy.context.object
     o.name = name
     o.scale = (sx, sz, sy)          # 게임 (x,y,z) 배율 → Blender (x, z, y)
     o.data.materials.append(material)
+    smooth(o, 80)
     if detail:
         DETAIL.append(o)
     return o
@@ -200,9 +217,13 @@ M["k_white"] = mat("kiosk_white", "#f4efe6", 0.6)
 M["k_pink"] = mat("kiosk_pink", "#f2b3c4", 0.7)
 M["k_mint"] = mat("kiosk_mint", "#a8dcc8", 0.7)
 
+# ---------------------------------------------------------------- 부품 파일 (blender/parts/*.py)
+for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props"):
+    exec(open(os.path.join(HERE, "parts", part + ".py"), encoding="utf-8").read())
+
 # ---------------------------------------------------------------- 1. 폐허 소품 정리
 for o in list(bpy.data.objects):
-    if o.name.startswith("trashbag"):
+    if o.name.startswith(("trashbag", "Barrel_01", "WetFloorSign")):   # 쓰레기봉투 · 드럼통 · 바닥 미끄럼 표지판
         bpy.data.objects.remove(o, do_unlink=True)
 for o in bpy.data.objects:
     if o.type == "MESH":
@@ -218,22 +239,11 @@ for o in dead:
 
 
 # ---------------------------------------------------------------- 2. 나무 · 화단
-def tree(x, z, s=1.0, kind=0):
-    tid = f"tree_{x:.0f}_{z:.0f}"
-    cyl(tid + "_trunk", x, 0, 2.2 * s, z, 0.18 * s, M["bark"], verts=8, r2=0.12 * s)
-    lf = M["leaf"] if kind == 0 else M["leaf2"]
-    sphere(tid + "_a", x, 2.9 * s, z, 1.3 * s, lf, sy=1.1, seg=10, ring=7)
-    sphere(tid + "_b", x + 0.6 * s, 2.5 * s, z + 0.3 * s, 0.9 * s, lf, seg=8, ring=6)
-    sphere(tid + "_c", x - 0.5 * s, 2.6 * s, z - 0.4 * s, 0.85 * s, lf, seg=8, ring=6)
-    colc(tid, x, z, 0.3 * s)
-
-
 TREES = [(-44, -3), (-52, -40), (46, 2), (-8, -52), (25, -46), (-50, 22), (20, 52),
          (-54, 34), (-46, 44), (-54, 50), (-40, 48), (-55, -10), (-55, -24), (-48, -52), (-36, -52),
          (52, 24), (54, 6), (54, -12), (54, -28), (30, 48), (38, 52), (28, 30), (-22, 50), (-26, 40),
          (14, -50), (-30, -40), (-46, -32)]
-for i, (x, z) in enumerate(TREES):
-    tree(x, z, 0.85 + random.random() * 0.4, i % 2)
+plant_trees(make_tree_templates(), [(x, z, 0.85 + random.random() * 0.35) for x, z in TREES])
 
 
 def flowerbed(x1, x2, z1, z2):
@@ -244,7 +254,7 @@ def flowerbed(x1, x2, z1, z2):
     n = int((x2 - x1) * (z2 - z1) * 1.2)
     for k in range(n):
         fx, fz = random.uniform(x1 + .3, x2 - .3), random.uniform(z1 + .3, z2 - .3)
-        sphere(f"flower_{x1:.0f}_{z1:.0f}_{k}", fx, 0.9, fz, 0.09, random.choice(cols), seg=6, ring=4)
+        sphere(f"flower_{x1:.0f}_{z1:.0f}_{k}", fx, 0.9, fz, 0.09, random.choice(cols), seg=10, ring=7)
     col(f"bed_{x1:.0f}_{z1:.0f}", x1, x2, z1, z2, 0.9)
 
 
@@ -389,105 +399,14 @@ zone("dorm", -52, 4, "직원 숙소", 5)
 empty("SPAWN_dorm_door", -44.5, 0, 4.0, -90)
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)
-# 바닥 x[9,13.5] z[17,20] · 북쪽(광장)을 보고 판매
-KX1, KX2, KZ1, KZ2 = 9.0, 13.5, 17.0, 20.0
-box("kiosk_floor", KX1, KX2, 0, 0.08, KZ1, KZ2, M["floor_tile"])
-box("kiosk_back", KX1, KX2, 0, 2.6, KZ2 - .15, KZ2, M["k_pink"])
-# 서쪽 벽 : 옆 창 (창 너머 광장 남서쪽의 달토끼 동상이 판매대를 정면으로 본다)
-box("kiosk_west_low", KX1, KX1 + .15, 0, 1.05, KZ1, KZ2, M["k_pink"])
-box("kiosk_west_top", KX1, KX1 + .15, 2.15, 2.6, KZ1, KZ2, M["k_pink"])
-box("kiosk_west_post_a", KX1, KX1 + .15, 1.05, 2.15, KZ1, KZ1 + .35, M["k_pink"])
-box("kiosk_west_post_b", KX1, KX1 + .15, 1.05, 2.15, KZ2 - .45, KZ2, M["k_pink"])
-box("kiosk_west_sill", KX1 - .08, KX1 + .3, 1.05, 1.1, KZ1 + .35, KZ2 - .45, M["k_mint"])
-box("kiosk_east", KX2 - .15, KX2, 0, 2.6, KZ1, 17.9, M["k_pink"])
-box("kiosk_counter", KX1 + .15, KX2 - .15, 0, 1.0, KZ1, KZ1 + .6, M["k_white"])
-box("kiosk_counter_top", KX1 + .1, KX2 - .1, 1.0, 1.05, KZ1 - .05, KZ1 + .65, M["k_mint"])
-box("kiosk_counter_stripe", KX1 + .15, KX2 - .15, 0.35, 0.6, KZ1 - .01, KZ1, M["stripe_red"], uv=2)
-# 아이스크림 진열 냉동고 (유리) + 통 3개
-box("kiosk_freezer", 9.6, 12.2, 1.05, 1.08, 17.15, 17.55, M["k_white"])   # 카운터에 묻힌 냉동고 (손님이 가슴 위로 보이게)
-box("kiosk_freezer_glass", 9.6, 12.2, 1.08, 1.24, 17.1, 17.14, M["glass"], detail=False)
-for k, (fl, mm) in enumerate((("vanilla", M["cream_v"]), ("strawberry", M["cream_s"]), ("choco", M["cream_c"]))):
-    cx = 10.0 + k * 0.85
-    box(f"IT_tub_{fl}", cx - .3, cx + .3, 1.02, 1.1, 17.2, 17.52, mm, detail=False)
-    for s in range(3):
-        sphere(f"tub_{fl}_scoop{s}", cx - .15 + s * .15, 1.12, 17.36, 0.07, mm, seg=8, ring=6)
-# 콘 꽂이
-box("kiosk_cone_rack", 12.4, 13.1, 1.05, 1.2, 17.2, 17.5, M["iron"])
-for s in range(4):
-    cyl(f"rack_cone{s}", 12.5 + s * .16, 1.2, 1.36, 17.35, 0.04, M["cone"], verts=8, r2=0.0)
-# 지붕 · 줄무늬 차양 · 간판 · 큰 아이스크림
-box("kiosk_roof", KX1 - .2, KX2 + .2, 2.6, 2.75, KZ1 - .2, KZ2 + .1, M["k_white"])
-aw = box("kiosk_awning", KX1 - .2, KX2 + .2, 2.2, 2.3, KZ1 - 1.3, KZ1 - .2, M["stripe_red"], uv=1.5)
-aw.rotation_euler[0] = 0  # 단순 처마
-for px in (KX1 - .1, KX2 + .1):
-    cyl(f"kiosk_post_{px:.0f}", px, 0, 2.2, KZ1 - 1.2, 0.05, M["paint_white"], verts=8)
-sign("icecream", (KX1 + KX2) / 2, 3.15, KZ1 - .05, 180, 3.8, 0.75)
-box("kiosk_sign_board", KX1 + .2, KX2 - .2, 2.75, 3.55, KZ1 - .1, KZ1, M["k_white"])
-cyl("kiosk_bigcone", 13.0, 2.75, 3.75, 19.2, 0.32, M["cone"], verts=12, r2=0.02).rotation_euler[0] = math.radians(180)
-sphere("kiosk_bigscoop1", 13.0, 3.95, 19.2, 0.38, M["cream_s"])
-sphere("kiosk_bigscoop2", 13.0, 4.45, 19.2, 0.32, M["cream_v"])
-sign("icecream_menu", 11.2, 1.9, KZ2 - .16, 180, 2.4, 0.9)
-box("kiosk_neon_strip", KX1 + .2, KX2 - .2, 2.55, 2.6, KZ1 + .62, KZ1 + .66, M["neon_pink"])
-light("icecream", 11.2, 2.4, 18.3, "#ffd1e0", 1.0, 8)
-col("kiosk_counter", KX1, KX2, KZ1 - .1, KZ1 + .65, 1.1)
-col("kiosk_back", KX1, KX2, KZ2 - .15, KZ2, 2.6)
-col("kiosk_west", KX1, KX1 + .15, KZ1, KZ2, 2.6)
-col("kiosk_east", KX2 - .15, KX2, KZ1, 17.9, 2.6)
-zone("icecream", 11.2, 16.0, "달토끼 아이스크림", 4)
-empty("SPAWN_kiosk", 11.2, 0, 19.55, 180)            # 북쪽(손님 쪽)을 본다
-empty("SPOT_customer", 11.2, 0, 16.1, 0)             # 손님이 서는 자리
-# 파라솔 테이블
-for k, (tx, tz) in enumerate(((5.5, 14.5), (15.0, 14.0))):
-    cyl(f"table_{k}", tx, 0, 0.72, tz, 0.05, M["iron"], verts=8)
-    cyl(f"table_{k}_top", tx, 0.72, 0.76, tz, 0.55, M["paint_white"], verts=16)
-    cyl(f"table_{k}_pole", tx, 0.76, 2.3, tz, 0.03, M["iron"], verts=6)
-    cyl(f"table_{k}_umb", tx, 2.0, 2.6, tz, 1.4, M["stripe_red"] if k == 0 else M["stripe_blue"], verts=12, r2=0.05)
-    for c in range(3):
-        a = c / 3 * math.tau
-        box(f"table_{k}_stool{c}", tx + math.cos(a) * .9 - .18, tx + math.cos(a) * .9 + .18, 0, 0.45,
-            tz + math.sin(a) * .9 - .18, tz + math.sin(a) * .9 + .18, M["paint_yellow"])
-    colc(f"table_{k}", tx, tz, 0.7)
+build_kiosk()      # blender/parts/icecream_kiosk.py
 
 # ---------------------------------------------------------------- 5. 달토끼 동상 (광장 남서쪽, 동쪽 = 메인 스트리트 쪽을 봄)
-# 동상 기준 좌표 : dx = 동상의 오른쪽(+), dz = 동상의 뒤(+)/앞(-). 앞이 동쪽(+x)이 되도록 돌려서 놓는다
+# 받침대 위에 큰 봉제인형 (blender/parts/rabbit_plush.py). 머리는 ANIM_rabbithead
 RX, RZ = -11.0, 17.5
-
-
-def R(dx, dz):
-    return RX - dz, RZ + dx
-
-
-def rs(name, dx, y, dz, r, m, sx=1, sy=1, sz=1, **kw):
-    x, z = R(dx, dz)
-    return sphere(name, x, y, z, r, m, sx=sz, sy=sy, sz=sx, **kw)   # 옆(sx)↔앞뒤(sz) 축이 바뀐다
-
-
-cyl("rabbit_pedestal", RX, 0, 0.8, RZ, 1.3, M["concrete"], verts=24)
-cyl("rabbit_pedestal_rim", RX, 0.8, 0.9, RZ, 1.4, M["brass"], verts=24)
-rs("rabbit_body", 0, 1.95, 0, 0.75, M["rabbit"], sy=1.35, sz=0.9, seg=16, ring=10)
-rs("rabbit_belly", 0, 1.85, -.45, 0.45, M["rabbit_pink"], sy=1.3, sz=0.5, seg=12, ring=8)
-for side in (-1, 1):
-    rs(f"rabbit_foot{side}", side * .35, 1.0, -.35, 0.28, M["rabbit"], sx=0.8, sy=0.5, sz=1.4)
-    rs(f"rabbit_arm{side}", side * .62, 2.15, -.2, 0.2, M["rabbit"], sy=2.0, sx=0.8)
-# 머리 : 엔진이 돌릴 수 있게 ANIM_rabbithead 아래에 묶는다 (자정 이후 플레이어를 따라 고개를 돌린다)
-head = empty("ANIM_rabbithead", RX, 3.0, RZ, -90)
-parts = [rs("rabbit_head", 0, 3.25, 0, 0.55, M["rabbit"], sy=0.95, seg=16, ring=10, detail=False)]
-for side in (-1, 1):
-    parts.append(rs(f"rabbit_ear{side}", side * .22, 4.25, .05, 0.16, M["rabbit"], sy=4.2, sx=0.9, sz=0.55, detail=False))
-    parts.append(rs(f"rabbit_earin{side}", side * .22, 4.25, -.02, 0.1, M["rabbit_pink"], sy=5.0, sx=0.8, sz=0.4, detail=False))
-    parts.append(rs(f"rabbit_eye{side}", side * .2, 3.35, -.48, 0.07, M["rabbit_eye"], seg=8, ring=6, detail=False))
-parts.append(rs("rabbit_nose", 0, 3.18, -.53, 0.05, M["rabbit_pink"], seg=8, ring=6, detail=False))
-bpy.context.view_layer.update()
-for p in parts:
-    p.parent = head
-    p.matrix_parent_inverse = head.matrix_world.inverted()
-# 절구 · 공이 (동상의 오른손 앞)
-mx, mz = R(.95, -.55)
-cyl("rabbit_mortar", mx, 0.9, 1.55, mz, 0.42, M["mortar"], verts=16, r2=0.5)
-cyl("rabbit_mortar_in", mx, 1.5, 1.56, mz, 0.38, M["locker_dark"], verts=16)
-px, pz = R(.75, -.45)
-pe = cyl("rabbit_pestle", px, 1.4, 3.0, pz, 0.07, M["darkwood"], verts=8)
-pe.rotation_euler[0] = math.radians(20)
+cyl("rabbit_pedestal", RX, 0, 0.8, RZ, 1.3, M["concrete"], verts=48)
+cyl("rabbit_pedestal_rim", RX, 0.8, 0.9, RZ, 1.4, M["brass"], verts=48)
+build_rabbit(RX, RZ, 90, s=1.35, prefix="rabbit", anim_head=True, base_y=0.9)
 sign("rabbit_plate", RX + 1.31, 0.5, RZ, 90, 1.6, 0.35)
 colc("rabbit", RX, RZ, 1.45)
 
@@ -500,7 +419,7 @@ def string_lights(x1, z1, x2, z2, y1, y2, sag=0.6, n=18):
         t = k / n
         x, z = x1 + (x2 - x1) * t, z1 + (z2 - z1) * t
         y = y1 + (y2 - y1) * t - sag * 4 * t * (1 - t)
-        b = sphere(f"bulbstr_{x1:.0f}_{z1:.0f}_{k}", x, y - .08, z, 0.06, M["bulb"], seg=6, ring=4, detail=False)
+        b = sphere(f"bulbstr_{x1:.0f}_{z1:.0f}_{k}", x, y - .08, z, 0.06, M["bulb"], seg=10, ring=7, detail=False)
         BULBS.append(b)
         if k < n:
             t2 = (k + 1) / n
@@ -528,12 +447,7 @@ for i in range(len(plaza_lamps)):
     string_lights(ax, az, bx, bz, 3.9, 3.9, sag=0.8, n=16)
 
 # ---------------------------------------------------------------- 7. 거리 소품
-# 쓰레기통
-for k, (x, z) in enumerate(((-6.8, 32.5), (6.8, 42.5), (-6.8, 47.5), (13.5, 22.0), (-13.5, 22.0), (-20, 0), (20, 0),
-                            (-24, -13), (10, -14), (28, 8), (-36, 22))):
-    cyl(f"bin_{k}", x, 0, 0.9, z, 0.28, M["paint_green"], verts=12)
-    cyl(f"bin_{k}_lid", x, 0.9, 0.98, z, 0.31, M["iron"], verts=12)
-    colc(f"bin_{k}", x, z, 0.3)
+place_catalog_props()      # blender/parts/catalog_props.py : 푸드카트 · 노점 · 카페 테이블 · 벤치 · 분리수거함 · 꽃수레
 
 
 # 풍선 수레 (정문 안쪽)
@@ -567,7 +481,7 @@ popcorn(16.5, 7.0)
 popcorn(-4.0, -9.5)
 
 # 안내 표지판 (광장 중앙 북쪽)
-cyl("dirpost", 3.5, 0, 3.0, 3.0, 0.06, M["iron"], verts=8)
+cyl("dirpost", 3.5, 0, 3.0, 3.0, 0.06, M["iron"], verts=16)
 sign("dir_0", 3.5, 2.6, 3.0, -90, 1.4, 0.32)
 sign("dir_1", 3.5, 2.2, 3.0, 90, 1.4, 0.32)
 sign("dir_2", 3.5, 1.8, 3.0, 180, 1.4, 0.32)
