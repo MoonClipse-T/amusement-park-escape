@@ -13,6 +13,8 @@
 두 곳 모두 이 GitHub 저장소 하나로 이어진다. **작업 시작 전 `git pull`, 끝나면 commit + push.**
 사이트 반영 : `git subtree push --prefix web origin gh-pages` (`web/` 만 gh-pages 브랜치로) → https://moonclipse-t.github.io/amusement-park-escape/
 
+**수정할 때마다 (선생님 요청)** : ① commit + main push ② gh-pages 반영 ③ `python tools/build.py` → `dist/lunaland.html` 을 저장소 바깥 `프로젝트_놀이공원/lunaland_vN.html` (번호 하나씩 올림)로 복사 ④ 사이트 주소와 html 파일을 선생님께 공유
+
 ## 규칙
 
 - 맵을 바꾸면 `web/assets/park.glb` 를 다시 내보내고 커밋한다. 엔진은 GLB 만 읽는다.
