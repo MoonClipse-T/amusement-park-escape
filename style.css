@@ -42,6 +42,10 @@ button{font-family:inherit;cursor:pointer;}
 #pauseBtn,#mapBtn{position:absolute;top:calc(12px + env(safe-area-inset-top));right:calc(12px + env(safe-area-inset-right));width:44px;height:44px;border-radius:50%;
  border:2px solid rgba(255,179,64,.45);background:rgba(10,8,6,.6);color:var(--amber);font-size:15px;pointer-events:auto;}
 #mapBtn{right:calc(64px + env(safe-area-inset-right));font-size:12px;}
+#invBtn{position:absolute;top:calc(12px + env(safe-area-inset-top));right:calc(116px + env(safe-area-inset-right));height:44px;padding:0 14px;border-radius:22px;
+ border:2px solid rgba(255,179,64,.45);background:rgba(10,8,6,.6);color:var(--amber);font-size:12px;pointer-events:auto;}
+#invBtn.new{animation:invPing 1s ease-out 3;border-color:var(--amber);}
+@keyframes invPing{0%{box-shadow:0 0 0 0 rgba(255,179,64,.8);}100%{box-shadow:0 0 0 14px rgba(255,179,64,0);}}
 #cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.85);transition:transform .15s;}
 #cross.hot{transform:scale(1.8);background:var(--amber);box-shadow:0 0 8px var(--amber);}
 #label{position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);font-size:14px;color:#fff;background:rgba(0,0,0,.55);padding:4px 10px;border-radius:4px;white-space:nowrap;display:none;}
@@ -89,12 +93,14 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 #card .bar{position:absolute;left:0;right:0;height:14vh;background:#000;transition:transform .8s cubic-bezier(.7,0,.2,1);}
 #card .bar.top{top:0;transform:translateY(-100%);} #card .bar.bot{bottom:0;transform:translateY(100%);}
 #card.on .bar{transform:none;}
-#card .inner{text-align:center;opacity:0;transition:opacity .8s .3s;padding:28px 40px;background:radial-gradient(ellipse at center,rgba(0,0,0,.7),rgba(0,0,0,0) 70%);}
+#card{background:rgba(0,0,0,0);transition:background .8s;} #card.on{background:rgba(0,0,0,.55);}
+#card .inner{text-align:center;opacity:0;transition:opacity .8s .3s;padding:28px 40px;max-width:92vw;}
+#card .kick{font-size:13px;letter-spacing:4px;color:#d9cdb8;margin-bottom:10px;}
 #card.on .inner{opacity:1;}
 #card .time{font:700 clamp(54px,11vw,110px)/1 var(--led);letter-spacing:6px;color:var(--amber);text-shadow:0 0 22px rgba(255,179,64,.6);}
 #card .title{font:400 clamp(22px,4vw,34px)/1.3 var(--sign);letter-spacing:6px;color:var(--cream);margin-top:12px;}
-#card .sub{font-size:14px;color:#b9ad98;margin-top:10px;letter-spacing:1px;}
-#card.dusk .time{color:#ffb070;} #card.close .time{color:#ff6b4a;text-shadow:0 0 22px rgba(255,80,50,.6);}
+#card .sub{font-size:17px;line-height:1.6;color:#efe4cf;margin-top:12px;letter-spacing:1px;}
+#card.dusk .time{color:#ffb070;} #card.closing .time{color:#ff6b4a;text-shadow:0 0 22px rgba(255,80,50,.6);}
 #card.dead .time{color:#d8d8e0;text-shadow:0 0 18px rgba(200,200,255,.35);} #card.dead .title{color:#c9b9b9;}
 #card.dead.on .time{animation:jit .2s steps(2) 8;}
 
@@ -238,17 +244,48 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .fhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;background:repeating-linear-gradient(-45deg,#f2c230 0 14px,#1b1b1b 14px 28px);}
 .fhead .ft{font:400 20px/1.2 var(--sign);letter-spacing:3px;color:#111;background:#f2c230;padding:2px 8px;}
 .fhead .fsub{font:700 10px/1 var(--led);letter-spacing:3px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
-#fcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
+#fcv,#lcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
 .fq{margin:12px 18px 6px;font-size:14px;line-height:1.6;color:#d8cfbd;text-align:left;}
 .fq b{color:#f2c230;}
 .frow{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 14px 0;}
 .frow .fl{min-width:84px;font-size:12px;letter-spacing:2px;color:#8a8d93;text-align:right;}
-.fdir,.fstep{min-height:44px;padding:0 14px;border:1px solid #55585e;border-radius:4px;background:#24262a;color:#cfc8b8;font-size:14px;}
+.fdir{min-height:44px;padding:0 14px;border:1px solid #55585e;border-radius:4px;background:#24262a;color:#cfc8b8;font-size:14px;}
 .fdir.on{border-color:var(--amber);color:var(--amber);background:#2e2616;box-shadow:0 0 10px rgba(255,179,64,.25);}
-.fstep{width:52px;font-size:22px;}
-.fval{min-width:110px;font:700 30px/44px var(--led);color:var(--amber);background:#07080a;border:1px solid #3a3d42;border-radius:4px;text-shadow:0 0 8px rgba(255,179,64,.6);}
+.fnum{width:120px;height:48px;font:700 30px/48px var(--led);text-align:center;color:var(--amber);background:#07080a;border:1px solid #55585e;border-radius:4px;outline:none;}
+.fnum:focus{border-color:var(--amber);box-shadow:0 0 10px rgba(255,179,64,.3);}
+.funit{font:700 22px/1 var(--led);color:#cfc8b8;}
 .fgo{margin-top:16px;min-height:48px;padding:0 42px;border:none;border-radius:24px;background:var(--red);color:#fff;font:400 18px/1 var(--sign);letter-spacing:4px;box-shadow:0 4px 0 #6a1612;}
 .fgo:active{transform:translateY(2px);box-shadow:0 2px 0 #6a1612;}
 .fgo:disabled{opacity:.5;}
 .fmsg{min-height:44px;margin:12px 18px 0;font-size:13px;line-height:1.6;color:#d9b0a8;}
 .fmsg.ok{color:#9be0a8;}
+
+/* ---------------- 소지품 ---------------- */
+.bag{position:relative;width:min(520px,92vw);max-height:86vh;overflow:auto;background:#f4ead2;color:#2a1a14;border-radius:6px;padding:0 0 16px;box-shadow:0 14px 40px rgba(0,0,0,.6);}
+.bhead{display:flex;justify-content:space-between;align-items:baseline;background:#2a3a33;color:#e9dcc0;padding:10px 16px;font:400 18px/1.2 var(--sign);letter-spacing:3px;}
+.bhead small{font:700 11px/1 var(--led);letter-spacing:1px;color:#b9c7b0;}
+.bag h3{margin:14px 16px 6px;font-size:12px;letter-spacing:3px;color:#8e231c;}
+.bnotes,.bitems{display:grid;gap:8px;margin:0 16px;}
+.bnotes button{display:flex;justify-content:space-between;align-items:center;min-height:44px;padding:0 14px;border:1.5px solid #2a1a14;border-radius:3px;background:#fffaf0;color:#2a1a14;font-size:14px;text-align:left;}
+.bnotes button::after{content:'읽기 ▸';font-size:12px;color:#8e231c;}
+.bitems div{padding:9px 12px;border:1px dashed #b9a88a;border-radius:3px;font-size:13px;line-height:1.5;}
+.bitems b{display:block;font-size:14px;}
+.bag .empty{font-size:13px;color:#8a7a6a;}
+.tagline .myname{color:#ffd27a;font-size:17px;}
+.note p b.red{color:#c8322a;}
+
+/* ---------------- 회전목마 조작반 ---------------- */
+.cbody{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;margin:18px 14px 4px;padding:18px;background:#121417;border:1px solid #3a3d42;border-radius:6px;}
+.cpow,.clev{display:flex;flex-direction:column;align-items:center;gap:8px;font:700 11px/1 var(--led);letter-spacing:2px;color:#cfc8b8;}
+.cpbtn{width:60px;height:60px;border-radius:50%;border:4px solid #55585e;background:radial-gradient(circle at 40% 35%,#8a2a22,#4a0f0b);cursor:pointer;}
+.cpbtn.on{background:radial-gradient(circle at 40% 35%,#ff6a50,#c8221a);box-shadow:0 0 18px rgba(255,60,40,.7);}
+.cslot{position:relative;width:34px;height:130px;border-radius:17px;border:2px solid #55585e;background:#07080a;cursor:pointer;}
+.cslot i{position:absolute;left:50%;top:8px;width:42px;height:42px;margin-left:-21px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ff6a50,#a8180f);box-shadow:0 3px 0 #3a0806;transition:top .35s cubic-bezier(.5,0,.3,1.4);}
+.cslot.down i{top:78px;}
+.cgrid{display:grid;grid-template-columns:repeat(4,56px);grid-template-rows:repeat(2,64px);gap:8px 12px;}
+.cl{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.cl i{width:40px;height:40px;border-radius:50%;border:3px solid #3a3d42;background:#20251f;}
+.cl b{font:700 14px/1 var(--led);color:#cfc8b8;}
+.cl.on i{background:radial-gradient(circle at 40% 35%,#9dffc4,#1fae5a);box-shadow:0 0 14px rgba(61,220,132,.8);}
+.cl.bad i{background:radial-gradient(circle at 40% 35%,#ff9a8a,#d11d10);box-shadow:0 0 14px rgba(255,59,48,.85);animation:blink .6s steps(2) infinite;}
+.cl.bad b{color:#ff6a50;}

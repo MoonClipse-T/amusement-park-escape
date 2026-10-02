@@ -1,6 +1,6 @@
 /* ============================================================
    STORY : 루나랜드 야간 알바
-   19:00 첫 출근 · 달토끼 아이스크림 판매 (손님 3명, 시간은 이야기로 흐른다)
+   19:00 첫 출근 · 달토끼 아이스크림 판매 (손님 2명 : 어른 남자 → 아이, 시간은 이야기로 흐른다)
    22:00 마감 → 화면 암전 후 시간 이동 · 손님은 모두 퇴장, 점검을 위해 불은 켜 둔다
         → 매니저 무전 : 직원 숙소의 '점검 지시서 #1' 을 찾아라  (방 1 : rooms/room1_dorm.js)
    00:00 자정 · 02:00 · 04:00 사건 → 06:00 시간 종료
@@ -10,11 +10,9 @@ const FLAVOR={vanilla:'바닐라',strawberry:'딸기',choco:'초코'};
 
 // 손님 주문 : next = 이 손님을 보낸 뒤 흐르는 공원 시각
 const ORDERS=[
-  {who:'손님', opts:{cloth:'#3b6fa8'}, flavor:'strawberry', next:19*60+50,
-   say:['딸기 하나 주세요!'], thanks:['감사합니다~ 와, 노을 진짜 예쁘다.']},
-  {who:'손님', opts:{cloth:'#e0b33a'}, flavor:'choco', next:21*60,
-   say:['초코 하나요. …오늘 보름달이라던데, 여기서 보면 엄청 크게 보인다면서요?'], thanks:['감사해요. 퍼레이드 보러 가야지.']},
-  {who:'아이', opts:{kid:true,ears:true,cloth:'#e07a9a'}, flavor:'vanilla', next:21*60+50,
+  {who:'손님', opts:{kind:'man',cloth:'#3b6fa8'}, flavor:'choco', next:20*60+50,
+   say:['초코 하나 주세요. …오늘 보름달이라던데, 여기서 보면 엄청 크게 보인다면서요?'], thanks:['감사합니다. 달 뜨면 다시 와 봐야겠네.']},
+  {who:'아이', opts:{kind:'hoodie',kid:true,ears:true,cloth:'#e07a9a'}, flavor:'vanilla', next:21*60+50,
    say:['바닐라 주세요!'], thanks:['고맙습니다!'], after:kidWarning},
 ];
 let ORDER=null;
@@ -46,9 +44,9 @@ async function serve(od,c){ await c.toCounter(); if(S.introSkip) return;
 function passTime(to,ms=2500){ return new Promise(res=>{ const from=S.introMin, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms); S.introMin=from+(to-from)*k; drawClock(); tickSky(0,true); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
 
-/* 셋째 손님 : 괴담 한 조각 + 달토끼 동상 눈이 잠깐 빛난다 */
+/* 아이 손님 : 괴담 한 조각 + 달토끼 동상 눈이 잠깐 빛난다 */
 async function kidWarning(){
-  await mono(['…알바생님, 오늘 밤에 여기 남아요?','자정이 넘으면 달토끼가 배고파진대요.','쿵, 쿵 — 절구 찧는 소리가 들리면, 꼭 숨어야 해요.'],'아이');
+  await mono(['알바생님, 그거 알아요?','밤 12시가 넘으면 저 달토끼가 움직인다는 소문이 있어요.','…혹시 들어 본 적 있으세요?'],'아이');
   const yaw0=P.yaw, R=PARK.anim.rabbithead; P.free=false;
   if(R){ const p=new THREE.Vector3(); R.getWorldPosition(p); await camTo({yaw:Math.atan2(-(p.x-P.x),-(p.z-P.z)),pitch:0.08},1.2); }
   await zoom(24,700); rabbitGlint(); AUDIO.tone(70,1.2,'sine',.25); await sleep(1100); await zoom(72,500);
@@ -75,14 +73,14 @@ async function intro(){
   CROWD.spawnWanderers(IS_TOUCH?12:22); const line=ORDERS.map((od,i)=>CROWD.customer({...od.opts,x:QUEUE[i][0],z:QUEUE[i][1]})); objective('…'); showClock('마감 22:00'); AUDIO.music('open');
   await sleep(300); $('#fade').classList.add('clear');
   await card('19:00','첫 출근','루나랜드 · 달토끼 아이스크림 판매대','dusk',3200);
-  await mono(['여기가 루나랜드…. 듣던 대로 하늘이 예쁘다.','밤 10시까지는 아이스크림 판매, 그다음엔 아침까지 공원 점검.']);
+  await mono(['내 이름은 이해권. 오늘이 루나랜드 첫 출근이다.','듣던 대로 하늘이 예쁘다.','밤 10시까지는 아이스크림 판매, 그다음엔 아침까지 공원 점검.']);
   await mono(['신입, 벌써 줄 섰어요! 주문 들으면 냉동고에서 그 맛을 퍼 주면 돼요.','10시 마감까지만 버텨요. 그 뒤 일은 그때 알려 줄게요.'],'무전 · 매니저');
   P.free=true; S.phase='play';
   $('#hint').textContent=IS_TOUCH?'아이스크림 통을 탭해서 퍼 주기':'마우스로 둘러보기 · 아이스크림 통을 보고 E (또는 클릭)'; setTimeout(()=>$('#hint').textContent='',10000);
   for(let i=0;i<ORDERS.length&&!S.introSkip;i++){ await serve(ORDERS[i],line[i]); if(S.introSkip) break;
-    line.slice(i+1).forEach((c,j)=>c.walkTo(...QUEUE[j])); objective(`손님에게 아이스크림 팔기 (${i+1}/3)`); await passTime(ORDERS[i].next,1600); }
+    line.slice(i+1).forEach((c,j)=>c.walkTo(...QUEUE[j])); objective(`손님에게 아이스크림 팔기 (${i+1}/${ORDERS.length})`); await passTime(ORDERS[i].next,1600); }
   if(S.introSkip) return startNight(true);
-  objective('마감 준비'); await announce('오늘도 루나랜드를 찾아 주셔서 감사합니다. 잠시 후 밤 10시, 모든 운행을 마칩니다. 안녕히 돌아가십시오.',{ms:2600});
+  objective('마감 준비'); await announce('오늘도 루나랜드를 찾아 주셔서 감사합니다. 잠시 후 밤 10시, 모든 운행을 마칩니다. 안녕히 돌아가십시오.',{ms:2600,voice:'pa_close'});
   await startNight(false); }
 
 /* 22:00 마감 → 야간 점검 시작 */
@@ -91,11 +89,11 @@ async function startNight(quick){ if(S.stage==='night') return; P.free=false; S.
   CROWD.clear(); AUDIO.stopMusic(); S.closed=true; S.stage='night'; S.rC=0; S.rW=0; ORDER=null;
   P.x=14.8; P.z=18.9; P.y=0; P.yaw=Math.atan2(14.8,8.9); P.pitch=0; P.vx=P.vz=0;   // 판매대 옆문 밖, 광장 쪽을 본다
   startTimer(); tickSky(0,true);
-  if(!quick) await card('22:00','마감','손님이 모두 돌아갔다. 점검을 위해, 불은 끄지 않는다.','close',3800);
+  if(!quick) await card('22:00','영업 마감','손님이 모두 돌아갔다. 지금부터 아침까지 공원을 점검한다.','closing',4200);
   $('#fade').classList.add('clear'); await sleep(600);
-  if(!quick){ await mono(['수고했어요, 신입. 지금부터는 야간 점검조예요.','첫 번째 점검 지시서는 직원 숙소 책상 위에 뒀어요. 숙소는 회전목마 서쪽.','…아, 그리고. 자정 넘어서는 혼자 다니지 마요.'],'무전 · 매니저');
+  if(!quick){ await mono(['수고했어요, 신입. 지금부터는 야간 점검조예요.','첫 번째 점검 지시서는 직원 숙소 책상 위에 뒀어요. 숙소는 회전목마 옆 건물이에요.','…아, 그리고. 자정 넘어서는 혼자 다니지 마요.'],'무전 · 매니저');
     await mono(['…혼자 다니지 말라니. 점검조는 나 혼자인데.']); }
-  P.free=true; objective('직원 숙소에서 점검 지시서를 찾자 (회전목마 서쪽)');
+  P.free=true; objective('직원 숙소에서 점검 지시서를 찾자 (화살표를 따라가자)');
   const d=PARK.spawns.dorm_door; setGoal(d?d.x:-45,d?d.z:4,'직원 숙소');
   $('#hint').textContent=IS_TOUCH?'':'M 지도 · E 조사'; setTimeout(()=>$('#hint').textContent='',8000); }
 
@@ -108,8 +106,8 @@ EVENTS.push(
   {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true; S.ridesGhost=true; rabbitGlint(); AUDIO.music('dead');
     if(PARK.scrawl) PARK.scrawl.visible=true;
     await card('00:00','자정','보름달이 가장 높이 떴다. 아무도 없는데, 회전목마가 돈다.','dead');
-    await announce('…손님 여러분… 아직… 공원에 남아 계신 분은… 달토끼 앞으로… 모여 주십시오…',{broken:true,ms:3400});
+    await announce('…손님 여러분… 아직… 공원에 남아 계신 분은… 달토끼 앞으로… 모여 주십시오…',{broken:true,ms:3400,voice:'pa_midnight'});
     AUDIO.stopMusic(); setTimeout(()=>{ if(!S.over) AUDIO.music('dead'); },6000); }},
-  {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 서쪽으로 기울기 시작했다','dead',3000)},
+  {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   {at:24*60+240, fn:()=>card('04:00','새벽 4시','해 뜨기까지 두 시간','dead',3000)},
 );

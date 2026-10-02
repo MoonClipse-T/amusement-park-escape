@@ -29,6 +29,14 @@ const AUDIO={ctx:null,
  // 문이 쾅 닫힘 : 낮은 쿵(나무 문짝) + 짧은 울림 + 걸쇠 찰칵
  slam(){ const c=this.ctx; if(!c) return; this.noise(.35,.9,0,160); this.noise(.12,.5,0,900); this.tone(62,.5,'sine',.55,0,-30); this.tone(110,.18,'triangle',.25,0,-50);
    this.noise(.6,.12,.05,400); this.tone(1800,.03,'square',.06,.16); this.tone(1200,.04,'square',.05,.19); },
+ // 녹음된 안내 방송 (web/assets/voice/<key>.mp3). broken 이면 느리고 찢어진 스피커 소리. → Promise<길이(초)>
+ voice(key,broken,delay=1.3){ const c=this.ctx; if(!c) return Promise.resolve(0);
+   const get=INLINE?Promise.resolve(ASSETS[key]?b64buf(ASSETS[key]):null):fetch('assets/voice/'+key+'.mp3').then(r=>r.ok?r.arrayBuffer():null);
+   return get.then(b=>b&&c.decodeAudioData(b)).then(buf=>{ if(!buf) return 0; const s=c.createBufferSource(); s.buffer=buf; if(broken) s.playbackRate.value=.9;
+     const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=broken?1300:1800; f.Q.value=broken?.9:.35;
+     const g=c.createGain(); g.gain.value=broken?1.6:1.25; s.connect(f); f.connect(g); g.connect(c.destination);
+     if(broken){ const d=c.createWaveShaper(), cv=new Float32Array(256); for(let i=0;i<256;i++){ const x=i/128-1; cv[i]=Math.tanh(x*4); } d.curve=cv; f.disconnect(); f.connect(d); d.connect(g); }
+     s.start(c.currentTime+delay); return buf.duration/(broken?.9:1); }).catch(()=>0); },
  // 걸쇠가 풀림 : 철컥 + 끼익
  unlatch(){ this.tone(1500,.03,'square',.08); this.tone(900,.05,'square',.08,.05); this.noise(.08,.3,0,2500); this.tone(380,.9,'sawtooth',.03,.25,140); },
  // 바람 소리 (계속 재생)
@@ -78,6 +86,8 @@ addEventListener('resize',resize); resize();
 
 const P={x:0,z:0,y:0,eye:1.6,yaw:0,pitch:0,vx:0,vz:0,vy:0,r:0.3,speed:2.6,free:false,grounded:true};
 const FLOORS=[]; // {test:(x,z)=>bool, y:(x,z)=>number}
+const LEDGES=[]; // 점프해야 오를 수 있는 원형 단 {x,z,r,y} (Blender FLOORC_)
+function ledgeAt(x,z){ let y=0; for(const c of LEDGES){ const dx=x-c.x,dz=z-c.z; if(dx*dx+dz*dz<c.r*c.r) y=Math.max(y,c.y); } return y; }
 function floorAt(x,z){ let y=0; for(const f of FLOORS){ if(f.test(x,z)) y=Math.max(y,f.y(x,z)); } return y; }
 const LIGHTS=[]; function regLight(l){ LIGHTS.push({l,base:l.intensity}); return l; }
 const COL=[];   // {x1,z1,x2,z2,on}  AABB
@@ -87,7 +97,7 @@ const WORLD=new THREE.Group(); scene.add(WORLD);
 const S={phase:'title',flags:{},t:0,timerOn:false,paused:false,over:false,busy:false,inv:[]};
 
 /* --- 충돌 (원 vs AABB/원, 축별 분리) --- */
-function blocked(x,z){ const r=P.r;
+function blocked(x,z){ const r=P.r; if(ledgeAt(x,z)>P.y+0.3) return true;     // 높은 단은 점프해서 올라선다
   for(const b of COL){ if(b.on&&!b.on()) continue; if(x+r>b.x1&&x-r<b.x2&&z+r>b.z1&&z-r<b.z2) return true; }
   for(const c of CIRC){ if(c.on&&!c.on()) continue; const dx=x-c.x,dz=z-c.z,rr=c.r+r; if(dx*dx+dz*dz<rr*rr) return true; } return false; }
 function move(dx,dz){ if(blocked(P.x,P.z)){ P.x+=dx; P.z+=dz; return; } // 이미 끼어 있으면 빠져나오게
@@ -97,8 +107,8 @@ function addBox(x1,z1,x2,z2,on){ COL.push({x1:Math.min(x1,x2),z1:Math.min(z1,z2)
 
 /* --- 입력 --- */
 const keys={};
-addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code==='Space'&&$('#mono').classList.contains('on')){ monoNext(); return; } if(S.phase!=='play') return;
-  if(e.code==='KeyE'&&!S.busy) tryInteract(); if(e.code==='Escape') togglePause(); if(e.code==='KeyF') toggleLight(); if(e.code==='KeyM') toggleMap();
+addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; keys[e.code]=true; if(e.code==='Space'&&$('#mono').classList.contains('on')){ monoNext(); return; } if(S.phase!=='play') return;
+  if(e.code==='KeyE'&&!S.busy) tryInteract(); if(e.code==='Escape') togglePause(); if(e.code==='KeyF') toggleLight(); if(e.code==='KeyM') toggleMap(); if(e.code==='KeyI'&&!S.busy) INV.open();
   if(e.code==='Space') jump(); dbgKey(e); });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 const stick={id:null,cx:0,cy:0,dx:0,dy:0}, look={id:null,lx:0,ly:0,sx:0,sy:0,t0:0,moved:false};
@@ -130,6 +140,18 @@ function objective(s){ $('#objtext').textContent=s; $('#objective').classList.to
 function ov(id,on){ const el=$(id); el.classList.toggle('on',on); if(!on) S.lastClose=performance.now(); S.busy=!!document.querySelector('.ov.on:not(#start)')||$('#mono').classList.contains('on'); if(S.busy){ stick.dx=stick.dy=0; } }
 document.querySelectorAll('.ov .close').forEach(b=>b.addEventListener('click',()=>{ ov('#'+b.parentElement.id,false); AUDIO.click(); }));
 function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
+
+/* 소지품 : INV.note(id,제목,본문) — 지시서 · 쪽지 (언제든 다시 읽기) · INV.item(id,이름,설명) — 물건 · INV.has(id) · INV.drop(id) */
+const INV={notes:[],items:[],
+  note(id,title,body){ if(this.notes.some(n=>n.id===id)) return; this.notes.push({id,title,body}); this.ping('소지품에 넣었다 · '+title); },
+  item(id,name,desc=''){ if(this.has(id)) return; this.items.push({id,name,desc}); this.ping('소지품에 넣었다 · '+name); },
+  drop(id){ this.items=this.items.filter(i=>i.id!==id); },
+  has(id){ return this.items.some(i=>i.id===id); },
+  ping(msg){ toast(msg); const b=$('#invBtn'); b.classList.remove('new'); void b.offsetWidth; b.classList.add('new'); },
+  open(){ const n=$('#inv .bnotes'), it=$('#inv .bitems'); n.innerHTML=this.notes.length?'':'<p class="empty">아직 없다</p>';
+    this.notes.forEach(x=>{ const b=document.createElement('button'); b.textContent=x.title; b.onclick=()=>{ ov('#inv',false); showMsg(x.title,x.body); }; n.appendChild(b); });
+    it.innerHTML=this.items.length?this.items.map(x=>`<div><b>${x.name}</b>${x.desc}</div>`).join(''):'<p class="empty">아직 없다</p>'; ov('#inv',true); AUDIO.click(); } };
+$('#invBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); if(S.phase==='play'&&!S.busy) INV.open(); });
 
 /* 독백창 */
 const monoQ={lines:[],i:0,res:null,typing:null,full:'',pend:[]};
@@ -173,13 +195,17 @@ $('#pauseBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); togglePa
 $('#resume').onclick=()=>togglePause(); $('#restart').onclick=()=>location.reload();
 
 /* 시간 카드 : 화면 위아래 검은 띠 + 큰 시각 */
+const KICK={'19:00':'저녁 7시','22:00':'밤 10시','00:00':'밤 12시 · 자정','02:00':'새벽 2시','04:00':'새벽 4시'};
 function card(time,title,sub='',cls='',ms=3600){ return new Promise(res=>{ const c=$('#card'); c.className=cls; c.querySelector('.time').textContent=time;
+  c.querySelector('.kick').textContent='지금 공원 시각 · '+(KICK[time]||time);
   c.querySelector('.title').textContent=title; c.querySelector('.sub').textContent=sub; void c.offsetWidth; c.classList.add('on');
   setTimeout(()=>{ c.classList.remove('on'); setTimeout(res,800); },ms); }); }
 /* 안내 방송 : 상단 배너, 차임 후 한 글자씩 */
-function announce(text,{broken=false,ms}={}){ return new Promise(res=>{ const el=$('#pa'), t=el.querySelector('.txt'); el.classList.toggle('broken',broken); AUDIO.chime(broken);
-  t.textContent=''; el.classList.add('on'); let k=0; const iv=setInterval(()=>{ k++; t.textContent=text.slice(0,k); if(k>=text.length){ clearInterval(iv);
-    setTimeout(()=>{ el.classList.remove('on'); setTimeout(res,400); },ms||Math.max(2600,text.length*60)); } },broken?70:40); }); }
+function announce(text,{broken=false,ms,voice}={}){ return new Promise(res=>{ const el=$('#pa'), t=el.querySelector('.txt'); el.classList.toggle('broken',broken); AUDIO.chime(broken);
+  const t0=performance.now(), vd=voice?AUDIO.voice(voice,broken):Promise.resolve(0);
+  t.textContent=''; el.classList.add('on'); let k=0; const iv=setInterval(async()=>{ k++; t.textContent=text.slice(0,k); if(k>=text.length){ clearInterval(iv);
+    const d=await vd, left=d?t0+1300+d*1000+500-performance.now():0;
+    setTimeout(()=>{ el.classList.remove('on'); setTimeout(res,400); },Math.max(left,ms||Math.max(2600,text.length*60))); } },broken?70:40); }); }
 
 /* 사건표 : at = 공원 시각(분, 자정 이후는 24*60+). 내용은 story.js · rooms/*.js 에서 push */
 const EVENTS=[];
@@ -217,7 +243,7 @@ async function loadGLB(key){ const buf=await glbBuffer(key); return new Promise(
 function loadImg(key){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error(key+'.jpg')); im.src=INLINE?'data:image/jpeg;base64,'+ASSETS[key]:'assets/'+key+'.jpg'; }); }
 
 /* 점프 · 중력 */
-function jump(){ if(!P.free||S.busy||!P.grounded) return; P.vy=4.6; P.grounded=false; }
+function jump(){ if(!P.free||S.busy||!P.grounded) return; P.vy=5.4; P.grounded=false; }   // 약 1 m 높이
 $('#jumpBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); AUDIO.init(); jump(); });
 function tickJump(dt){ if(!P.free||camAnim) return; const fy=floorAt(P.x,P.z);
   if(!P.grounded||P.y>fy+0.45){ P.vy-=14*dt; P.y+=P.vy*dt; if(P.y<=fy){ P.y=fy; P.vy=0; P.grounded=true; } else P.grounded=false; }
@@ -267,7 +293,7 @@ const PARK={mats:[],mat:{},items:{},signs:{},spawns:{},spots:{},lights:{},zones:
 
 async function buildPark(){
   const root=await loadGLB('park'); WORLD.add(root); root.updateMatrixWorld(true);
-  const kill=[], bb=new THREE.Box3(), v=new THREE.Vector3(), q=new THREE.Quaternion();
+  const kill=[], ride=[], bb=new THREE.Box3(), v=new THREE.Vector3(), q=new THREE.Quaternion();
   const mats=new Set();
   root.traverse(o=>{ const n=o.name||'';
     if(/^COLC_/.test(n)){ bb.setFromObject(o); CIRC.push({x:(bb.min.x+bb.max.x)/2,z:(bb.min.z+bb.max.z)/2,r:(bb.max.x-bb.min.x)/2}); kill.push(o); return; }
@@ -276,6 +302,8 @@ async function buildPark(){
       if(k){ const pk=new THREE.Mesh(new THREE.BoxGeometry(bb.max.x-bb.min.x+.2,2.4,bb.max.z-bb.min.z+.2),PICK); bb.getCenter(v); pk.position.set(v.x,1.2,v.z); WORLD.add(pk);
         INTER.push({mesh:pk,name:GATES[k]||k,range:3.2,fn:()=>gateTap(k),enabled:()=>!S.flags['open_'+k]}); }
       kill.push(o); return; }
+    if(/^FLOORC_/.test(n)){ bb.setFromObject(o); const c={x:(bb.min.x+bb.max.x)/2,z:(bb.min.z+bb.max.z)/2,r:(bb.max.x-bb.min.x)/2,y:bb.max.y};
+      FLOORS.push({test:(x,z)=>(x-c.x)**2+(z-c.z)**2<c.r*c.r,y:()=>c.y}); LEDGES.push(c); kill.push(o); return; }
     if(/^FLOOR_/.test(n)){ bb.setFromObject(o); const f={x1:bb.min.x,x2:bb.max.x,z1:bb.min.z,z2:bb.max.z,y:bb.max.y};
       FLOORS.push({test:(x,z)=>x>f.x1&&x<f.x2&&z>f.z1&&z<f.z2,y:()=>f.y}); kill.push(o); return; }
     if(/^(LAMP|LIGHT)_/.test(n)){ const u=o.userData; const l=regLight(new THREE.PointLight(new THREE.Color(u.color||'#ffb46b'),u.i||1,u.d||14,1.6)); o.getWorldPosition(l.position); scene.add(l);
@@ -283,7 +311,7 @@ async function buildPark(){
     if(/^SIGN_/.test(n)){ const k=n.slice(5), u=o.userData, s=SIGNS[k]; if(k==='map') return addMapBoard(o,u); if(!s) return;
       const tex=TEX.sign(s.slice(0,2).filter(Boolean),s[2],s[3],1024,Math.round(1024*u.h/u.w)||256);
       const m=new THREE.Mesh(new THREE.PlaneGeometry(u.w,u.h),new THREE.MeshStandardMaterial({map:tex,roughness:.8,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.08}));
-      o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); PARK.signs[k]=m; return; }
+      o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); PARK.signs[k]=m; if(/^ANIM_/.test(o.parent&&o.parent.name)) ride.push([o.parent,m]); return; }
     if(/^ZONE_/.test(n)){ o.getWorldPosition(v); PARK.zones.push({id:n.slice(5),title:o.userData.title||n,r:o.userData.r||8,x:v.x,z:v.z}); return; }
     if(n==='SPAWN'){ o.getWorldPosition(v); PARK.spawn={x:v.x,z:v.z,yaw:0}; return; }
     if(/^(SPAWN|SPOT)_/.test(n)){ o.getWorldPosition(v); o.getWorldQuaternion(q); const e=new THREE.Euler().setFromQuaternion(q,'YXZ');
@@ -294,6 +322,7 @@ async function buildPark(){
     if(o.isMesh){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m)); }
   });
   kill.forEach(o=>o.parent&&o.parent.remove(o));
+  ride.forEach(([p,m])=>{ m.updateMatrixWorld(true); p.attach(m); });
   Object.values(PARK.items).forEach(dequant);
   // 재질 손보기 : Blender 속성(tint, glow) 반영
   mats.forEach(m=>{ const u=m.userData||{};
@@ -323,8 +352,7 @@ function drawMap(g,W,H,me){
   g.fillStyle='#ece5d3'; g.fillRect(0,0,W,H); g.strokeStyle='#2a2a2a'; g.lineWidth=3; g.strokeRect(X(B.x1),Y(B.z1),(B.x2-B.x1)*s,(B.z2-B.z1)*s);
   g.fillStyle='#ece5d3'; g.fillRect(X(-7.5),Y(B.z2)-4,15*s,8);
   g.fillStyle='#8e231c'; g.font=`900 ${W*.05}px "Malgun Gothic",sans-serif`; g.textAlign='left'; g.textBaseline='top'; g.fillText('LUNA LAND',pad,14*W/1000);
-  g.font=`500 ${W*.018}px "Malgun Gothic",sans-serif`; g.fillStyle='#555'; g.textAlign='right'; g.fillText('↑ 북',W-pad,24*W/1000);
-  PARK.zones.forEach((z,i)=>{ g.fillStyle='rgba(142,35,28,.12)'; g.beginPath(); g.arc(X(z.x),Y(z.z),z.r*s,0,7); g.fill();
+    PARK.zones.forEach((z,i)=>{ g.fillStyle='rgba(142,35,28,.12)'; g.beginPath(); g.arc(X(z.x),Y(z.z),z.r*s,0,7); g.fill();
     g.fillStyle='#8e231c'; g.beginPath(); g.arc(X(z.x),Y(z.z),W*.008,0,7); g.fill();
     g.fillStyle='#1a1a1a'; g.font=`700 ${W*.022}px "Malgun Gothic",sans-serif`; g.textAlign='center'; g.textBaseline='top'; g.fillText(z.title,X(z.x),Y(z.z)+W*.012); });
   if(me){ g.save(); g.translate(X(P.x),Y(P.z)); g.rotate(-P.yaw); g.fillStyle='#1f6a3a'; g.beginPath(); g.moveTo(0,-W*.022); g.lineTo(W*.013,W*.014); g.lineTo(-W*.013,W*.014); g.fill(); g.restore();
@@ -421,7 +449,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   camera.position.set(P.x,P.y+eyeY,P.z); camera.rotation.order='YXZ'; camera.rotation.set(P.pitch,P.yaw,0);
   tickLights(dt); tickZones(dt); tickGoal();
   // 놀이기구 : 운영 중엔 돌고, 폐장하면 서서히 멈추고, 자정엔 회전목마만 혼자 돈다
-  const A=PARK.anim, tgtC=S.ridesGhost?0.25:S.closed?0:0.55, tgtW=S.closed?0:0.06;
+  const A=PARK.anim, tgtC=S.ridesGhost?0.25:S.carouselRun?0.45:S.closed?0:0.55, tgtW=S.closed?0:0.06;
   S.rC=lerp(S.rC??tgtC,tgtC,1-Math.pow(0.6,dt)); S.rW=lerp(S.rW??tgtW,tgtW,1-Math.pow(0.7,dt));
   if(A.carousel) A.carousel.rotation.y+=dt*S.rC; if(A.wheel){ A.wheel.rotation.z+=dt*S.rW; PARK.gondolas.forEach(g=>g.rotation.z=-A.wheel.rotation.z); }
   tickSky(dt);
@@ -453,7 +481,7 @@ function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px
   for(let i=0;i<16;i++){ const a=i/16*Math.PI*2, l=document.createElementNS(NS,'line'); l.setAttribute('x1',0); l.setAttribute('y1',0); l.setAttribute('x2',Math.cos(a)*190); l.setAttribute('y2',Math.sin(a)*190); sp.appendChild(l); }
   for(let i=0;i<32;i++){ const a=i/32*Math.PI*2, c=document.createElementNS(NS,'circle'); c.setAttribute('cx',Math.cos(a)*190); c.setAttribute('cy',Math.sin(a)*190); c.setAttribute('r',5);
     c.style.animationDelay=(i%4)*0.6+'s'; wb.appendChild(c); }
-  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>야간 점검은 아침 6시에 끝납니다.':'근무 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · F 손전등 · M 지도 · Esc 정지<br>밤 10시부터 공원 시간은 실제 1분에 12분씩 흐릅니다. 아침 6시 전에 모든 점검을 끝내야 합니다.'; })();
+  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>야간 점검은 아침 6시에 끝납니다.':'근무 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · Space 점프 · F 손전등 · M 지도 · I 소지품 · Esc 정지<br>밤 10시부터 공원 시간은 실제 1분에 12분씩 흐릅니다. 아침 6시 전에 모든 점검을 끝내야 합니다.'; })();
 
 async function boot(){ try{
     loadStep(8,'공원 불을 켜는 중…'); await buildSky(); loadStep(30,'근무표 확인 중…'); await sleep(30);
