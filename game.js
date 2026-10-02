@@ -1,9 +1,9 @@
 /* ============================================================
-   루나랜드 — 야간 개장 (저녁 19:00 → 새벽 03:00) 스릴러 방탈출 · 기본 맵
+   루나랜드 — 야간 알바 스릴러 방탈출 (중1 과학 '힘의 작용')
    three.js r128 · 터치/키보드 겸용 · 1인칭
-   구조 : ENGINE(렌더/플레이어/충돌/입력/UI) + TIME(공원 시계·하늘·사건) + PARK(Blender 맵) + ROOMS[](방 단위 스크립트)
-   실제 40분 = 공원 시간 8시간 (실제 1분 = 공원 12분)
-   맵은 build/build_park.py(Blender)에서 만들고, 이름 규칙(COL_/FLOOR_/SIGN_/ZONE_…)으로 엔진이 읽는다.
+   파일 : game.js(엔진) → crowd.js(손님 NPC) → story.js(인트로·시간 사건) → rooms/*.js(방) → main.js(시작)
+   시간 : 인트로 19:00~22:00 은 이야기로 진행(타이머 없음), 22:00 부터 실제 40분 = 공원 8시간 (06:00 까지)
+   맵은 blender/build_lunaland_v2.py 에서 만들고, 이름 규칙(COL_/FLOOR_/SIGN_/ZONE_/IT_/SPAWN_…)으로 엔진이 읽는다.
    ============================================================ */
 'use strict';
 const $=s=>document.querySelector(s);
@@ -138,28 +138,30 @@ $('#mono').addEventListener('pointerdown',e=>{ e.stopPropagation(); monoNext(); 
 addEventListener('pointerdown',e=>{ if($('#mono').classList.contains('on')&&e.target===canvas){ e.stopPropagation(); monoNext(); } },true);
 
 /* ============================================================
-   TIME : 공원 시계 (19:00 → 03:00) · 남은 시간 · 사건
-   - 공원 시각(분) = 19:00 + 경과 비율 × 8시간
-   - EVENTS 의 at(공원 시각)에 도달하면 fn 실행 (방 스크립트도 EVENTS.push 로 붙일 수 있다)
+   TIME : 공원 시계 · 남은 시간 · 사건
+   - 인트로(타이머 전) : 공원 시각 = S.introMin (이야기가 직접 19:00 → 21:50 으로 옮긴다)
+   - 22:00 startTimer() 이후 : 공원 시각 = 22:00 + 경과 비율 × 8시간 (06:00 에 끝)
+   - EVENTS 의 at(공원 시각, 자정 이후는 24*60+)에 도달하면 fn 실행 (story.js · 방 스크립트에서 EVENTS.push)
    ============================================================ */
 const TIMER_SEC=40*60; let timeLeft=TIMER_SEC;
-const CLOCK_START=19*60, CLOCK_SPAN=8*60;            // 19:00 시작, 8시간
-function parkMin(){ return CLOCK_START+(1-timeLeft/TIMER_SEC)*CLOCK_SPAN; }   // 19:00 → 27:00(=03:00)
+const CLOCK_START=22*60, CLOCK_SPAN=8*60;            // 22:00 시작, 8시간 → 06:00
+function parkMin(){ return S.timerOn?CLOCK_START+(1-timeLeft/TIMER_SEC)*CLOCK_SPAN:(S.introMin??19*60); }
 function hhmm(m,ap){ m=Math.floor(m)%1440; const h=Math.floor(m/60), mm=String(m%60).padStart(2,'0');
   if(!ap) return String(h).padStart(2,'0')+':'+mm; return [(h>=12?'PM':'AM'), String(h%12||12).padStart(2,'0')+':'+mm]; }
 function fmt(s){ s=Math.max(0,Math.ceil(s)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
-function startTimer(){ S.timerOn=true; $('#clock').classList.add('on'); drawClock(); }
+function startTimer(){ S.timerOn=true; $('#clock').classList.add('on'); $('#clock .left').innerHTML='남은 시간 <b></b>'; drawClock(); }
+function showClock(label){ $('#clock').classList.add('on'); if(label) $('#clock .left').textContent=label; drawClock(); }
 function drawClock(){ const [ap,hm]=hhmm(parkMin(),true); const el=$('#clock'); el.querySelector('.ap').textContent=ap; el.querySelector('.hm').textContent=hm;
-  el.querySelector('.left b').textContent=fmt(timeLeft); el.classList.toggle('late',parkMin()>=24*60+120); el.classList.toggle('warn',timeLeft<300); }
+  const b=el.querySelector('.left b'); if(b) b.textContent=fmt(timeLeft); el.classList.toggle('late',S.timerOn&&parkMin()>=24*60+240); el.classList.toggle('warn',S.timerOn&&timeLeft<300); }
 function tickTimer(dt){ if(!S.timerOn||S.paused||S.over) return; const prev=timeLeft; timeLeft-=dt; drawClock();
   if(Math.floor(prev)!==Math.floor(timeLeft)&&timeLeft<60&&timeLeft>0) AUDIO.tick();
   const pm=parkMin(); for(const e of EVENTS){ if(!e.done&&pm>=e.at){ e.done=true; e.fn(); } }
   if(timeLeft<=0){ timeLeft=0; gameOver(); } }
 function gameOver(){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on');
   AUDIO.noise(2.4,.25,0,260); setTimeout(()=>AUDIO.noise(.25,.4,0,180),2300);
-  $('#overT').textContent='운행이 종료되었습니다'; $('#overP').innerHTML='새벽 3시. 마지막 불이 꺼지고 셔터가 내려왔다.<br>루나랜드는 오늘도 손님 한 명을 남겼다.'; ov('#over',true); }
+  $('#overT').textContent='야간 점검 종료'; $('#overP').innerHTML='아침 6시. 교대 근무자가 숙소 문을 열었지만, 야간 점검조는 어디에도 없었다.<br>사물함 하나가 새로 잠겨 있었을 뿐.'; ov('#over',true); }
 function gameClear(text){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on'); AUDIO.ok();
-  $('#clearP').innerHTML=(text||'정문 너머로 첫차 소리가 들린다.')+`<br>공원 시각 ${hhmm(parkMin())} · 걸린 시간 ${fmt(TIMER_SEC-timeLeft)}`; ov('#clear',true); }
+  $('#clearP').innerHTML=(text||'정문 너머로 해가 뜬다.')+`<br>공원 시각 ${hhmm(parkMin())} · 걸린 시간 ${fmt(TIMER_SEC-timeLeft)}`; ov('#clear',true); }
 $('#overRe').onclick=()=>location.reload(); $('#clearRe').onclick=()=>location.reload();
 function togglePause(){ if(S.phase!=='play'||S.over) return; S.paused=!S.paused; ov('#pause',S.paused); }
 $('#pauseBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); togglePause(); });
@@ -174,22 +176,24 @@ function announce(text,{broken=false,ms}={}){ return new Promise(res=>{ const el
   t.textContent=''; el.classList.add('on'); let k=0; const iv=setInterval(()=>{ k++; t.textContent=text.slice(0,k); if(k>=text.length){ clearInterval(iv);
     setTimeout(()=>{ el.classList.remove('on'); setTimeout(res,400); },ms||Math.max(2600,text.length*60)); } },broken?70:40); }); }
 
-/* 사건표 : at = 공원 시각(분, 자정 이후는 24*60+) */
-const EVENTS=[
-  {at:20*60, fn:()=>announce('잠시 후 8시, 서커스 텐트에서 야간 특별 공연이 시작됩니다. 많은 관람 바랍니다.')},
-  {at:21*60+30, fn:()=>announce('손님 여러분께 안내 말씀 드립니다. 오늘 루나랜드는 밤 10시에 폐장합니다.')},
-  {at:22*60, fn:closingTime},
-  {at:24*60, fn:midnight},
-  {at:24*60+120, fn:async()=>{ await card('02:00','새벽 2시','해가 뜨기 전에 나가야 한다','dead',3000); objective('새벽 3시 전에 공원을 빠져나가자'); }},
-];
-async function closingTime(){ S.closed=true; await announce('오늘 루나랜드를 찾아주셔서 감사합니다. 모든 놀이기구의 운행을 종료합니다. 출구는 정문입니다. 안녕히 돌아가십시오.',{ms:3200});
-  AUDIO.stopMusic(); setLightsClosed(); AUDIO.noise(.6,.3,0,200);
-  await card('22:00','폐장','정문 쪽 불이 꺼졌다','close');
-  await mono(['…방송이 끝나자마자 불이 한꺼번에 꺼졌다.','정문으로 가 보자. 아직 열려 있겠지.']); objective('정문으로 돌아가 보자'); }
-async function midnight(){ document.body.classList.add('midnight'); AUDIO.music('dead'); S.ridesGhost=true;
-  await card('00:00','자정','아무도 없는데, 회전목마가 다시 돈다','dead');
-  await announce('…손님 여러분… 아직… 공원에 남아 계신 분은… 회전목마 앞으로…',{broken:true,ms:3400});
-  AUDIO.stopMusic(); setTimeout(()=>{ if(!S.over) AUDIO.music('dead'); },6000); }
+/* 사건표 : at = 공원 시각(분, 자정 이후는 24*60+). 내용은 story.js · rooms/*.js 에서 push */
+const EVENTS=[];
+
+/* 목적지 화살표 : setGoal(x,z,'이름') / setGoal(null) */
+const GOAL={on:false};
+function setGoal(x,z,name){ if(x===null||x===undefined){ GOAL.on=false; $('#goal').classList.remove('on'); return; } Object.assign(GOAL,{on:true,x,z,name}); $('#goal').classList.add('on'); }
+function tickGoal(){ if(!GOAL.on) return; const dx=GOAL.x-P.x, dz=GOAL.z-P.z, d=Math.hypot(dx,dz);
+  const rel=Math.atan2(-dx,-dz)-P.yaw; $('#goal i').style.transform=`rotate(${-rel}rad)`; $('#goal span').textContent=`${GOAL.name||''} ${d<2?'도착':Math.round(d)+'m'}`; }
+
+/* 번호 자물쇠 : keypad({title, len, hint, check:(code)=>bool}) → Promise<성공 여부> */
+function keypad({title='번호 자물쇠',len=4,hint='',check}){ return new Promise(res=>{ const el=$('#keypad'), scr=el.querySelector('.scr'); let code='';
+  el.querySelector('.kt').textContent=title; el.querySelector('.kh').innerHTML=hint; const draw=()=>{ scr.textContent=code.padEnd(len,'_').split('').join(' '); }; draw();
+  el.querySelectorAll('.keys button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; AUDIO.tick();
+    if(k==='C'){ code=''; draw(); return; }
+    if(k==='OK'){ if(code.length<len){ AUDIO.err(); return; } if(check(code)){ AUDIO.ok(); scr.classList.add('ok'); setTimeout(()=>{ scr.classList.remove('ok'); ov('#keypad',false); res(true); },700); }
+      else { AUDIO.err(); scr.classList.add('bad'); setTimeout(()=>{ scr.classList.remove('bad'); code=''; draw(); },600); } return; }
+    if(code.length<len){ code+=k; draw(); } });
+  el.querySelector('.close').onclick=()=>{ ov('#keypad',false); res(false); }; ov('#keypad',true); }); }
 
 /* 카메라 연출 */
 let camAnim=null;
@@ -240,12 +244,20 @@ const SIGNS={
   coaster:['롤러코스터','키 120cm 이상 탑승','#8e231c','#f2ede2'], haunted:['유령의 집','들어간 사람은 있어도…','#151515','#b8b0a0'],
   game_0:['오리 낚시','','#8e231c','#f2ede2'], game_1:['사 격','','#2f4f7a','#f2ede2'], game_2:['고리 던지기','','#2f6a4a','#f2ede2'],
   food_8:['핫도그','','#f0e6d0','#8e231c'], food_15:['음료','','#f0e6d0','#2f4f7a'], tower:['자이로드롭','','#e8dcc0','#8e231c'], bumper:['범퍼카','BUMPER CARS','#e3b54a','#1b1b1b'],
-  shed:['창고','','#d8d2c2','#2a2a2a'], staff:['관계자 외 출입금지','STAFF ONLY','#e8dcc0','#8e231c'], office:['관리동','통제실 2F','#d8d2c2','#2a2a2a'], exit:['비상구','','#1f6a3a','#f2ede2']
+  shed:['창고','','#d8d2c2','#2a2a2a'], staff:['관계자 외 출입금지','STAFF ONLY','#e8dcc0','#8e231c'], office:['관리동','통제실 2F','#d8d2c2','#2a2a2a'], exit:['비상구','','#1f6a3a','#f2ede2'],
+  // v2 맵
+  icecream:['달토끼 아이스크림','MOON BUNNY ICE CREAM','#fbe9ef','#c0405f'], icecream_menu:['딸기 · 초코 · 바닐라','한 스쿱 3,000원 · 보름달 콘 +500원','#3a2430','#ffd9e4'],
+  dorm:['직원 숙소','STAFF DORM · 야간 점검조','#e8eef2','#2a3a4a'], dorm_rule:['야간 점검조 수칙','자정 이후 혼자 다니지 말 것 · 절구 소리가 들리면 건물 안으로','#f2ede2','#7a1d16'],
+  rabbit_plate:['달토끼','LUNA LAND 마스코트 · 달에서 떡방아를 찧는 토끼','#c9a23e','#2a1a0a'],
+  dir_0:['← 회전목마 · 직원 숙소','','#2f4f7a','#f2ede2'], dir_1:['서커스 →','','#8e231c','#f2ede2'], dir_2:['↑ 관람차 · 유령의 집','','#2f6a4a','#f2ede2'],
+  poster_0:['보름달 축제','달토끼와 함께하는 야간 개장 · 매일 19:00','#1b2440','#ffe2a8'], poster_1:['달빛 퍼레이드','오늘 밤 보름달 · 20:30 중앙 광장','#2a1a3a','#f2d2ff'],
 };
+for(let i=1;i<=10;i++) SIGNS['locker_'+i]=[String(i),'','#e8e4da','#1a1a1a'];
 // 잠긴 문 (Blender COL_GATE_<key>) — 방에서 openGate(key) 로 연다
-const GATES={coaster:'롤러코스터 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
+const GATES={dorm:'숙소 문', coaster:'롤러코스터 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
+const GATE_TAP={};   // 방 스크립트가 문마다 동작을 붙인다 : GATE_TAP.dorm=()=>{…}
 function openGate(k){ S.flags['open_'+k]=true; }
-const PARK={mats:[],zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
+const PARK={mats:[],mat:{},items:{},spawns:{},spots:{},lights:{},zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
 
 async function buildPark(){
   const root=await loadGLB('park'); WORLD.add(root); root.updateMatrixWorld(true);
@@ -261,13 +273,16 @@ async function buildPark(){
     if(/^FLOOR_/.test(n)){ bb.setFromObject(o); const f={x1:bb.min.x,x2:bb.max.x,z1:bb.min.z,z2:bb.max.z,y:bb.max.y};
       FLOORS.push({test:(x,z)=>x>f.x1&&x<f.x2&&z>f.z1&&z<f.z2,y:()=>f.y}); kill.push(o); return; }
     if(/^(LAMP|LIGHT)_/.test(n)){ const u=o.userData; const l=regLight(new THREE.PointLight(new THREE.Color(u.color||'#ffb46b'),u.i||1,u.d||14,1.6)); o.getWorldPosition(l.position); scene.add(l);
-      const e=LIGHTS[LIGHTS.length-1]; if(n.startsWith('LAMP_')&&Math.random()<.22) e.flicker=Math.random()*10; if((u.d||0)>30) e.far=30; return; }
+      const e=LIGHTS[LIGHTS.length-1]; PARK.lights[n.slice(n.indexOf('_')+1)]=e; if(n.startsWith('LAMP_')&&Math.random()<.22) e.flicker=Math.random()*10; if((u.d||0)>30) e.far=30; return; }
     if(/^SIGN_/.test(n)){ const k=n.slice(5), u=o.userData, s=SIGNS[k]; if(k==='map') return addMapBoard(o,u); if(!s) return;
       const tex=TEX.sign(s.slice(0,2).filter(Boolean),s[2],s[3],1024,Math.round(1024*u.h/u.w)||256);
       const m=new THREE.Mesh(new THREE.PlaneGeometry(u.w,u.h),new THREE.MeshStandardMaterial({map:tex,roughness:.8,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.08}));
       o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); return; }
     if(/^ZONE_/.test(n)){ o.getWorldPosition(v); PARK.zones.push({id:n.slice(5),title:o.userData.title||n,r:o.userData.r||8,x:v.x,z:v.z}); return; }
     if(n==='SPAWN'){ o.getWorldPosition(v); PARK.spawn={x:v.x,z:v.z,yaw:0}; return; }
+    if(/^(SPAWN|SPOT)_/.test(n)){ o.getWorldPosition(v); o.getWorldQuaternion(q); const e=new THREE.Euler().setFromQuaternion(q,'YXZ');
+      (n.startsWith('SPAWN_')?PARK.spawns:PARK.spots)[n.replace(/^(SPAWN|SPOT)_/,'')]={x:v.x,z:v.z,yaw:e.y}; return; }
+    if(/^IT_/.test(n)) PARK.items[n.slice(3)]=o;      // 조사할 수 있는 물체 (방 스크립트가 INTER 에 붙인다)
     if(/^ANIM_/.test(n)) PARK.anim[n.slice(5)]=o;
     if(/^GONDOLA_/.test(n)) PARK.gondolas.push(o);
     if(o.isMesh){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m)); }
@@ -276,7 +291,8 @@ async function buildPark(){
   // 재질 손보기 : Blender 속성(tint, glow) 반영
   mats.forEach(m=>{ const u=m.userData||{};
     if(u.tint) m.color.set(u.tint).convertSRGBToLinear();
-    if(u.glow){ m.emissiveIntensity=u.glow; if(/bulb/.test(m.name)) PARK.bulbs.push(m); }
+    if(u.glow!==undefined){ m.emissiveIntensity=u.glow; if(/bulb/.test(m.name)&&u.glow>0) PARK.bulbs.push(m); }
+    PARK.mat[m.name]=m;
     ['map','normalMap','roughnessMap'].forEach(k=>{ if(m[k]) m[k].anisotropy=8; });
     m.envMapIntensity=0.55; PARK.mats.push(m); });
   // 낙서 한 줄 (정문 안쪽 담)
@@ -285,7 +301,7 @@ async function buildPark(){
 }
 const PICK=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}); // 보이지 않는 탭 판정용
 
-async function gateTap(k){ AUDIO.click(); AUDIO.noise(.3,.25,0,400); await mono(['…잠겨 있다.']); }
+async function gateTap(k){ if(GATE_TAP[k]) return GATE_TAP[k](); AUDIO.click(); AUDIO.noise(.3,.25,0,400); await mono(['…잠겨 있다.']); }
 
 /* 공원 지도 (안내판 + M 키) */
 function drawMap(g,W,H,me){
@@ -316,10 +332,12 @@ const SKY_KEYS=[
  // 시각       하늘 위     중간       지평선     안개색     안개   노출  반구광 해   별   해높이 반사광(env)
  {m:19*60,    top:'#2b2a5a',mid:'#a24f7c',hor:'#ff9a5a',fog:'#5a4058',fd:.010,ex:1.30,hemi:.75,sun:1.0,star:0,  sy:.06,env:.75},
  {m:19*60+50, top:'#141a40',mid:'#40407a',hor:'#b0607a',fog:'#2e2a44',fd:.014,ex:1.15,hemi:.50,sun:.25,star:.35,sy:-.04,env:.55},
- {m:21*60,    top:'#05070f',mid:'#0e1528',hor:'#3a2f48',fog:'#16192a',fd:.018,ex:1.05,hemi:.34,sun:0,  star:1,  sy:-.2,env:.42},
- {m:22*60+10, top:'#040509',mid:'#0a0f1c',hor:'#1c1d2a',fog:'#11141d',fd:.022,ex:1.00,hemi:.30,sun:0,  star:1,  sy:-.3,env:.32},
- {m:24*60,    top:'#020306',mid:'#06080f',hor:'#120f16',fog:'#0b0b10',fd:.030,ex:.95, hemi:.24,sun:0,  star:1,  sy:-.4,env:.18},
- {m:27*60,    top:'#020205',mid:'#05060b',hor:'#0e0b10',fog:'#08080b',fd:.036,ex:.92, hemi:.20,sun:0,  star:.8, sy:-.4,env:.14},
+ {m:21*60,    top:'#070b1c',mid:'#121c3a',hor:'#3a3552',fog:'#181d30',fd:.016,ex:1.08,hemi:.40,sun:0,  star:.8, sy:-.2,env:.45},
+ {m:22*60,    top:'#060a18',mid:'#101a32',hor:'#2a2c48',fog:'#141a2a',fd:.017,ex:1.05,hemi:.38,sun:0,  star:.9, sy:-.3,env:.40},
+ {m:24*60,    top:'#03050c',mid:'#0a1020',hor:'#181a28',fog:'#0c0f18',fd:.024,ex:1.00,hemi:.32,sun:0,  star:1,  sy:-.4,env:.30},
+ {m:27*60,    top:'#020308',mid:'#070a14',hor:'#12121c',fog:'#090a10',fd:.032,ex:.96, hemi:.26,sun:0,  star:1,  sy:-.4,env:.22},
+ {m:29*60+20, top:'#0a1028',mid:'#1a2244',hor:'#4a3a58',fog:'#1a1c2c',fd:.022,ex:1.02,hemi:.34,sun:0,  star:.4, sy:-.1,env:.32},
+ {m:30*60,    top:'#1a2448',mid:'#3a4a7a',hor:'#c08070',fog:'#3a3448',fd:.014,ex:1.12,hemi:.50,sun:.2, star:.05,sy:.0, env:.5},
 ];
 const SKY={};
 function buildSkyDome(){
@@ -334,7 +352,10 @@ function buildSkyDome(){
         float s=max(dot(d,normalize(sunDir)),0.); c+=vec3(1.,.62,.36)*(pow(s,6.)*.35+pow(s,64.)*.6+smoothstep(.9994,.9997,s)*1.2)*sunAmt;
         vec3 g=floor(d*380.); float st=step(.9975,h3(g)); float tw=.6+.4*sin(t*3.+h3(g+1.)*40.);
         c+=vec3(.85,.9,1.)*st*tw*starAmt*smoothstep(.06,.35,y);
-        float m=dot(d,moonDir); c+=vec3(.9,.92,1.)*smoothstep(.99955,.9997,m)*starAmt + vec3(.25,.3,.45)*pow(max(m,0.),180.)*starAmt*.5;
+        // 보름달 : 원반 + 무늬(바다) + 달무리. 지평선 아래면 안 보인다
+        float m=dot(d,moonDir), up=smoothstep(-.02,.03,moonDir.y); float disc=smoothstep(.99935,.9995,m);
+        float mar=h3(floor(d*900.))*.12+.88-.18*smoothstep(.4,.9,sin(d.x*700.)*sin(d.y*650.+1.3));
+        c=mix(c,vec3(1.,.98,.9)*mar*1.15,disc*up); c+=vec3(.35,.4,.55)*(pow(max(m,0.),120.)*.5+pow(max(m,0.),12.)*.08)*up;
         gl_FragColor=vec4(c,1.); }`});
   const dome=new THREE.Mesh(new THREE.SphereGeometry(230,32,16),mat); dome.renderOrder=-1; dome.frustumCulled=false; scene.add(dome);
   SKY.u=u; SKY.dome=dome; }
@@ -342,17 +363,20 @@ async function buildSky(){ const im=await loadImg('sky'); const t=new THREE.Text
   const pm=new THREE.PMREMGenerator(renderer); scene.environment=pm.fromEquirectangular(t).texture; pm.dispose(); scene.background=null;
   buildSkyDome();
   SKY.hemi=new THREE.HemisphereLight(0x8a9ab8,0x1a1612,0.32); scene.add(SKY.hemi);
-  SKY.moon=new THREE.DirectionalLight(0xa9bce0,0.38); SKY.moon.position.set(-30,40,-60); scene.add(SKY.moon);
-  SKY.sun=new THREE.DirectionalLight(0xff9a5a,0); SKY.sun.position.set(60,8,30); scene.add(SKY.sun);   // 해 질 녘 서쪽 빛
+  SKY.moon=new THREE.DirectionalLight(0xb8c8f0,0.38); scene.add(SKY.moon);                          // 보름달 빛
+  SKY.sun=new THREE.DirectionalLight(0xff9a5a,0); SKY.sun.position.set(-60,8,-25); scene.add(SKY.sun); // 해 질 녘 서북서 빛
   tickSky(0,true); }
 const _c1=new THREE.Color(),_c2=new THREE.Color(); let skyT=0;
 function tickSky(dt,force){ if(!SKY.u) return; SKY.u.t.value+=dt; skyT+=dt; if(!force&&skyT<0.2) return; skyT=0;
   const m=parkMin(); let i=0; while(i<SKY_KEYS.length-2&&m>SKY_KEYS[i+1].m) i++; const a=SKY_KEYS[i],b=SKY_KEYS[i+1]; const k=clamp((m-a.m)/(b.m-a.m),0,1);
   const col=(key,out)=>out.set(a[key]).lerp(_c2.set(b[key]),k), num=key=>lerp(a[key],b[key],k);
   col('top',SKY.u.top.value); col('mid',SKY.u.mid.value); col('hor',SKY.u.hor.value);
-  const sy=num('sy'); SKY.u.sunDir.value.set(.85,sy,.5).normalize(); SKY.u.sunAmt.value=num('sun'); SKY.u.starAmt.value=num('star');
+  const sy=num('sy'); SKY.u.sunDir.value.set(-.85,sy,-.35).normalize(); SKY.u.sunAmt.value=num('sun'); SKY.u.starAmt.value=num('star');
+  // 보름달 : 해가 질 무렵 동쪽에서 떠서, 자정 무렵 남쪽 하늘 가장 높이, 해 뜰 무렵 서쪽으로 진다 (남중 고도 약 50°로 둠)
+  const ma=(m-19*60)/(11*60)*Math.PI, alt=50*Math.PI/180; const md=SKY.u.moonDir.value.set(Math.cos(ma),Math.sin(ma)*Math.sin(alt),Math.sin(ma)*Math.cos(alt)).normalize();
+  SKY.moon.position.copy(md).multiplyScalar(100); SKY.moon.intensity=Math.max(0,md.y)*0.55+0.08;
   col('fog',_c1); scene.fog.color.copy(_c1).convertSRGBToLinear(); scene.fog.density=num('fd'); renderer.toneMappingExposure=DBG.bright?2.6:num('ex');
-  SKY.hemi.intensity=num('hemi'); const env=num('env'); PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; SKY.moon.intensity=0.18+num('star')*0.22; }
+  SKY.hemi.intensity=num('hemi'); const env=num('env'); PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; }
 
 /* 구역 : 처음 들어가면 이름 표시 */
 let zoneT=0, curZone=null;
@@ -368,18 +392,6 @@ function tickZones(dt){ zoneT+=dt; if(zoneT<0.25) return; zoneT=0; let z=null;
    ============================================================ */
 const ROOMS=[];
 
-/* ---------------- 시작 ---------------- */
-async function intro(){
-  const sp=PARK.spawn; P.x=sp.x; P.z=sp.z; P.y=0; P.yaw=sp.yaw; P.pitch=0.12; P.free=false;
-  $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); } $('#lightBtn').classList.add('on');
-  objective('…'); AUDIO.music('open'); await sleep(300); $('#fade').classList.add('clear');
-  await card('19:00','야간 개장','루나랜드 · 해 질 녘','dusk',3200);
-  await mono(['…늦지 않았다. 7시 정각.','야간 개장 마지막 날이라더니, 생각보다 사람이 없네.','폐장은 밤 10시. 그 전에 한 바퀴 돌아보자.']);
-  P.free=true; S.phase='play'; startTimer(); objective('공원 안으로 들어가 둘러보자 (폐장 22:00)');
-  $('#hint').textContent=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사':'WASD 이동 · Shift 달리기 · 마우스 끌기 시점 · E 조사 · F 손전등 · M 지도';
-  setTimeout(()=>$('#hint').textContent='',12000);
-}
-
 /* ---------------- 메인 루프 ---------------- */
 let last=performance.now(),fpsN=0,fpsT=0,fps=0;
 function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-last)/1000); const dt=Math.min(0.1,dtReal); last=now; S.t+=dt;
@@ -394,8 +406,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   tickJump(dt);
   const eyeY=P.free&&P.grounded?P.eye+Math.sin(P.bob||0)*(P.bobA||0):P.eye;
   camera.position.set(P.x,P.y+eyeY,P.z); camera.rotation.order='YXZ'; camera.rotation.set(P.pitch,P.yaw,0);
-  tickLights(dt); tickZones(dt);
-  // 놀이기구 : 아주 느리게 돈다
+  tickLights(dt); tickZones(dt); tickGoal();
   // 놀이기구 : 운영 중엔 돌고, 폐장하면 서서히 멈추고, 자정엔 회전목마만 혼자 돈다
   const A=PARK.anim, tgtC=S.ridesGhost?0.25:S.closed?0:0.55, tgtW=S.closed?0:0.06;
   S.rC=lerp(S.rC??tgtC,tgtC,1-Math.pow(0.6,dt)); S.rW=lerp(S.rW??tgtW,tgtW,1-Math.pow(0.7,dt));
@@ -407,17 +418,18 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   // 조사 대상
   if(P.free&&!S.busy){ const it=pick(0,0); if(it!==hot){ hot=it; $('#label').textContent=it?it.name:''; $('#label').classList.toggle('on',!!it); $('#cross').classList.toggle('hot',!!it); $('#interact').classList.toggle('on',!!it); } }
   else if(hot){ hot=null; $('#label').classList.remove('on'); $('#cross').classList.remove('hot'); $('#interact').classList.remove('on'); }
-  ROOMS.forEach(r=>r.tick&&r.tick(dt));
+  ROOMS.forEach(r=>r.tick&&r.tick(dt)); if(typeof CROWD!=='undefined') CROWD.tick(dt);
   renderer.render(scene,camera);
   fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`fps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+D 정보 · Shift+1~0 구역 이동 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 */
+/* 제작용 디버그 : Shift+D 정보 · Shift+1~0 구역 이동 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 const DBG={on:false};
 function dbgKey(e){ if(!e.shiftKey) return;
   if(e.code==='KeyD'){ DBG.on=!DBG.on; $('#dbg').style.display=DBG.on?'block':'none'; }
   if(e.code==='KeyG'){ Object.keys(GATES).forEach(openGate); toast('모든 문 열림 (디버그)'); }
   if(e.code==='KeyN'){ DBG.bright=!DBG.bright; tickSky(0,true); }
-  if(e.code==='KeyT'){ timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
+  if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
+  if(e.code==='KeyK'&&typeof skipIntro==='function') skipIntro();
   const d=(e.code.match(/Digit(\d)/)||[])[1]; if(d===undefined) return; const z=PARK.zones[(+d+9)%10]; if(!z) return;
   P.x=z.x; P.z=z.z; P.y=floorAt(z.x,z.z); P.vx=P.vz=0; toast(z.title); }
 
@@ -428,17 +440,16 @@ function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px
   for(let i=0;i<16;i++){ const a=i/16*Math.PI*2, l=document.createElementNS(NS,'line'); l.setAttribute('x1',0); l.setAttribute('y1',0); l.setAttribute('x2',Math.cos(a)*190); l.setAttribute('y2',Math.sin(a)*190); sp.appendChild(l); }
   for(let i=0;i<32;i++){ const a=i/32*Math.PI*2, c=document.createElementNS(NS,'circle'); c.setAttribute('cx',Math.cos(a)*190); c.setAttribute('cy',Math.sin(a)*190); c.setAttribute('r',5);
     c.style.animationDelay=(i%4)*0.6+'s'; wb.appendChild(c); }
-  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>새벽 3시가 되면 공원이 닫힙니다.':'이용 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · F 손전등 · M 지도 · Esc 정지<br>공원 시간은 실제 1분에 12분씩 흐릅니다. 새벽 3시가 되면 공원이 닫힙니다.'; })();
+  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>야간 점검은 아침 6시에 끝납니다.':'근무 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · F 손전등 · M 지도 · Esc 정지<br>밤 10시부터 공원 시간은 실제 1분에 12분씩 흐릅니다. 아침 6시 전에 모든 점검을 끝내야 합니다.'; })();
 
 async function boot(){ try{
-    loadStep(8,'공원 불을 켜는 중…'); await buildSky(); loadStep(30,'놀이기구 점검 중…'); await sleep(30);
-    await buildPark(); loadStep(85,'매표소 문 여는 중…');
+    loadStep(8,'공원 불을 켜는 중…'); await buildSky(); loadStep(30,'근무표 확인 중…'); await sleep(30);
+    await buildPark(); loadStep(80,'손님 맞을 준비 중…'); if(typeof CROWD!=='undefined') CROWD.build();
     for(const r of ROOMS) if(r.build) await r.build();
     PARK.zones.sort((a,b)=>b.z-a.z);   // 남쪽(정문) → 북쪽 순서 = 디버그 단축키 순서
-    loadStep(100,'발권 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(500);
+    loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(500);
     $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(600); $('#loading').style.display='none';
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
 $('#startBtn').onclick=async()=>{ if(S.phase!=='title') return; S.phase='intro'; AUDIO.init(); if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume();
   $('#startBtn').classList.add('torn'); AUDIO.noise(.25,.3,0,2400); await sleep(700);
   $('#fade').classList.remove('clear'); await sleep(900); AUDIO.wind(); ov('#start',false); S.busy=false; intro(); };
-boot(); requestAnimationFrame(frame);
