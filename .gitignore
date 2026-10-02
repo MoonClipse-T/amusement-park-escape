@@ -1,0 +1,13 @@
+# Blender autosave/backup
+*.blend1
+*.blend2
+*.blend@
+# Node / build
+node_modules/
+dist/
+.vite/
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
