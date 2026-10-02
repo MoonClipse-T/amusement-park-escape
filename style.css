@@ -223,7 +223,11 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 #goal{position:absolute;top:calc(64px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:none;align-items:center;gap:6px;
  padding:3px 10px 3px 6px;border-radius:12px;background:rgba(10,8,6,.5);border:1px solid rgba(255,179,64,.35);color:#f2e2c0;font-size:12px;}
 #goal.on{display:flex;}
-#goal i{font-style:normal;color:var(--amber);display:inline-block;font-size:13px;transition:transform .1s linear;}
+#goal{gap:10px;padding:5px 14px 5px 6px;border-radius:24px;font-size:14px;font-weight:700;background:rgba(10,8,6,.7);border:1.5px solid rgba(255,179,64,.6);}
+#goal svg{width:40px;height:40px;flex:none;transition:transform .1s linear;}
+#goal svg circle{fill:rgba(255,179,64,.15);stroke:rgba(255,179,64,.6);stroke-width:1.5;}
+#goal svg path{fill:var(--amber);stroke:#1a1208;stroke-width:1.2;stroke-linejoin:round;}
+#goal.here svg path{fill:#7dff9a;}
 
 /* ---------------- 번호 자물쇠 ---------------- */
 .lockpad{width:min(300px,86vw);background:linear-gradient(#3a3d42,#23252a);border:2px solid #555a62;border-radius:14px;padding:20px 18px 16px;text-align:center;
@@ -244,7 +248,7 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .fhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;background:repeating-linear-gradient(-45deg,#f2c230 0 14px,#1b1b1b 14px 28px);}
 .fhead .ft{font:400 20px/1.2 var(--sign);letter-spacing:3px;color:#111;background:#f2c230;padding:2px 8px;}
 .fhead .fsub{font:700 10px/1 var(--led);letter-spacing:3px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
-#fcv,#lcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
+#fcv,#lcv,#fcv2{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
 .fq{margin:12px 18px 6px;font-size:14px;line-height:1.6;color:#d8cfbd;text-align:left;}
 .fq b{color:#f2c230;}
 .frow{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 14px 0;}
@@ -289,3 +293,11 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .cl.on i{background:radial-gradient(circle at 40% 35%,#9dffc4,#1fae5a);box-shadow:0 0 14px rgba(61,220,132,.8);}
 .cl.bad i{background:radial-gradient(circle at 40% 35%,#ff9a8a,#d11d10);box-shadow:0 0 14px rgba(255,59,48,.85);animation:blink .6s steps(2) infinite;}
 .cl.bad b{color:#ff6a50;}
+
+/* ---------------- 범퍼카 ---------------- */
+.cgrid.c3{grid-template-columns:repeat(3,56px);}
+.ftab{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:4px 14px 0;}
+.ftab div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border:1px solid #3a3d42;border-radius:4px;background:#121417;font-size:12px;color:#8a8d93;}
+.ftab div b{color:#cfc8b8;font-size:12px;} .ftab div span{font:700 15px/1.2 var(--led);color:#e9e2d2;}
+.ftab div.cur{border-color:var(--amber);} .ftab div.odd span{color:#ff6a50;}
+#fric .fgo{user-select:none;-webkit-user-select:none;touch-action:none;}

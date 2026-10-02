@@ -3,7 +3,7 @@
    19:00 첫 출근 · 달토끼 아이스크림 판매 (손님 2명 : 어른 남자 → 아이, 시간은 이야기로 흐른다)
    22:00 마감 → 화면 암전 후 시간 이동 · 손님은 모두 퇴장, 점검을 위해 불은 켜 둔다
         → 매니저 무전 : 직원 숙소의 '점검 지시서 #1' 을 찾아라  (방 1 : rooms/room1_dorm.js)
-   00:00 자정 · 02:00 · 04:00 사건 → 06:00 시간 종료
+   00:00 자정 · 02:00 · 04:00 시간 카드 → 06:00 시간 종료
    ============================================================ */
 'use strict';
 const FLAVOR={vanilla:'바닐라',strawberry:'딸기',choco:'초코'};
@@ -103,11 +103,9 @@ function skipIntro(){ if(S.stage!=='shift') return; S.introSkip=true; if(ORDER){
 
 /* ---------------- 밤의 사건 ---------------- */
 EVENTS.push(
-  {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true; S.ridesGhost=true; rabbitGlint(); AUDIO.music('dead');
-    if(PARK.scrawl) PARK.scrawl.visible=true;
-    await card('00:00','자정','보름달이 가장 높이 떴다. 아무도 없는데, 회전목마가 돈다.','dead');
-    await announce('…손님 여러분… 아직… 공원에 남아 계신 분은… 달토끼 앞으로… 모여 주십시오…',{broken:true,ms:3400,voice:'pa_midnight'});
-    AUDIO.stopMusic(); setTimeout(()=>{ if(!S.over) AUDIO.music('dead'); },6000); }},
+  // 자정 : 시각만 알린다 (회전목마가 혼자 도는 일은 범퍼카에 도착했을 때 · rooms/room2_carousel.js)
+  {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true; rabbitGlint();
+    if(PARK.scrawl) PARK.scrawl.visible=true; await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   {at:24*60+240, fn:()=>card('04:00','새벽 4시','해 뜨기까지 두 시간','dead',3000)},
 );

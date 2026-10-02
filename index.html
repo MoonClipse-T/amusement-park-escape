@@ -21,7 +21,7 @@
   <div id="cross"></div><div id="label"></div>
   <button id="interact" class="rbtn">조사</button><button id="jumpBtn" class="rbtn">점프</button><button id="lightBtn" class="rbtn">손전등</button>
   <div id="stick"><div id="knob"></div></div>
-  <div id="goal"><i>▲</i><span></span></div>
+  <div id="goal"><svg viewBox="-20 -20 40 40" aria-hidden="true"><circle r="18"/><path d="M0,-15 L10,1 L4,1 L4,13 L-4,13 L-4,1 L-10,1 Z"/></svg><span></span></div>
   <div id="hint"></div><div id="toast"></div>
 </div>
 
@@ -75,12 +75,29 @@
 
 <!-- 쓰러진 말 다시 걸기 : 용수철저울 · 리프트 (방 2) -->
 <div id="lift" class="ov"><button class="close">✕</button><div class="fpad">
-  <div class="fhead"><span class="ft">말 다시 걸기</span><span class="fsub">SPRING SCALE · N</span></div>
-  <canvas id="lcv" width="720" height="330"></canvas>
+  <div class="fhead"><span class="ft">말의 무게 재기</span><span class="fsub">SPRING SCALE · N</span></div>
+  <canvas id="lcv" width="720" height="380"></canvas>
   <p class="fq"></p>
-  <div class="frow"><span class="fl">리프트 방향</span><button data-d="up" class="fdir on">▲ 위로</button><button data-d="down" class="fdir">▼ 아래로</button></div>
-  <div class="frow"><span class="fl">힘의 크기</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
-  <button class="fgo">리프트 작동</button><p class="fmsg"></p></div></div>
+  <div class="frow"><span class="fl">말에 작용하는 중력</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
+  <button class="fgo">확인</button><p class="fmsg"></p></div></div>
+
+<!-- 범퍼카 조작반 : 전원 · 범퍼카 전기 램프 6개 (방 3) -->
+<div id="bctrl" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">범퍼카 조작반</span><span class="fsub">BUMPER CARS CONTROL</span></div>
+  <div class="cbody">
+    <div class="cpow"><button class="cpbtn" aria-label="전원"></button><span>ON / OFF</span></div>
+    <div class="cgrid c3"></div>
+  </div><p class="fmsg"></p></div></div>
+
+<!-- 범퍼카 마찰력 측정 (방 3) -->
+<div id="fric" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">마찰력 측정</span><span class="fsub">FRICTION · N</span></div>
+  <canvas id="fcv2" width="720" height="260"></canvas>
+  <p class="fq"></p>
+  <div class="ftab"></div>
+  <div class="frow"><button class="fgo">누르고 있으면 당기기</button></div>
+  <div class="frow"><button class="fdir foil">윤활유 조금 뿌리기</button><button class="fdir fwipe">걸레로 닦아 내기</button></div>
+  <p class="fmsg"></p></div></div>
 
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
@@ -143,6 +160,7 @@
 <script src="story.js"></script>
 <script src="rooms/room1_dorm.js"></script>
 <script src="rooms/room2_carousel.js"></script>
+<script src="rooms/room3_bumper.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
