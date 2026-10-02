@@ -107,7 +107,7 @@ function addBox(x1,z1,x2,z2,on){ COL.push({x1:Math.min(x1,x2),z1:Math.min(z1,z2)
 
 /* --- 입력 --- */
 const keys={};
-addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; keys[e.code]=true; if(e.code==='Space'&&$('#mono').classList.contains('on')){ monoNext(); return; } if(S.phase!=='play') return;
+addEventListener('keydown',e=>{ if(e.target&&e.target.tagName==='INPUT') return; keys[e.code]=true; if(e.code==='Space'&&$('#mono').classList.contains('on')){ monoNext(); return; } if(S.phase!=='play'){ if(S.phase==='intro') dbgKey(e); return; }
   if(e.code==='KeyE'&&!S.busy) tryInteract(); if(e.code==='Escape') togglePause(); if(e.code==='KeyF') toggleLight(); if(e.code==='KeyM') toggleMap(); if(e.code==='KeyI'&&!S.busy) INV.open();
   if(e.code==='Space') jump(); dbgKey(e); });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
@@ -472,18 +472,34 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   else if(hot){ hot=null; $('#label').classList.remove('on'); $('#cross').classList.remove('hot'); $('#interact').classList.remove('on'); }
   ROOMS.forEach(r=>r.tick&&r.tick(dt)); if(typeof CROWD!=='undefined') CROWD.tick(dt);
   renderer.render(scene,camera);
-  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`fps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
+  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+1~9 방 바로 가기 · Shift+0 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+D 정보 · Shift+1~0 구역 이동 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
+/* 제작용 디버그 : Shift+1~9 방(퍼즐) 바로 가기 · Shift+0 바로 가기 목록 · Alt+1~0 구역 이동
+   Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
+// 바로 가기 : 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
+const CHECKPOINTS=[];
+function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P.vy=0; P.grounded=true; if(lookX!==undefined) P.yaw=Math.atan2(-(lookX-x),-(lookZ-z)); P.pitch=0; P.free=true; }
+function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
+// 앞 단계로 돌아가도 상태가 섞이지 않게, 바로 가기는 늘 새로 불러온 뒤(?cp=번호) 그 자리로 간다
+function jumpTo(key){ if(CHECKPOINTS.some(c=>c.key===key)) location.search='?cp='+key; }
+// 바로 가기로 새로 불러오면 소리가 잠겨 있다 → 첫 클릭 · 키에서 깨운다
+['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{ if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume(); },true));
+const CP=(location.search.match(/[?&]cp=(\d)/)||[])[1];
+async function runCheckpoint(key){ const c=CHECKPOINTS.find(c=>c.key===key); if(!c) return;
+  while($('#mono').classList.contains('on')) monoNext(); document.querySelectorAll('.ov.on').forEach(el=>{ if(el.id!=='start') ov('#'+el.id,false); });
+  camAnim=null; await ensureNight(); while($('#mono').classList.contains('on')) monoNext();
+  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); toast('디버그 · '+key+'. '+c.name); }
+function checkpointList(){ showMsg('디버그 · 방 바로 가기',CHECKPOINTS.slice().sort((a,b)=>a.key.localeCompare(b.key)).map(c=>'<b>Shift+'+c.key+'</b> &nbsp;'+c.name).join('<br>')+'<br><br><span style="opacity:.6">Alt+숫자 : 구역(놀이기구) 위치로만 이동</span>'); }
 const DBG={on:false};
-function dbgKey(e){ if(!e.shiftKey) return;
+function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
+  if(e.altKey&&d!==undefined){ e.preventDefault(); const z=PARK.zones[(+d+9)%10]; if(z){ P.x=z.x; P.z=z.z; P.y=floorAt(z.x,z.z); P.vx=P.vz=0; toast(z.title); } return; }
+  if(!e.shiftKey) return;
   if(e.code==='KeyD'){ DBG.on=!DBG.on; $('#dbg').style.display=DBG.on?'block':'none'; }
   if(e.code==='KeyG'){ Object.keys(GATES).forEach(openGate); toast('모든 문 열림 (디버그)'); }
   if(e.code==='KeyN'){ DBG.bright=!DBG.bright; tickSky(0,true); }
   if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
   if(e.code==='KeyK'&&typeof skipIntro==='function') skipIntro();
-  const d=(e.code.match(/Digit(\d)/)||[])[1]; if(d===undefined) return; const z=PARK.zones[(+d+9)%10]; if(!z) return;
-  P.x=z.x; P.z=z.z; P.y=floorAt(z.x,z.z); P.vx=P.vz=0; toast(z.title); }
+  if(d===undefined) return; e.preventDefault(); if(d==='0') checkpointList(); else jumpTo(d); }
 
 /* 불러오기 : 입장권이 발권기에서 조금씩 나온다 */
 function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px'; $('#lpct').textContent=pct+'%'; if(msg) $('#lmsg').textContent=msg; }
@@ -501,6 +517,7 @@ async function boot(){ try{
     PARK.zones.sort((a,b)=>b.z-a.z);   // 남쪽(정문) → 북쪽 순서 = 디버그 단축키 순서
     loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(500);
     $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(600); $('#loading').style.display='none';
+    if(CP) $('#startBtn').click();     // 디버그 바로 가기 : 시작 화면을 건너뛴다
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
 $('#startBtn').onclick=async()=>{ if(S.phase!=='title') return; S.phase='intro'; AUDIO.init(); if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume();
   $('#startBtn').classList.add('torn'); AUDIO.noise(.25,.3,0,2400); await sleep(700);
