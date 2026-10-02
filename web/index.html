@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>루나랜드 — 야간 개장</title>
+<title>루나랜드 — 야간 알바</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -21,6 +21,7 @@
   <div id="cross"></div><div id="label"></div>
   <button id="interact" class="rbtn">조사</button><button id="jumpBtn" class="rbtn">점프</button><button id="lightBtn" class="rbtn">손전등</button>
   <div id="stick"><div id="knob"></div></div>
+  <div id="goal"><i>▲</i><span></span></div>
   <div id="hint"></div><div id="toast"></div>
 </div>
 
@@ -42,6 +43,12 @@
 <!-- 쪽지 · 단서 -->
 <div id="msg" class="ov"><div class="note"><i class="tape"></i><h2 id="msgT"></h2><p id="msgP"></p><button id="msgOk">접기</button></div></div>
 
+<!-- 번호 자물쇠 -->
+<div id="keypad" class="ov"><button class="close">✕</button><div class="lockpad"><div class="kt"></div><div class="scr">_ _ _ _</div>
+  <div class="keys"><button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+  <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="C" class="fn">지움</button><button data-k="0">0</button><button data-k="OK" class="fn ok">확인</button></div>
+  <div class="kh"></div></div></div>
+
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
   <div class="ctitle">운행 일시 정지<small>OPERATION PAUSED</small></div>
@@ -50,7 +57,7 @@
 
 <!-- 실패 : 셔터가 내려온다 -->
 <div id="over" class="ov"><div class="shutter"></div>
-  <div class="otext"><div class="led">03:00</div><h2 id="overT">…</h2><p id="overP"></p><button id="overRe">다시 입장</button></div></div>
+  <div class="otext"><div class="led">06:00</div><h2 id="overT">…</h2><p id="overP"></p><button id="overRe">다시 입장</button></div></div>
 
 <!-- 탈출 성공 : 새벽 -->
 <div id="clear" class="ov"><div class="dawn"></div>
@@ -74,13 +81,13 @@
   </svg>
   <div class="tcontent">
     <div class="marquee"><div class="bulbs"></div>
-      <div class="kicker">LUNA LAND · NIGHT OPENING</div>
+      <div class="kicker">LUNA LAND · NIGHT SHIFT</div>
       <h1>루나랜드</h1>
-      <div class="hours">야간 개장 <b>19:00</b> — 폐장 <b>22:00</b></div></div>
-    <p class="tagline">해가 지면 불이 켜지는 놀이공원.<br>폐장 방송이 끝난 뒤에도, 공원은 잠들지 않는다.</p>
+      <div class="hours">판매 <b>19:00</b> — 마감 <b>22:00</b> — 야간 점검 <b>06:00</b></div></div>
+    <p class="tagline">달빛이 가장 아름답다는 놀이공원, 루나랜드.<br>오늘 하루, 이곳의 야간 아르바이트를 맡았다.<br>자정이 넘으면 달토끼가 배고파진다는 소문은 — 그냥 소문이겠지.</p>
     <button class="ticket" id="startBtn">
-      <span class="main"><small>NIGHT PASS · 야간 자유이용권</small><strong>1인 입장권</strong><em>No. 0731 · 오늘 19:00 입장</em></span>
-      <span class="stub">입장<br><b>▶</b></span>
+      <span class="main"><small>STAFF PASS · 일일 아르바이트</small><strong>직원 출입증</strong><em>No. 0731 · 아이스크림 판매 / 야간 점검</em></span>
+      <span class="stub">출근<br><b>▶</b></span>
     </button>
     <div class="guide" id="guide"></div>
   </div>
@@ -88,7 +95,7 @@
 
 <!-- 불러오기 : 입장권 발권 -->
 <div id="loading"><div class="slot"></div>
-  <div class="paper"><div class="pt">LUNA LAND</div><div class="pl">입장권 발권 중</div><div class="pn" id="lpct">0%</div></div>
+  <div class="paper"><div class="pt">LUNA LAND</div><div class="pl">출입증 발급 중</div><div class="pn" id="lpct">0%</div></div>
   <div class="lmsg" id="lmsg">공원 불을 켜는 중…</div></div>
 
 <div id="fade" class="clear"></div>
@@ -98,5 +105,9 @@
 <script src="vendor/GLTFLoader.js"></script>
 <!--ASSETS-->
 <script src="game.js"></script>
+<script src="crowd.js"></script>
+<script src="story.js"></script>
+<script src="rooms/room1_dorm.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
