@@ -70,6 +70,7 @@ async function intro(){
   S.stage='shift'; S.introMin=19*60; tickSky(0,true);
   $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); }
   if(/night/.test(location.search)) return startNight(true);           // 주소 끝에 ?night 를 붙이면 22:00 부터 (시험용)
+  if(CP){ await startNight(true); return runCheckpoint(CP); }          // ?cp=번호 : 디버그 바로 가기 (Shift+숫자)
   CROWD.spawnWanderers(IS_TOUCH?12:22); const line=ORDERS.map((od,i)=>CROWD.customer({...od.opts,x:QUEUE[i][0],z:QUEUE[i][1]})); objective('…'); showClock('마감 22:00'); AUDIO.music('open');
   await sleep(300); $('#fade').classList.add('clear');
   await card('19:00','첫 출근','루나랜드 · 달토끼 아이스크림 판매대','dusk',3200);
@@ -96,6 +97,9 @@ async function startNight(quick){ if(S.stage==='night') return; P.free=false; S.
   P.free=true; objective('직원 숙소에서 점검 지시서를 찾자 (화살표를 따라가자)');
   const d=PARK.spawns.dorm_door; setGoal(d?d.x:-45,d?d.z:4,'직원 숙소');
   $('#hint').textContent=IS_TOUCH?'':'M 지도 · E 조사'; setTimeout(()=>$('#hint').textContent='',8000); }
+
+/* 디버그 바로 가기 전에 : 인트로 중이면 건너뛰고 22:00 으로 */
+async function ensureNight(){ if(S.stage==='night') return; if(S.stage==='shift') skipIntro(); await startNight(true); P.free=true; S.phase='play'; }
 
 /* 시험용 : Shift+K 로 인트로 건너뛰기 */
 function skipIntro(){ if(S.stage!=='shift') return; S.introSkip=true; if(ORDER){ const r=ORDER.done; ORDER=null; r(); }
