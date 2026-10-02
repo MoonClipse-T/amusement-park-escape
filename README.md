@@ -22,14 +22,16 @@
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
 | `tools/build.py` | 전부 묶어서 `dist/lunaland.html` 한 파일로 만든다 |
 | `blender/build_lunaland_v2.py` | 맵 만드는 스크립트 : v1 맵(`blender/source/park_v1.glb`) + 숙소 · 판매대 · 달토끼 동상 · 전구 줄 · 나무 등 → `web/assets/park.glb` |
-| `blender/parts/` | 맵 부품 : `rabbit_plush.py`(달토끼 봉제인형) · `icecream_kiosk.py`(판매대) · `trees.py`(Sapling 나무) · `catalog_props.py`(카탈로그 소품 배치) |
-| `blender/source/` | 원본 : v1 맵 · `catalog_props.glb`(Higgsfield 3D 카탈로그 소품) · `people/`(사람 모델) |
+| `blender/parts/` | 맵 부품 : `rabbit_plush.py`(달토끼 봉제인형) · `icecream_kiosk.py`(판매대) · `trees.py`(Sapling 나무) · `catalog_props.py`(카탈로그 소품 배치) · `dorm_dress.py`(숙소 벽 · 바닥 · 소품) |
+| `blender/source/` | 원본 : v1 맵 · `catalog_props.glb`(Higgsfield 3D 카탈로그 소품) · `people/`(사람 모델) · `polyhaven/`(숙소 소품) |
 | `blender/build_people.py` | 손님 모델 → `web/assets/people_*.glb` |
 | `tools/optimize_glb.py` | GLB 압축 (glTF-Transform, Node.js 필요) |
 | `blender/lunaland_v2.blend` | 위 스크립트 결과 (Blender 로 열어 볼 수 있음) |
 | `docs/` | 기획 문서 |
 
 ## 실행
+
+**온라인** — https://moonclipse-t.github.io/amusement-park-escape/ (`git subtree push --prefix web origin gh-pages` 후 1~2분 뒤 반영)
 
 **개발 중** (파일을 고치면서 바로 확인) — `web/` 폴더에서 로컬 서버를 띄운다.
 ```
@@ -86,7 +88,8 @@ ROOMS.push({ id:'haunted',
 
 ## 에셋 출처
 
-- 사람 : three.js 저장소 예제 모델 (`Michelle.glb` · `readyplayer.me.glb` · 동작은 `Soldier.glb` 의 Walk · Idle) — https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf
+- 사람 : Quaternius 'Ultimate Animated Character Pack' (CC0) — https://poly.pizza (Animated Woman · Casual Character · Business Man · Hoodie Character · Animated Woman 드레스)
+- 숙소 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등
 - 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
 - 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
 - 배포 전에 각 에셋의 이용 조건을 한 번 확인할 것

@@ -248,6 +248,7 @@ const SIGNS={
   // v2 맵
   icecream:['달토끼 아이스크림','MOON BUNNY ICE CREAM','#fbe9ef','#c0405f'], icecream_menu:['딸기 · 초코 · 바닐라','한 스쿱 3,000원 · 보름달 콘 +500원','#3a2430','#ffd9e4'],
   dorm:['직원 숙소','STAFF DORM · 야간 점검조','#e8eef2','#2a3a4a'], dorm_rule:['야간 점검조 수칙','자정 이후 혼자 다니지 말 것 · 절구 소리가 들리면 건물 안으로','#f2ede2','#7a1d16'],
+  dorm_safety:['안전 제일','야간 점검 시 손전등 · 무전기 필수 · 혼자 기구에 오르지 말 것','#f2c230','#1b1b1b'],
   rabbit_plate:['달토끼','LUNA LAND 마스코트 · 달에서 떡방아를 찧는 토끼','#c9a23e','#2a1a0a'],
   dir_0:['← 회전목마 · 직원 숙소','','#2f4f7a','#f2ede2'], dir_1:['서커스 →','','#8e231c','#f2ede2'], dir_2:['↑ 관람차 · 유령의 집','','#2f6a4a','#f2ede2'],
   poster_0:['보름달 축제','달토끼와 함께하는 야간 개장 · 매일 19:00','#1b2440','#ffe2a8'], poster_1:['달빛 퍼레이드','오늘 밤 보름달 · 20:30 중앙 광장','#2a1a3a','#f2d2ff'],
@@ -288,6 +289,7 @@ async function buildPark(){
     if(o.isMesh){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m)); }
   });
   kill.forEach(o=>o.parent&&o.parent.remove(o));
+  Object.values(PARK.items).forEach(dequant);
   // 재질 손보기 : Blender 속성(tint, glow) 반영
   mats.forEach(m=>{ const u=m.userData||{};
     if(u.tint) m.color.set(u.tint).convertSRGBToLinear();
@@ -299,6 +301,12 @@ async function buildPark(){
   const sc=new THREE.Mesh(new THREE.PlaneGeometry(4.4,1.65),new THREE.MeshBasicMaterial({map:TEX.scrawl('돌아가'),transparent:true,depthWrite:false}));
   sc.position.set(-14,1.7,55.7); sc.rotation.y=Math.PI; sc.visible=false; PARK.scrawl=sc; WORLD.add(sc);   // 폐장 후에만 보인다
 }
+// 압축(quantize)된 GLB 는 좌표가 정수(normalized)로 들어 있는데, r128 레이캐스트는 그 정수를 그대로 읽어서 조사(클릭)가 빗나간다
+// → 조사 대상(IT_)만 좌표를 실수로 풀어 둔다
+function dequant(o){ o.traverse(m=>{ const a=m.geometry&&m.geometry.attributes.position; if(!a||!a.normalized) return;
+  const k={Int8Array:127,Uint8Array:255,Int16Array:32767,Uint16Array:65535}[a.array.constructor.name]||1, f=new Float32Array(a.count*3);
+  for(let i=0;i<a.count;i++){ f[i*3]=Math.max(a.getX(i)/k,-1); f[i*3+1]=Math.max(a.getY(i)/k,-1); f[i*3+2]=Math.max(a.getZ(i)/k,-1); }
+  m.geometry.setAttribute('position',new THREE.BufferAttribute(f,3)); }); }
 const PICK=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}); // 보이지 않는 탭 판정용
 
 async function gateTap(k){ if(GATE_TAP[k]) return GATE_TAP[k](); AUDIO.click(); AUDIO.noise(.3,.25,0,400); await mono(['…잠겨 있다.']); }

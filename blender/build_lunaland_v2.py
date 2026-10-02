@@ -28,6 +28,11 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=SRC)
 SC = bpy.context.scene
 COLL = SC.collection
+# v1 맵의 관람차 곤돌라는 위치에 부모(ANIM_wheel) 위치가 한 번 더 더해져 있어 바퀴와 따로 하늘에 떠 있었다 → 부모 기준으로 되돌린다
+_w = bpy.data.objects["ANIM_wheel"]
+for _g in _w.children:
+    if _g.name.startswith("GONDOLA_"):
+        _g.location -= _w.location
 DETAIL = []          # 나중에 재질별로 합칠 정적 소품
 
 
@@ -218,7 +223,7 @@ M["k_pink"] = mat("kiosk_pink", "#f2b3c4", 0.7)
 M["k_mint"] = mat("kiosk_mint", "#a8dcc8", 0.7)
 
 # ---------------------------------------------------------------- 부품 파일 (blender/parts/*.py)
-for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props"):
+for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress"):
     exec(open(os.path.join(HERE, "parts", part + ".py"), encoding="utf-8").read())
 
 # ---------------------------------------------------------------- 1. 폐허 소품 정리
@@ -397,6 +402,7 @@ box("dorm_path", DX2 + 1.0, -38.6, 0, 0.02, 3.3, 4.7, M["paving"], uv=0.5)
 sign("dorm_rule", DX2 + .02, 1.5, 6.2, 90, 0.9, 1.2)
 zone("dorm", -52, 4, "직원 숙소", 5)
 empty("SPAWN_dorm_door", -44.5, 0, 4.0, -90)
+dress_dorm()       # blender/parts/dorm_dress.py : 두 색 벽 · 체크 바닥 · 휴게 구석 · Poly Haven 소품
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)
 build_kiosk()      # blender/parts/icecream_kiosk.py

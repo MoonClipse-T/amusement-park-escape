@@ -1,10 +1,10 @@
-"""GLB 줄이기 (glTF-Transform) : 중복 제거 → 정점 양자화(KHR_mesh_quantization) → 텍스처 최대 1024px
+"""GLB 줄이기 (glTF-Transform) : 중복 제거 → 정점 양자화(KHR_mesh_quantization) → 텍스처 최대 1024px → WebP
    ※ prune 은 쓰지 않는다 — 엔진이 읽는 빈 표식 노드(SIGN_ · ZONE_ · LAMP_ · SPAWN_ …)까지 지워 버린다.
    사용 : python tools/optimize_glb.py web/assets/park.glb [다른 파일 …]   (Node.js 의 npx 필요)
 """
 import subprocess, sys, os, shutil, tempfile
 
-CLI = ["npx", "--yes", "@gltf-transform/cli@4"]
+CLI = [shutil.which("npx") or "npx", "--yes", "@gltf-transform/cli@4"]
 
 
 def run(*args):
@@ -14,11 +14,12 @@ def run(*args):
 def optimize(path, tex=1024):
     before = os.path.getsize(path)
     with tempfile.TemporaryDirectory() as d:
-        a, b, c = (os.path.join(d, n) for n in ("a.glb", "b.glb", "c.glb"))
+        a, b, c, e = (os.path.join(d, n) for n in ("a.glb", "b.glb", "c.glb", "e.glb"))
         run("dedup", path, a)
         run("quantize", a, b)
         run("resize", b, c, "--width", str(tex), "--height", str(tex))
-        shutil.copy(c, path)
+        run("webp", c, e)
+        shutil.copy(e, path)
     print(f"{path}: {before // 1024} KB → {os.path.getsize(path) // 1024} KB")
 
 

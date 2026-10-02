@@ -33,12 +33,13 @@ async function scoop(f){ if(!ORDER){ await mono('…다음 손님을 기다리�
   if(f!==ORDER.flavor){ AUDIO.err(); ORDER.busy=true; await mono([`어… 그거 말고 ${FLAVOR[ORDER.flavor]}요!`],ORDER.who); ORDER.busy=false; return; }
   AUDIO.click(); AUDIO.noise(.15,.15,0,1800); const r=ORDER.done; ORDER=null; r(); }
 
-async function serve(od){ const c=CROWD.customer({...od.opts,fromX:3,fromZ:24}); await c.toCounter();
-  if(S.introSkip){ CROWD.remove(c.o); return; }
-  objective('주문을 듣고, 냉동고에서 그 맛을 골라 퍼 주자'); await mono(od.say,od.who);
+// 손님 줄 : 처음부터 판매대 앞에 줄을 서 있고, 한 명씩 앞으로 나온다
+const QUEUE=[[11.1,14.6],[10.8,13.2],[10.4,11.8]];
+async function serve(od,c){ await c.toCounter(); if(S.introSkip) return;
+  await mono(od.say,od.who); objective(`냉동고에서 ${FLAVOR[od.flavor]} 아이스크림을 퍼 주자`);
   await new Promise(r=>{ ORDER={...od,done:r}; if(S.introSkip) r(); });
-  if(S.introSkip){ CROWD.remove(c.o); return; }
-  c.give(od.flavor); AUDIO.ok(); toast('판매 완료'); await mono(od.thanks,od.who);
+  if(S.introSkip) return;
+  c.give(od.flavor); c.wave(); AUDIO.ok(); toast('판매 완료'); await mono(od.thanks,od.who);
   if(od.after) await od.after(c); c.leave(); }
 
 /* 공원 시각을 부드럽게 흘려보낸다 (인트로 전용) */
@@ -71,14 +72,15 @@ async function intro(){
   S.stage='shift'; S.introMin=19*60; tickSky(0,true);
   $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); } $('#lightBtn').classList.add('on');
   if(/night/.test(location.search)) return startNight(true);           // 주소 끝에 ?night 를 붙이면 22:00 부터 (시험용)
-  CROWD.spawnWanderers(IS_TOUCH?12:22); objective('…'); showClock('마감 22:00'); AUDIO.music('open');
+  CROWD.spawnWanderers(IS_TOUCH?12:22); const line=ORDERS.map((od,i)=>CROWD.customer({...od.opts,x:QUEUE[i][0],z:QUEUE[i][1]})); objective('…'); showClock('마감 22:00'); AUDIO.music('open');
   await sleep(300); $('#fade').classList.add('clear');
   await card('19:00','첫 출근','루나랜드 · 달토끼 아이스크림 판매대','dusk',3200);
-  await mono(['여기가 루나랜드…. 듣던 대로 하늘이 예쁘다.','오늘 할 일은 두 가지. 밤 10시까지는 아이스크림 판매,','그다음엔 아침까지 공원 정리와 점검.']);
-  await mono(['신입, 첫 손님 온다! 주문 들으면 냉동고에서 그 맛을 골라 퍼 주면 돼요.','10시 마감까지만 버텨요. 그 뒤 일은 그때 알려 줄게요.'],'무전 · 매니저');
+  await mono(['여기가 루나랜드…. 듣던 대로 하늘이 예쁘다.','밤 10시까지는 아이스크림 판매, 그다음엔 아침까지 공원 점검.']);
+  await mono(['신입, 벌써 줄 섰어요! 주문 들으면 냉동고에서 그 맛을 퍼 주면 돼요.','10시 마감까지만 버텨요. 그 뒤 일은 그때 알려 줄게요.'],'무전 · 매니저');
   P.free=true; S.phase='play';
   $('#hint').textContent=IS_TOUCH?'아이스크림 통을 탭해서 퍼 주기':'마우스로 둘러보기 · 아이스크림 통을 보고 E (또는 클릭)'; setTimeout(()=>$('#hint').textContent='',10000);
-  for(let i=0;i<ORDERS.length&&!S.introSkip;i++){ await serve(ORDERS[i]); if(S.introSkip) break; objective(`손님에게 아이스크림 팔기 (${i+1}/3)`); await passTime(ORDERS[i].next); }
+  for(let i=0;i<ORDERS.length&&!S.introSkip;i++){ await serve(ORDERS[i],line[i]); if(S.introSkip) break;
+    line.slice(i+1).forEach((c,j)=>c.walkTo(...QUEUE[j])); objective(`손님에게 아이스크림 팔기 (${i+1}/3)`); await passTime(ORDERS[i].next,1600); }
   if(S.introSkip) return startNight(true);
   objective('마감 준비'); await announce('오늘도 루나랜드를 찾아 주셔서 감사합니다. 잠시 후 밤 10시, 모든 운행을 마칩니다. 안녕히 돌아가십시오.',{ms:2600});
   await startNight(false); }
