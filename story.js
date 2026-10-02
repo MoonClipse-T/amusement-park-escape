@@ -70,7 +70,7 @@ function tickRabbit(dt){ const R=PARK.anim.rabbithead; if(!R) return; if(rabbitB
 async function intro(){
   const sp=PARK.spawns.kiosk||PARK.spawn; P.x=sp.x; P.z=sp.z; P.y=0; P.yaw=0; P.pitch=0.02; P.free=false;
   S.stage='shift'; S.introMin=19*60; tickSky(0,true);
-  $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); } $('#lightBtn').classList.add('on');
+  $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); }
   if(/night/.test(location.search)) return startNight(true);           // 주소 끝에 ?night 를 붙이면 22:00 부터 (시험용)
   CROWD.spawnWanderers(IS_TOUCH?12:22); const line=ORDERS.map((od,i)=>CROWD.customer({...od.opts,x:QUEUE[i][0],z:QUEUE[i][1]})); objective('…'); showClock('마감 22:00'); AUDIO.music('open');
   await sleep(300); $('#fade').classList.add('clear');
@@ -97,7 +97,7 @@ async function startNight(quick){ if(S.stage==='night') return; P.free=false; S.
     await mono(['…혼자 다니지 말라니. 점검조는 나 혼자인데.']); }
   P.free=true; objective('직원 숙소에서 점검 지시서를 찾자 (회전목마 서쪽)');
   const d=PARK.spawns.dorm_door; setGoal(d?d.x:-45,d?d.z:4,'직원 숙소');
-  $('#hint').textContent=IS_TOUCH?'':'F 손전등 · M 지도'; setTimeout(()=>$('#hint').textContent='',8000); }
+  $('#hint').textContent=IS_TOUCH?'':'M 지도 · E 조사'; setTimeout(()=>$('#hint').textContent='',8000); }
 
 /* 시험용 : Shift+K 로 인트로 건너뛰기 */
 function skipIntro(){ if(S.stage!=='shift') return; S.introSkip=true; if(ORDER){ const r=ORDER.done; ORDER=null; r(); }

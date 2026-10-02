@@ -49,6 +49,15 @@
   <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="C" class="fn">지움</button><button data-k="0">0</button><button data-k="OK" class="fn ok">확인</button></div>
   <div class="kh"></div></div></div>
 
+<!-- 힘 장치 : 당기는 힘의 크기 · 방향을 정해 당긴다 (방 1 숙소 문) -->
+<div id="forcepad" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">장력 평형 잠금장치</span><span class="fsub">TENSION LOCK · N</span></div>
+  <canvas id="fcv" width="720" height="300"></canvas>
+  <p class="fq"></p>
+  <div class="frow"><span class="fl">당기는 방향</span><button data-d="in" class="fdir on">◀ 숙소 안쪽</button><button data-d="out" class="fdir">바깥쪽 ▶</button></div>
+  <div class="frow"><span class="fl">힘의 크기</span><button data-s="-1" class="fstep">−</button><b class="fval">0 N</b><button data-s="1" class="fstep">+</button></div>
+  <button class="fgo">당기기</button><p class="fmsg"></p></div></div>
+
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
   <div class="ctitle">운행 일시 정지<small>OPERATION PAUSED</small></div>
@@ -109,6 +118,7 @@
 <script src="crowd.js"></script>
 <script src="story.js"></script>
 <script src="rooms/room1_dorm.js"></script>
+<script src="rooms/room2_carousel.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
