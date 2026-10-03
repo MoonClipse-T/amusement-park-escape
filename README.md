@@ -19,7 +19,7 @@
 | `web/rooms/room1_dorm.js` | 방 1 : 직원 숙소 — 사물함 · 열쇠 · 장력 평형 잠금장치 (글 · 정답은 맨 위 `ROOM1`) |
 | `web/rooms/room2_carousel.js` | 방 2 : 회전목마 — 조작반 · 용수철저울로 말의 중력 재기 (`ROOM2`) |
 | `web/rooms/room3_bumper.js` | 방 3 : 범퍼카 — 마찰력 측정 · 윤활유 (`ROOM3`) |
-| `web/rooms/room4_coaster.js` | 방 4 : 롤러코스터 = 후룸라이드 — 잠긴 조작실 키패드 · 직접 타기 · 크레인 힘 센서로 부력 재기 · 모래주머니로 무게 맞추기 (`ROOM4`) |
+| `web/rooms/room4_coaster.js` | 방 4 : 후룸라이드 — 키패드(코스 그림) · 직접 타기 · 크레인 리모컨과 3D 계기판으로 부력 재기 · 모래주머니로 무게 맞추기 (`ROOM4`) |
 | `web/main.js` | 시작 |
 | `web/vendor/` | three.js r128, GLTFLoader |
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
@@ -60,14 +60,14 @@ python tools/optimize_glb.py web/assets/park.glb      # 선택 : 17MB → 13MB
 
 ## 제작용 단축키 · 주소
 
-**방(퍼즐) 바로 가기** — 앞 단계를 모두 끝낸 상태로 새로 불러와 그 자리로 간다 (주소 끝 `?cp=번호` 와 같음)
+**방(퍼즐) 바로 가기** — 앞 방을 모두 끝낸 상태로 그 방 입구로 간다. 앞 방으로는 그 자리에서 바로, 지나온 방으로는 새로 불러와서(입장권 연출 없이) 간다 (주소 끝 `?cp=번호` 와 같음)
 
 | 키 | 바로 가기 |
 |---|---|
 | Shift+1 | 숙소 (22:00 시작) |
 | Shift+2 | 회전목마 조작실 |
 | Shift+3 | 범퍼카 조작실 |
-| Shift+4 | 롤러코스터(후룸라이드) 조작실 앞 |
+| Shift+4 | 후룸라이드 조작실 앞 |
 | Shift+L | 바로 가기 목록 |
 
 그 밖 : Alt+1~0 구역 위치로만 이동 · Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기

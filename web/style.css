@@ -234,6 +234,7 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 16px 50px rgba(0,0,0,.7);}
 .lockpad .kt{font:400 18px/1.3 var(--sign);letter-spacing:3px;color:#e8e2d4;}
 .lockpad .scr{margin:12px auto 14px;padding:10px 0;background:#0e1a12;border:2px solid #000;border-radius:4px;font:700 30px/1 var(--led);letter-spacing:6px;color:#7dff9a;text-shadow:0 0 8px rgba(80,255,120,.6);}
+.lockpad .scr.long{font-size:22px;letter-spacing:2px;}
 .lockpad .scr.bad{color:#ff5a4a;text-shadow:0 0 8px rgba(255,60,40,.7);animation:jit .1s steps(2) 5;} .lockpad .scr.ok{color:#fff;}
 .lockpad .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .lockpad .keys button{height:50px;border-radius:8px;border:0;background:linear-gradient(#e9e6df,#c9c4b8);color:#1a1a1a;font:700 20px/1 var(--led);box-shadow:0 3px 0 #77736a;}
@@ -301,9 +302,20 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .ftab div b{color:#cfc8b8;font-size:12px;} .ftab div span{font:700 15px/1.2 var(--led);color:#e9e2d2;}
 .ftab div.cur{border-color:var(--amber);} .ftab div.odd span{color:#ff6a50;}
 #fric .fgo{user-select:none;-webkit-user-select:none;touch-action:none;}
-/* ---------------- 후룸라이드 크레인 ---------------- */
-.btab div.line b{color:#3dff8a;} .btab div.line{border-color:#2a7a4a;}
-#buoy .frow{flex-wrap:wrap;} #buoy .bq1 .fl{min-width:0;}
+/* ---------------- 후룸라이드 크레인 리모컨 (3D 화면 위 오른쪽 아래) ---------------- */
+#remote{display:none;position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;width:min(300px,calc(100vw - 28px));
+ padding:10px 12px 12px;border-radius:18px;background:linear-gradient(#e2b52a,#b88a14);border:3px solid #1b1b1b;box-shadow:0 10px 28px rgba(0,0,0,.6);color:#1b1b1b;}
+#remote.on{display:block;}
+#remote .rhead{display:flex;justify-content:space-between;align-items:baseline;font:400 17px/1.2 var(--sign);letter-spacing:2px;}
+#remote .rbags{font:700 12px/1 var(--led);letter-spacing:1px;}
+#remote .rq{margin:8px 0 6px;padding:8px;border-radius:6px;background:#10241c;color:#c8f5da;font-size:13px;line-height:1.5;}
+#remote .rq b{color:#7dffb0;}
+#remote .rrow{display:flex;gap:6px;margin-top:6px;align-items:center;}
+#remote .rb{flex:1;min-height:44px;border:2px solid #1b1b1b;border-radius:10px;background:#2a2c30;color:#f2ede2;font-size:14px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;}
+#remote .rb:active{background:#45484e;} #remote .rdown,#remote .rup{font-size:16px;} #remote .rrel{background:#a3271c;} #remote .rexit{flex:none;width:100%;min-height:34px;font-size:12px;background:#1b1b1b;}
+#remote .rnum{width:90px;height:44px;font:700 24px/44px var(--led);text-align:center;color:#7dffb0;background:#07130d;border:2px solid #1b1b1b;border-radius:8px;outline:none;}
+#remote .rmsg{margin:6px 0 0;min-height:1em;font-size:12.5px;line-height:1.5;font-weight:700;} #remote .rmsg.ok{color:#0d5a2a;} #remote .rmsg.bad{color:#7a1208;}
+#remote .rkeys{margin:6px 0 0;font-size:11px;opacity:.7;}
 
 /* ---------------- 도구 고르기 ---------------- */
 #tools .tq{margin:14px 16px 10px;font-size:15px;line-height:1.6;font-weight:700;}

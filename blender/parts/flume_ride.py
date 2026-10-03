@@ -10,7 +10,7 @@
             IT_flume_crane(크레인 조작 기둥 · 힘 센서) · COL_flume_pool · COL_flume_gantry_ · LIGHT_flume · SIGN_flume_pool · SIGN_flume_crane
   Sketchfab (CC BY) : gantry_crane.glb — "Gantry Portica" by speedtwo · sandbag.glb — "Sandbag [Low Poly Realist]" by Islide
             조작실 (tag = coaster) : IT_manual_coaster · IT_console_coaster · IT_mic_coaster · SPOT_booth_coaster · SIGN_booth_coaster
-            COL_GATE_cbooth(잠긴 문) · ANIM_cbdoor(문 경첩) · IT_keypad_coaster(키패드) · IT_keynote_coaster(옆에 붙은 찢어진 쪽지) · IT_keynote2_coaster(나머지 반쪽, 승강장 바닥)
+            COL_GATE_cbooth(잠긴 문) · ANIM_cbdoor(문 경첩) · IT_keypad_coaster(키패드) · IT_keynote_coaster(옆에 붙은 쪽지 — 코스 그림)
 """
 import bpy, bmesh, math, os, mathutils
 
@@ -268,7 +268,13 @@ def build_flume():
     # 문 옆 키패드 + 그 옆에 붙은 쪽지 (바깥 벽, 문 왼쪽)
     b.prop("sketchfab/keypad_door_lock.glb", .8, -.035, rot=180, y=1.22, height=0.22, name="IT_keypad_coaster")
     sticky = _mat("flumex_sticky", "#f1e38a", 0.9)
-    note = b.box("IT_keynote_coaster", .26, .58, 1.28, 1.5, -.012, -.002, sticky)                 # 아래 반쪽이 찢겨 나간 쪽지
+    note = b.box("IT_keynote_coaster", .26, .58, 1.12, 1.5, -.012, -.002, sticky)                 # 코스 그림이 그려진 쪽지 (그림은 엔진 화면)
     _kids(note, b.box(p + "note_tape", .36, .48, 1.47, 1.53, -.016, -.011, _mat("flumex_tape", "#d9d4c4", 0.6)))
-    # 찢어진 나머지 반쪽 : 바람에 날려 롤러코스터 승강장 바닥(계단으로 올라온 입구 안쪽)에 떨어져 있다
-    _box("IT_keynote2_coaster", 22.75, 23.07, 1.2, 1.206, -9.55, -9.33, sticky)
+    z = bpy.data.objects.get("ZONE_coaster")         # 구역 이름 → 후룸라이드. 속성만 바꾸면 glTF 내보내기가 옛 값을 쓴다 → 빈 물체를 새로 만든다
+    if z and z.get("title") != "후룸라이드":
+        loc, cols, r = z.location.copy(), list(z.users_collection), z.get("r", 9)
+        bpy.data.objects.remove(z, do_unlink=True)
+        n = bpy.data.objects.new("ZONE_coaster", None)
+        n.location, n["title"], n["r"] = loc, "후룸라이드", r
+        for c in cols:
+            c.objects.link(n)

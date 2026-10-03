@@ -229,7 +229,7 @@ function tickGoal(){ if(!GOAL.on) return; const dx=GOAL.x-P.x, dz=GOAL.z-P.z, d=
 
 /* 번호 자물쇠 : keypad({title, len, hint, check:(code)=>bool}) → Promise<성공 여부> */
 function keypad({title='번호 자물쇠',len=4,hint='',check}){ return new Promise(res=>{ const el=$('#keypad'), scr=el.querySelector('.scr'); let code='';
-  el.querySelector('.kt').textContent=title; el.querySelector('.kh').innerHTML=hint; const draw=()=>{ scr.textContent=code.padEnd(len,'_').split('').join(' '); }; draw();
+  el.querySelector('.kt').textContent=title; el.querySelector('.kh').innerHTML=hint; scr.classList.toggle('long',len>6); const draw=()=>{ scr.textContent=code.padEnd(len,'_').split('').join(' '); }; draw();
   el.querySelectorAll('.keys button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; AUDIO.tick();
     if(k==='C'){ code=''; draw(); return; }
     if(k==='OK'){ if(code.length<len){ AUDIO.err(); return; } if(check(code)){ AUDIO.ok(); scr.classList.add('ok'); setTimeout(()=>{ scr.classList.remove('ok'); ov('#keypad',false); res(true); },700); }
@@ -285,7 +285,7 @@ const SIGNS={
   shop_0:['기념품 가게','SOUVENIR','#f0e6d0','#8e231c'], shop_1:['솜사탕','COTTON CANDY','#f3e9ef','#a0405a'], shop_2:['사진관','PHOTO','#1d2a36','#e8dcc0'],
   shop_3:['분실물 센터','LOST & FOUND','#e8dcc0','#2a2a2a'], shop_4:['츄러스','CHURROS','#3a2416','#f0c27a'], shop_5:['인형 뽑기','CLAW MACHINE','#f0e6d0','#2f4f7a'],
   carousel:['회전목마','CAROUSEL','#e8dcc0','#8e231c'], circus:['서커스','매일 밤 8시 공연','#1b1b1b','#e3b54a'], wheel:['관람차','MOON WHEEL','#e8dcc0','#2f4f7a'],
-  coaster:['롤러코스터','키 120cm 이상 탑승','#8e231c','#f2ede2'], haunted:['유령의 집','들어간 사람은 있어도…','#151515','#b8b0a0'],
+  coaster:['후룸라이드','키 120cm 이상 탑승','#8e231c','#f2ede2'], haunted:['유령의 집','들어간 사람은 있어도…','#151515','#b8b0a0'],
   game_0:['오리 낚시','','#8e231c','#f2ede2'], game_1:['사 격','','#2f4f7a','#f2ede2'], game_2:['고리 던지기','','#2f6a4a','#f2ede2'],
   food_8:['핫도그','','#f0e6d0','#8e231c'], food_15:['음료','','#f0e6d0','#2f4f7a'], tower:['자이로드롭','','#e8dcc0','#8e231c'], bumper:['범퍼카','BUMPER CARS','#e3b54a','#1b1b1b'],
   shed:['창고','','#d8d2c2','#2a2a2a'], staff:['관계자 외 출입금지','STAFF ONLY','#e8dcc0','#8e231c'], office:['관리동','통제실 2F','#d8d2c2','#2a2a2a'], exit:['비상구','','#1f6a3a','#f2ede2'],
@@ -299,7 +299,7 @@ const SIGNS={
 };
 for(let i=1;i<=10;i++) SIGNS['locker_'+i]=[String(i),'','#e8e4da','#1a1a1a'];
 // 잠긴 문 (Blender COL_GATE_<key>) — 방에서 openGate(key) 로 연다
-const GATES={dorm:'숙소 문', coaster:'롤러코스터 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
+const GATES={dorm:'숙소 문', coaster:'후룸라이드 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
 const GATE_TAP={};   // 방 스크립트가 문마다 동작을 붙인다 : GATE_TAP.dorm=()=>{…}
 function openGate(k){ S.flags['open_'+k]=true; }
 const PARK={mats:[],mat:{},items:{},signs:{},spawns:{},spots:{},lights:{},zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
@@ -476,14 +476,18 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   renderer.render(scene,camera);
   fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+숫자 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 롤러코스터 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 방마다 하나, 방 번호 = 숫자 키. 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
 function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P.vy=0; P.grounded=true; if(lookX!==undefined) P.yaw=Math.atan2(-(lookX-x),-(lookZ-z)); P.pitch=0; P.free=true; }
 function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
 // 앞 단계로 돌아가도 상태가 섞이지 않게, 바로 가기는 늘 새로 불러온 뒤(?cp=번호) 그 자리로 간다
-function jumpTo(key){ if(CHECKPOINTS.some(c=>c.key===key)) location.search='?cp='+key; }
+// 앞 방으로 가는 건 그 자리에서 바로 옮긴다. 이미 지나온 방으로 돌아갈 때만 새로 불러온다 (입장권 연출 없이 바로 시작)
+function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
+function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
+  if(S.phase!=='title'&&+key>cpLevel()) return runCheckpoint(key);
+  location.search='?cp='+key; }
 // 바로 가기로 새로 불러오면 소리가 잠겨 있다 → 첫 클릭 · 키에서 깨운다
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{ if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume(); },true));
 const CP=(location.search.match(/[?&]cp=(\w)/)||[])[1];
@@ -518,9 +522,9 @@ async function boot(){ try{
     await buildPark(); loadStep(80,'손님 맞을 준비 중…'); if(typeof CROWD!=='undefined'){ loadStep(84,'손님 입장 중…'); await CROWD.build(); }
     for(const r of ROOMS) if(r.build) await r.build();
     PARK.zones.sort((a,b)=>b.z-a.z);   // 남쪽(정문) → 북쪽 순서 = 디버그 단축키 순서
-    loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(500);
-    $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(600); $('#loading').style.display='none';
-    if(CP) $('#startBtn').click();     // 디버그 바로 가기 : 시작 화면을 건너뛴다
+    loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(CP?0:500);
+    $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(CP?0:600); $('#loading').style.display='none';
+    if(CP){ S.phase='intro'; AUDIO.init(); ov('#start',false); S.busy=false; intro(); }     // 디버그 바로 가기 : 시작 화면 · 입장권 뜯기 없이 바로
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
 $('#startBtn').onclick=async()=>{ if(S.phase!=='title') return; S.phase='intro'; AUDIO.init(); if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume();
   $('#startBtn').classList.add('torn'); AUDIO.noise(.25,.3,0,2400); await sleep(700);
