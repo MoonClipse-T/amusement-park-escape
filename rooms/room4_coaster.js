@@ -6,26 +6,27 @@
           (트랙 제어점을 3×3 칸에 나눠 넣으면 그대로 나오는 순서 — 실제 트랙 모양)
         → 점검 방법 : ① 전원을 켜고 점검용 보트에 직접 타서 코스를 끝까지 ② 물에 떨어진 보트는 옆면 초록 선까지만 잠겨 떠야 한다
                       ③ 아니면 크레인 힘 센서로 부력을 재서 무게를 맞춘다 ④ 전원 종료
-        → 조작반 전원 ON → 역의 보트에 타면 1인칭으로 트랙을 따라 달린다 (뒷자리 : 앞쪽 보트 · 모래주머니가 보인다)
-        → 첫 탑승 : 모래주머니 9개(550 N) — 보트가 다 잠겨도 부력은 500 N 까지라 보트째 꼬르륵 가라앉는다 (물속 연출)
+        → 조작반 전원 ON → 역의 보트에 타면 1인칭으로 트랙을 따라 달린다 (뒷자리 : 앞쪽 보트 · 자석가 보인다)
+        → (공포) 꼭대기에서 떨어지기 직전 시선이 오른쪽 아래로 — 땅에서 달토끼가 올려다보다가, 눈이 마주치면 입이 찢어지게 벌어진다
+        → 첫 탑승 : 자석 9개(550 N) — 보트가 다 잠겨도 부력은 500 N 까지라 보트째 꼬르륵 가라앉는다 (물속 연출)
         → 크레인 리모컨 (게임 화면 그대로, 3D) : 리모컨으로 보트를 물에 내리고 올리면 실제로 내려가고,
           바로 앞 크레인 계기판(3D 화면)에 힘 센서 값이 실시간으로 뜬다 · 1칸마다 계기판 아래 기록
             550 → 450 → 350 → 250 …  (잠긴 부피가 클수록 부력이 크다)
             Q. 초록 선(3칸)까지 잠겼을 때 부력은? → 550 − 250 = 300 N   (부력 = 물에 넣기 전 값 − 잠겼을 때 값)
-          리모컨으로 모래주머니(한 개 50 N)를 내리고 줄을 풀어 띄워 본다 : 떠서 멈춘 보트는 중력 = 부력 (힘의 평형)
+          리모컨으로 자석(한 개 50 N)를 내리고 줄을 풀어 띄워 본다 : 떠서 멈춘 보트는 중력 = 부력 (힘의 평형)
             500 N 넘으면 가라앉음 · 300 N 보다 무거우면 초록 선 아래로 · 가벼우면 너무 뜬다 · 300 N(4개) 이면 딱 초록 선
         → 다시 타서 마지막 낙하만 확인 → 초록 선에 맞게 뜬다 → 조작실 전원 OFF
-   ★ 글 · 숫자는 아래 ROOM4 에서 고친다 (bags 를 바꾸면 Blender flume_ride.py 의 SAND_N 도 같이)
+   ★ 글 · 숫자는 아래 ROOM4 에서 고친다 (mags 를 바꾸면 Blender flume_ride.py 의 MAG_N 도 같이)
    ============================================================ */
 'use strict';
 const ROOM4={
   route:[7,4,1,2,6,9,8,7],            // 키패드 비밀번호 = 코스 그림을 키패드 위에서 따라간 순서 (역 = 7 에서 출발해 다시 역까지)
   manual:{title:'후룸라이드 야간 점검 방법',
-    body:`1. 조작반 전원을 켜고, 역에 있는 점검용 보트에 <b>직접 타서</b> 코스를 끝까지 따라가며 제대로 움직이는지 확인한다. (보트에는 손님 무게 대신 <b>모래주머니</b>를 싣는다)<br>
+    body:`1. 조작반 전원을 켜고, 역에 있는 점검용 보트에 <b>직접 타서</b> 코스를 끝까지 따라가며 제대로 움직이는지 확인한다. (손님 무게 대신 보트에 <b>무게 조절 자석</b>을 붙인다 — 자석을 붙였다 뗐다 해서 무게를 맞추는 특수 보트)<br>
 2. 마지막에 물에 떨어진 보트는 옆면의 <b>초록 선</b>까지만 잠겨서 떠야 한다. 너무 가라앉아도, 너무 떠도 안 된다.<br>
-3. 맞지 않으면 스플래시 풀의 <b>크레인</b>에 보트를 매달고 힘 센서로 <b>부력</b>을 잰 다음, 모래주머니로 보트의 무게를 맞춘다.<br>
+3. 맞지 않으면 스플래시 풀의 <b>크레인</b>에 보트를 매달고 힘 센서로 <b>부력</b>을 잰 다음, 자석을 붙이거나 떼어 보트의 무게를 맞춘다.<br>
 <b class="red">4. 점검이 끝나면 전원 장치를 종료한다.</b>`},
-  boat:100, bag:50, bags:9,           // 빈 보트 100 N · 모래주머니 한 개 50 N · 처음 9개 → 550 N
+  boat:100, mag:50, mags:9,           // 빈 보트 100 N · 무게 조절 자석 한 개 50 N · 처음 9개 → 550 N (특수 보트 : 자석을 붙였다 뗐다 해서 무게를 맞춘다)
   perLevel:100, levels:5, line:3,     // 보트 깊이를 5칸으로 나눠 한 칸 잠길 때마다 부력 +100 N · 초록 선 = 3칸 → 부력 300 N
 };
 ROOM4.code=ROOM4.route.join('');
@@ -50,9 +51,10 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
 (function(){
   const R=ROOM4, door={t:0,base:null};
   const WATER=1.0, D=0.68, REST=new THREE.Vector3(32.3,0,0.6), BEAM=5.9;      // 수면 높이 · 보트 깊이(테두리까지, m) · 풀에서 보트가 서는 자리(크레인 밑) · 크레인 들보 높이
-  const W=n=>R.boat+R.bag*n, B=L=>R.perLevel*L, BMAX=B(R.levels), BLINE=B(R.line);
-  const st={power:false}, bz={n:R.bags,lvl:-1.5,tgt:-1.5,mode:'hang',rec:{},busy:false};
+  const W=n=>R.boat+R.mag*n, B=L=>R.perLevel*L, BMAX=B(R.levels), BLINE=B(R.line);
+  const st={power:false}, bz={n:R.mags,lvl:-1.5,tgt:-1.5,mode:'hang',rec:{},busy:false};
   const spot=()=>PARK.spots.booth_coaster||{x:22.6,z:4.1};
+  const inBooth=()=>P.x>21.9&&P.x<24.1&&P.z>1.1&&P.z<3.3;          // 조작반 · 점검 방법 · 마이크는 조작실 안에서만 (창 · 벽 너머로 조사 안 되게)
   const boat=()=>PARK.items.flume_boat;
 
   /* ---------- 트랙 : v1 맵(build_park.py)의 트랙 제어점 → 같은 Catmull-Rom 곡선 (게임 좌표 x, 높이, z) ---------- */
@@ -67,19 +69,19 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     for(let i=1;i<T.length;i++) CUM.push(CUM[i-1]+T[i].distanceTo(T[i-1])); LEN=CUM[CUM.length-1]+T[0].distanceTo(T[T.length-1]); })();
   const near=(x,z,from=0)=>{ let b=from, d=1e9; for(let i=from;i<T.length;i++){ const e=Math.hypot(T[i].x-x,T[i].z-z); if(e<d){ d=e; b=i; } } return b; };
   const iPeak=T.reduce((b,p,i)=>p.y>T[b].y?i:b,0), H_PEAK=T[iPeak].y;
-  const iStation=near(26,-9), iDrop=near(34.6,-.6,iPeak), iLast=near(50.5,-18,iPeak);
+  const iStation=near(26,-9), iDrop=near(34.4,-.6,iPeak), iLast=near(50.5,-18,iPeak);
   function at(s){ s=((s%LEN)+LEN)%LEN; let k=CUM.length-1; for(let i=1;i<CUM.length;i++) if(CUM[i]>s){ k=i-1; break; }
     const a=T[k], b=T[(k+1)%T.length], seg=(k+1<CUM.length?CUM[k+1]:LEN)-CUM[k];
     return { p:a.clone().lerp(b,(s-CUM[k])/seg), f:b.clone().sub(a).normalize() }; }
 
-  /* ---------- 3D : 보트 놓기 · 모래주머니 · 밧줄 · 물보라 · 거품 · 물속 화면 ---------- */
+  /* ---------- 3D : 보트 놓기 · 자석 · 밧줄 · 물보라 · 거품 · 물속 화면 ---------- */
   let rope, uw, drops=[];
   function placeBoat(pos,fwd){ const b=boat(); if(!b) return; b.parent.updateMatrixWorld(true);
     b.position.copy(b.parent.worldToLocal(pos.clone())); b.updateMatrixWorld(true); b.lookAt(pos.clone().add(fwd)); }     // +Z(보트 긴 축)가 진행 방향
   const restFwd=new THREE.Vector3(-1,0,0);
   function floatBoat(draft,fwd=restFwd){ placeBoat(new THREE.Vector3(REST.x,WATER-draft,REST.z),fwd); }
-  function syncBags(){ for(let k=1;k<=R.bags;k++){ const o=PARK.items['fsand_'+k]; if(o) o.visible=k<=bz.n; } }
-  // 뒷자리에 앉는다 : 앞쪽으로 보트 · 모래주머니가 보여서 보트와 함께 움직이는 느낌
+  function syncBags(){ for(let k=1;k<=R.mags;k++){ const o=PARK.items['fmag_'+k]; if(o) o.visible=k<=bz.n; } }
+  // 뒷자리에 앉는다 : 앞쪽으로 보트 · 자석이 보여서 보트와 함께 움직이는 느낌
   function seat(pos,fwd,pitch,eyeUp=1.78){ const e=pos.clone().addScaledVector(fwd,-1.0); P.x=e.x; P.z=e.z; P.y=e.y+eyeUp-P.eye;
     P.yaw=Math.atan2(-fwd.x,-fwd.z); P.pitch=pitch??Math.atan2(fwd.y,Math.hypot(fwd.x,fwd.z))*.8-.12; }
   const dropGeo=new THREE.SphereGeometry(.07,5,4), dropMat=new THREE.MeshBasicMaterial({color:0xcfefff,transparent:true,opacity:.85});
@@ -94,13 +96,13 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   /* ---------- 타기 : 트랙 → 낙하 → 물 (보트와 함께) ---------- */
   let rd=null, parked=false;      // parked : 다시 타기 전 보트를 트랙에 올려 둔 동안 (풀 출렁임이 덮어쓰지 않게)
   function ride(fromI,last){ return new Promise(res=>{ setGoal(null); P.free=false; zoom(camera.fov+10,800);
-    rd={mode:'track',s:CUM[fromI],end:CUM[iDrop]+(iDrop<fromI?LEN:0),lift:fromI<iPeak?CUM[iPeak]:-1,t:0,v:last?5:0,tick:0,res,sink:W(bz.n)>BMAX}; }); }
+    rd={mode:'track',s:CUM[fromI],end:CUM[iDrop]+(iDrop<fromI?LEN:0),lift:fromI<iPeak?CUM[iPeak]:-1,t:0,v:last?5:0,tick:0,res,sink:W(bz.n)>BMAX,scare:last?null:{}}; }); }
   function stepRide(dt){
     if(rd.mode==='track'){ const {p,f}=at(rd.s), lifting=rd.s<rd.lift;
-      const vt=lifting?3.2:.8*Math.sqrt(2*9.8*Math.max(0,H_PEAK+.5-p.y))+2.5; rd.v+=(vt-rd.v)*Math.min(1,dt*(lifting?3:1.5)); rd.s+=rd.v*dt;
-      const pos=p.clone(); pos.y+=.2; placeBoat(pos,f); seat(pos,f);
+      let vt=lifting?3.2:.8*Math.sqrt(2*9.8*Math.max(0,H_PEAK+.5-p.y))+2.5; if(rd.scare&&rd.scare.on&&!rd.scare.done) vt=.45; rd.v+=(vt-rd.v)*Math.min(1,dt*(lifting?3:1.5)); rd.s+=rd.v*dt;
+      const pos=p.clone(); pos.y+=.2; placeBoat(pos,f); seat(pos,f); if(rd.scare&&!rd.scare.done) scareTick(dt,pos,f);
       rd.tick-=dt; if(rd.tick<=0){ rd.tick=lifting?.22:.18; if(lifting) AUDIO.tone(70,.05,'square',.07); else AUDIO.noise(.22,Math.min(.22,rd.v/70),0,400+rd.v*70); }
-      if(rd.s>=rd.end){ rd.mode='drop'; rd.t=0; rd.p0=pos; rd.f0=f; AUDIO.noise(1,.25,0,1400); } }
+      if(rd.s>=rd.end){ if(rab){ rab.visible=false; face.visible=false; } rd.mode='drop'; rd.t=0; rd.p0=pos; rd.f0=f; AUDIO.noise(1,.25,0,1400); } }
     else if(rd.mode==='drop'){ rd.t=Math.min(1,rd.t+dt/.9); const t=rd.t, pos=rd.p0.clone().lerp(REST,t);
       pos.y=rd.p0.y+(WATER-.12-rd.p0.y)*t*t; const f=rd.f0.clone().lerp(restFwd,t); f.y=-.25-.45*t; f.normalize();
       placeBoat(pos,f); seat(pos,f);
@@ -117,66 +119,115 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
         if(rd.t>1.2&&rd.t%0.45<dt) AUDIO.noise(.3,.22,0,260+Math.random()*200); }                     // 보글보글
       if(rd.sink?rd.d>=tgt-.01&&rd.t>4.6:rd.t>3){ const r=rd.res, sank=rd.sink; rd=null; zoom(camera.fov-10,600); r(sank?'sank':'float'); } } }
 
-  async function ride1(){ AUDIO.click(); await mono(['보트 뒷자리에 올라탔다. 앞쪽엔 손님 대신 모래주머니가 잔뜩 실려 있다.','…좋아. 점검 방법 1번, 코스를 끝까지 따라가 보자.']);
+  /* ---------- 공포 : 꼭대기에서 떨어지기 직전, 시선이 오른쪽 아래로 — 땅에서 달토끼가 올려다보고 있다.
+                  눈이 마주치는 순간 입이 찢어지게 벌어지고 눈이 빨갛게 (첫 탑승만) ---------- */
+  let rab=null, face=null;
+  const ease=x=>x*x*(3-2*x), FACE_Y=.535;               // 얼굴(입) 높이 = 인형 키의 FACE_Y
+  function mawTex(){ const c=document.createElement('canvas'); c.width=256; c.height=300; const g=c.getContext('2d');
+    g.fillStyle='#100000'; g.beginPath(); g.ellipse(128,150,120,142,0,0,7); g.fill();
+    const r=g.createRadialGradient(128,175,8,128,160,118); r.addColorStop(0,'#7a0505'); r.addColorStop(1,'#1a0000'); g.fillStyle=r; g.beginPath(); g.ellipse(128,160,98,112,0,0,7); g.fill();
+    g.fillStyle='#efe6cf'; for(let i=0;i<9;i++){ const x=30+i*22, d=Math.abs(4-i);
+      g.beginPath(); g.moveTo(x,34+d*7); g.lineTo(x+11,96+d*2); g.lineTo(x+22,34+d*7); g.fill();
+      g.beginPath(); g.moveTo(x,266-d*7); g.lineTo(x+11,204-d*2); g.lineTo(x+22,266-d*7); g.fill(); }
+    g.fillStyle='#8a1520'; g.beginPath(); g.ellipse(128,212,52,22,0,0,7); g.fill();
+    return new THREE.CanvasTexture(c); }
+  function makeRabbit(){ const src=PARK.items.bplush; if(!src) return;
+    rab=src.clone(true); rab.position.set(0,0,0); rab.quaternion.identity(); rab.scale.set(1,1,1); scene.add(rab); rab.updateMatrixWorld(true);
+    const sz=new THREE.Box3().setFromObject(rab).getSize(new THREE.Vector3()), k=3.2/sz.y; rab.scale.setScalar(k); rab.visible=false;
+    rab.userData={w:sz.x*k,d:sz.z*k,h:3.2};                                           // 사람보다 큰 인형
+    face=new THREE.Group(); const w=sz.x*k*.46;          // 머리 폭에 맞춘 입 (눈 바로 아래)
+    face.add(new THREE.Mesh(new THREE.PlaneGeometry(w,w*1.15),new THREE.MeshBasicMaterial({map:mawTex(),transparent:true})));
+    const eg=new THREE.SphereGeometry(w*.1,10,8), em=new THREE.MeshBasicMaterial({color:0xff1a10});
+    [-1,1].forEach(sx=>{ const e=new THREE.Mesh(eg,em); e.position.set(sx*w*.28,w*.66,.03); face.add(e); });
+    face.traverse(m=>{ if(m.material){ m.material.depthTest=false; m.renderOrder=999; } });          // 머리에 묻히지 않게 얼굴 위에 늘 그린다
+    face.visible=false; scene.add(face); }
+  function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
+    const base=pos.clone().addScaledVector(right,5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
+    const eye=new THREE.Vector3(P.x,P.y+P.eye,P.z);
+    rab.position.copy(base); rab.visible=true; rab.updateMatrixWorld(true); rab.lookAt(new THREE.Vector3(eye.x,base.y+(eye.y-base.y)*.7,eye.z));   // 고개를 젖혀 위의 나를 올려다본다 — 얼굴이 정면으로 보이게 rab.updateMatrixWorld(true);
+    rab.position.y+=base.y-new THREE.Box3().setFromObject(rab).min.y;                 // 발을 땅에
+    const fw=new THREE.Vector3(0,0,1).applyQuaternion(rab.quaternion);
+    const up=new THREE.Vector3(0,1,0).applyQuaternion(rab.quaternion), bot=new THREE.Box3().setFromObject(rab).min.y;
+    rab.userData.face=new THREE.Vector3(rab.position.x,bot,rab.position.z).addScaledVector(up,rab.userData.h*FACE_Y).addScaledVector(fw,rab.userData.d*.5+.05);
+    face.position.copy(rab.userData.face); face.lookAt(eye); face.scale.setScalar(.001); face.visible=true; }
+  function scareTick(dt,pos,f){ const sc=rd.scare;
+    if(!sc.on){ if(rd.s<CUM[iPeak]-5) return; sc.on=true; sc.t=0; sc.fov=camera.fov; placeRabbit(pos,f); zoom(30,600); }      // 시선이 내려가며 확 당겨 본다
+    sc.t+=dt; const t=sc.t, k=t<.5?ease(t/.5):t<2.1?1:t<2.5?1-ease((t-2.1)/.4):0;
+    const fh=new THREE.Vector3(f.x,0,f.z).normalize(); P.x+=-fh.z*.8*k; P.z+=fh.x*.8*k; P.y+=.3*k;          // 보트 오른쪽 가장자리 너머로 몸을 내밀어 내려다본다
+    if(rab&&rab.userData.face){ const e=new THREE.Vector3(P.x,P.y+P.eye,P.z), tg=rab.userData.face;
+      const ty=Math.atan2(-(tg.x-e.x),-(tg.z-e.z)), tp=Math.atan2(tg.y-e.y,Math.hypot(tg.x-e.x,tg.z-e.z));
+      P.yaw+=Math.atan2(Math.sin(ty-P.yaw),Math.cos(ty-P.yaw))*k; P.pitch=lerp(P.pitch,tp,k); }
+    if(t>.8&&!sc.mouth){ sc.mouth=true; AUDIO.noise(.9,.7,0,3200); AUDIO.tone(1900,.9,'sawtooth',.18,0,-1400); AUDIO.tone(70,1.2,'sine',.5,0,-30); zoom(22,200); }
+    if(face) face.scale.setScalar(sc.mouth?Math.max(.001,Math.min(1,(t-.8)/.12)):.001);
+    if(t>2.2&&!sc.back){ sc.back=true; zoom(sc.fov,400); }
+    if(t>2.6) sc.done=true; }
+
+  async function ride1(){ AUDIO.click(); await mono(['보트 뒷자리에 올라탔다. 앞쪽엔 손님 무게 대신 무게 조절 자석이 잔뜩 붙어 있다.','…좋아. 점검 방법 1번, 코스를 끝까지 따라가 보자.']);
     toast('후룸라이드 출발'); const r=await ride(iStation,false);
     S.flags.flume_rode=true; if(r==='sank') await afterSink(); }
   async function afterSink(){ S.flags.flume_sank=true; const f=$('#fade'); f.classList.remove('clear'); await sleep(1300);
     uw.style.opacity=0; floatBoat(D+.1); warp(29.8,3.8,REST.x,REST.z); f.classList.add('clear');
-    await mono(['푸핫…! 콜록, 콜록.','보트가 물에 떨어지자마자 나랑 같이 통째로 가라앉았다.','모래주머니를 너무 많이 실었어. 이대로면 손님이 다 물에 빠지겠어.','점검 방법 3번 — 크레인에 보트를 매달고 힘 센서로 부력을 재 보자.']);
+    await mono(['푸핫…! 콜록, 콜록.','보트가 물에 떨어지자마자 나랑 같이 통째로 가라앉았다.','자석을 너무 많이 붙여 놨어. 이대로면 손님이 다 물에 빠지겠어.','점검 방법 3번 — 크레인에 보트를 매달고 힘 센서로 부력을 재 보자.']);
     objective('크레인 리모컨으로 보트를 건져 부력을 재자'); const c=itemPos('flume_crane'); if(c) setGoal(c.x,c.z,'크레인 리모컨'); }
   async function ride2(){ AUDIO.click(); P.free=false; parked=true; setGoal(null); const f=$('#fade'); f.classList.remove('clear'); await sleep(1300);
     const {p,f:fw}=at(CUM[iLast]); p.y+=.2; placeBoat(p,fw); seat(p,fw); f.classList.add('clear');
-    await mono(['보트를 다시 트랙에 올렸다. 모래주머니는 4개.','마지막 낙하 구간부터 다시. …간다!']); parked=false; await ride(iLast,true);
+    await mono(['보트를 다시 트랙에 올렸다. 자석은 4개.','마지막 낙하 구간부터 다시. …간다!']); parked=false; await ride(iLast,true);
     S.flags.flume_ok=true; await mono(['…풍덩!','초록 선까지 딱 맞게 잠겨서 떠 있다. 중력과 부력이 평형을 이룬다.','점검 끝. 점검 방법 4번 — 조작실로 가서 전원을 끄자.']);
     const fd=$('#fade'); fd.classList.remove('clear'); await sleep(1300); warp(29.8,3.8,REST.x,REST.z); fd.classList.add('clear');
     objective('조작실에서 후룸라이드 전원을 끄자'); const s=spot(); setGoal(s.x,s.z,'후룸라이드 조작실'); }
 
-  /* ---------- 크레인 리모컨 (3D 그대로) · 계기판 (3D 화면, 실시간) ---------- */
-  const rm=$('#remote'), rmsg=rm.querySelector('.rmsg'), LBL=['물 밖','1칸','2칸','3칸','4칸','5칸'];
-  const cr={on:false,dir:0,tick:0,gauge:null,g:null,tex:null,key:''};
+  /* ---------- 크레인 리모컨 (손에 들고 걸어 다니며 조종) · 계기판 (기둥 위 3D 화면 + 리모컨 화면, 실시간) ---------- */
+  const rm=$('#remote'), rmsg=rm.querySelector('.rmsg');
+  const cr={on:false,dir:0,tick:0,gauge:null,g:null,tex:null,key:'',air:null,line:null,was:false};
   const lim=()=>Math.min(R.levels,W(bz.n)/R.perLevel);
-  const reading=()=>!S.flags.crane_seen?0:bz.mode==='hang'?Math.max(0,Math.round(W(bz.n)-B(Math.max(0,bz.lvl)))):0;
+  const SNAP=.2;                                   // 초록 선 ±0.2칸 안이면 '초록 선에 맞음' — 리모컨으로 얼추 맞추면 깔끔한 값이 찍힌다
+  const onLine=()=>bz.mode==='hang'&&Math.abs(bz.lvl-R.line)<SNAP;
+  function reading(){ if(!S.flags.crane_seen||bz.mode!=='hang') return 0; const w=W(bz.n);
+    if(bz.lvl<=0) return w; if(onLine()) return w-BLINE; return Math.max(0,Math.round((w-B(bz.lvl))/10)*10); }      // 그 밖에서는 10 N 단위
+  function status(){ const v=reading(); return bz.mode!=='hang'?'줄 풀림':bz.lvl<=0.02?'물 밖':v===0?'줄 느슨함':onLine()?'● 초록 선':'물속'; }
   function say(h,ok){ rmsg.innerHTML=h; rmsg.className='rmsg'+(ok?' ok':ok===false?' bad':''); }
-  function drawGauge(){ if(!cr.g) return; const g=cr.g, w=512, h=300, v=reading();
-    const k=[v,bz.mode,Math.round(bz.lvl*20),bz.n,JSON.stringify(bz.rec)].join('|'); if(k===cr.key) return; cr.key=k;
-    g.fillStyle='#0a1a12'; g.fillRect(0,0,w,h); g.strokeStyle='#2c6b48'; g.lineWidth=6; g.strokeRect(3,3,w-6,h-6);
+  function drawGauge(){ const v=reading(), stt=status();
+    rm.querySelector('.lcd b').textContent=v+' N'; rm.querySelector('.lcd i').textContent=stt; rm.querySelector('.lcd').classList.toggle('line',onLine());
+    if(!cr.g) return; const k=[v,stt,cr.air,cr.line].join('|'); if(k===cr.key) return; cr.key=k;
+    const g=cr.g, w=512, h=300, line=onLine();
+    g.fillStyle='#0a1a12'; g.fillRect(0,0,w,h); g.strokeStyle=line?'#3dff8a':'#2c6b48'; g.lineWidth=6; g.strokeRect(3,3,w-6,h-6);
     g.fillStyle='#7dffb0'; g.font='700 26px "Noto Sans KR",sans-serif'; g.textAlign='left'; g.fillText('힘 센서',22,42);
-    g.textAlign='right'; g.fillStyle='#9fd8b8'; g.font='700 22px "Noto Sans KR",sans-serif';
-    g.fillText(bz.mode!=='hang'?'줄 풀림':bz.lvl<=0.02?'물 밖':v===0?'줄 느슨함':`잠긴 깊이 ${(Math.round(bz.lvl*10)/10).toFixed(1)}칸`,w-22,42);
-    g.textAlign='center'; g.fillStyle=bz.mode==='hang'?'#9dffc4':'#4a7a5c'; g.font='700 110px "Noto Sans KR",sans-serif'; g.fillText(v+' N',w/2,165);
-    g.font='700 19px "Noto Sans KR",sans-serif';
-    for(let i=0;i<=R.levels;i++){ const x=14+i*81, y=196, line=i===R.line; g.strokeStyle=line?'#3dff8a':'#2c6b48'; g.lineWidth=line?3:2; g.strokeRect(x,y,76,86);
-      g.fillStyle=line?'#3dff8a':'#9fd8b8'; g.fillText(LBL[i]+(line?' ●':''),x+38,y+28); g.fillStyle='#e8fff0'; g.font='700 24px "Noto Sans KR",sans-serif';
-      g.fillText(bz.rec[i]===undefined?'—':bz.rec[i],x+38,y+66); g.font='700 19px "Noto Sans KR",sans-serif'; }
+    g.textAlign='right'; g.fillStyle=line?'#3dff8a':'#9fd8b8'; g.font='700 24px "Noto Sans KR",sans-serif'; g.fillText(stt,w-22,42);
+    g.textAlign='center'; g.fillStyle=bz.mode==='hang'?'#9dffc4':'#4a7a5c'; g.font='700 116px "Noto Sans KR",sans-serif'; g.fillText(v+' N',w/2,168);
+    [['물에 넣기 전',cr.air],['초록 선까지',cr.line]].forEach(([l,val],i)=>{ const x=20+i*240, y=196; g.strokeStyle=i?'#3dff8a':'#2c6b48'; g.lineWidth=2; g.strokeRect(x,y,232,86);
+      g.fillStyle=i?'#3dff8a':'#9fd8b8'; g.font='700 22px "Noto Sans KR",sans-serif'; g.fillText(l,x+116,y+30);
+      g.fillStyle='#e8fff0'; g.font='700 34px "Noto Sans KR",sans-serif'; g.fillText(val==null?'—':val+' N',x+116,y+72); });
     cr.tex.needsUpdate=true; }
   function setRemote(){ const q2=!!S.flags.buoy_q1; rm.querySelectorAll('.rq1').forEach(r=>r.style.display=q2?'none':''); rm.querySelectorAll('.rq2').forEach(r=>r.style.display=q2?'':'none');
     rm.querySelector('.rq').innerHTML=q2
-      ?`보트가 크레인 없이 <b>혼자</b> 초록 선까지 잠겨 떠 있으려면? 떠서 멈춘 보트는 <b>중력(무게) = 부력</b>. 모래주머니(한 개 ${R.bag} N)로 무게를 맞추고 줄을 풀어 보자.`
-      :'보트를 <b>물속으로 내리면서</b> 계기판의 힘 센서 값을 읽자. 초록 선(3칸)까지 잠겼을 때 보트에 작용하는 <b>부력</b>은?';
-    rm.querySelector('.rbags').textContent=`모래주머니 ${bz.n}개`; }
-  async function openCrane(){ if(!S.flags.flume_sank){ AUDIO.click(); await mono(['크레인 리모컨이 걸려 있다. 옆에 힘 센서 계기판.','…점검 방법대로 먼저 보트를 타 보자.']); return; }
+      ?`보트가 크레인 없이 <b>혼자</b> 초록 선까지 잠겨 떠 있으려면? 떠서 멈춘 보트는 <b>중력(무게) = 부력</b>. 자석(한 개 ${R.mag} N)을 떼거나 붙여 무게를 맞추고 줄을 풀어 보자.`
+      :'보트를 물에 내리면서 힘 센서 값을 보자. 보트 옆면의 <b>초록 선</b>이 물에 닿았을 때, 보트에 작용하는 <b>부력</b>은?';
+    rm.querySelector('.rbags').textContent=`자석 ${bz.n}개`; }
+  async function openCrane(){ if(!S.flags.flume_sank){ AUDIO.click(); await mono(['크레인 리모컨이 걸려 있다. 위에는 힘 센서 계기판.','…점검 방법대로 먼저 보트를 타 보자.']); return; }
     if(S.flags.buoy_done){ AUDIO.click(); await mono('보트는 초록 선에 맞게 떠 있다. 크레인은 이제 됐다.'); return; }
-    setGoal(null); AUDIO.click(); P.free=false; cr.on=true; cr.dir=0;
-    await camTo({x:28.9,z:4.2,y:.3,yaw:Math.atan2(-(30.9-28.9),-(1.63-4.2)),pitch:-.13},.8);     // 계기판(왼쪽 아래)과 보트(오른쪽)가 한 화면에
+    if(cr.on) return closeCrane();
+    setGoal(null); AUDIO.click(); say(''); rm.querySelector('.rnum').value=''; setRemote(); rm.classList.add('on'); cr.on=true; cr.dir=0;
     if(!S.flags.crane_seen){ S.flags.crane_seen=true; bz.mode='hang'; bz.lvl=bz.tgt=-1.5; AUDIO.tone(90,1.2,'sawtooth',.05,0,40);
-      await mono(['리모컨으로 가라앉은 보트를 건져 올렸다.','이제 천천히 물속으로 내리면서, 앞에 있는 계기판의 힘 센서 값을 읽어 보자.']); }
-    say(''); rm.querySelector('.rnum').value=''; setRemote(); rm.classList.add('on'); }
-  function closeCrane(){ if(!cr.on) return; cr.on=false; cr.dir=0; rm.classList.remove('on'); if(!S.busy) P.free=true; }
+      await mono(['크레인 리모컨을 집어 들었다. 가라앉은 보트를 건져 올렸다.','리모컨을 들고 풀 가까이 가서, 보트 옆면의 초록 선이 물에 닿게 내려 보자.']); } }
+  function closeCrane(){ if(!cr.on) return; cr.on=false; cr.dir=0; rm.classList.remove('on'); }
   function hold(btn,dir){ const b=rm.querySelector(btn); b.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); cr.dir=dir; });
     ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>{ if(cr.dir===dir) cr.dir=0; })); }
   hold('.rdown',1); hold('.rup',-1);
-  addEventListener('keydown',e=>{ if(!cr.on||e.target.tagName==='INPUT') return; if(e.code==='ArrowDown'||e.code==='KeyS') cr.dir=1; else if(e.code==='ArrowUp'||e.code==='KeyW') cr.dir=-1; else if(e.code==='KeyQ') closeCrane(); });
-  addEventListener('keyup',e=>{ if(cr.on&&['ArrowDown','KeyS','ArrowUp','KeyW'].includes(e.code)) cr.dir=0; });
+  addEventListener('keydown',e=>{ if(!cr.on||e.target.tagName==='INPUT') return; if(e.code==='KeyZ') cr.dir=1; else if(e.code==='KeyX') cr.dir=-1; else if(e.code==='KeyQ') closeCrane(); });
+  addEventListener('keyup',e=>{ if(cr.on&&(e.code==='KeyZ'||e.code==='KeyX')) cr.dir=0; });
   rm.addEventListener('pointerdown',e=>e.stopPropagation());
-  function tickCrane(dt){ if(bz.mode==='hang'){ if(!cr.on||!cr.dir||bz.busy) return;
-      const prev=bz.lvl, L=lim(); let nl=Math.max(-1.5,Math.min(L,prev+cr.dir*.8*dt));
-      if(cr.dir>0&&nl>=L&&prev<L) say(L<R.levels?'줄이 느슨해졌다 — 보트가 더 내려가지 않고 혼자 떠 버린다.':'보트 테두리까지 다 잠겼다. 더 내리면 물이 들어온다.');
-      for(let k=0;k<=R.levels;k++) if(k<=L+1e-6&&bz.rec[k]===undefined&&(prev-k)*(nl-k)<=0&&prev!==nl){ bz.rec[k]=W(bz.n)-B(k); AUDIO.tick(); }
-      bz.lvl=nl; cr.tick-=dt; if(cr.tick<=0&&prev!==nl){ cr.tick=.14; AUDIO.tone(95,.12,'sawtooth',.035,0,cr.dir*20); } }
-    else { const d=bz.tgt-bz.lvl; bz.lvl+=Math.sign(d)*Math.min(Math.abs(d),1.1*dt); } }
-  function setBags(d){ if(bz.mode!=='hang'||bz.busy) return; const n=bz.n+d; if(n<0||n>R.bags) return;
-    bz.n=n; bz.rec={}; bz.lvl=Math.min(bz.lvl,lim()); syncBags(); setRemote(); AUDIO.tone(d<0?160:90,.2,'square',.1); AUDIO.noise(.15,.3,0,400);
-    say((d<0?'모래주머니를 하나 내렸다':'모래주머니를 하나 실었다')+` (${n}개). 무게가 바뀌어 계기판 기록을 지웠다.`); }
+  function tickCrane(dt){
+    if(bz.mode==='hang'){
+      if(cr.on&&cr.dir&&!bz.busy){ const prev=bz.lvl, L=lim(), nl=Math.max(-1.5,Math.min(L,prev+cr.dir*.55*dt));
+        if(cr.dir>0&&nl>=L&&prev<L) say(L<R.levels?'줄이 느슨해졌다 — 보트가 더 내려가지 않고 혼자 떠 버린다.':'보트 테두리까지 다 잠겼다. 더 내리면 물이 들어온다.');
+        bz.lvl=nl; cr.tick-=dt; if(cr.tick<=0&&prev!==nl){ cr.tick=.14; AUDIO.tone(95,.12,'sawtooth',.035,0,cr.dir*20); } }
+      const ln=onLine(); if(ln&&!cr.was) AUDIO.tone(1300,.08,'square',.06); cr.was=ln;
+      if(bz.lvl<=0&&S.flags.crane_seen) cr.air=W(bz.n); if(ln) cr.line=W(bz.n)-BLINE; }
+    else { const d=bz.tgt-bz.lvl; bz.lvl+=Math.sign(d)*Math.min(Math.abs(d),1.1*dt); }
+    if(cr.on&&Math.hypot(P.x-REST.x,P.z-REST.z)>15){ closeCrane(); toast('크레인에서 너무 멀어져 리모컨을 내려놓았다'); } }
+  function setMags(d){ if(bz.mode!=='hang'||bz.busy) return; const n=bz.n+d; if(n<0||n>R.mags) return;
+    bz.n=n; cr.air=cr.line=null; bz.lvl=Math.min(bz.lvl,lim()); syncBags(); setRemote(); AUDIO.tone(d<0?1400:500,.12,'square',.08); AUDIO.tone(d<0?600:900,.1,'sine',.1,.08);
+    say((d<0?'자석을 하나 떼어 냈다':'자석을 하나 붙였다')+` (${n}개). 무게가 바뀌어 계기판 메모를 지웠다.`); }
   const until=async f=>{ while(!f()) await sleep(50); };
   async function release(){ if(bz.mode!=='hang'||bz.busy) return; bz.busy=true; const w=W(bz.n), fl=w/R.perLevel;
     bz.mode='float'; bz.tgt=fl>R.levels?(WATER-.15)/D*R.levels:fl; AUDIO.noise(.5,.3,0,600); say('줄을 풀었다…');
@@ -184,8 +235,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     if(fl>R.levels){ say(`보트가 다 잠겨도 부력은 <b>${BMAX} N</b> 까지인데, 무게(중력)가 그보다 크다 — <b>가라앉았다!</b>`,false); AUDIO.err(); }
     else if(w===BLINE){ S.flags.buoy_done=true; say(`보트의 무게(중력) <b>${w} N</b> = 부력 <b>${w} N</b> — <b>힘의 평형!</b> 초록 선까지 딱 맞게 잠겨 떠 있다.`,true); AUDIO.ok();
       await sleep(3000); closeCrane(); return solved(); }
-    else if(w>BLINE){ say(`무게 ${w} N = 부력 ${w} N 인 곳(${fl}칸)에서 멈췄다 — <b>초록 선보다 더 잠겼다.</b> 손님이 타면 물이 넘칠 것 같다.`,false); AUDIO.err(); }
-    else { say(`무게 ${w} N = 부력 ${w} N 인 곳(${fl}칸)에서 멈췄다 — <b>초록 선보다 덜 잠겨 너무 떴다.</b> 흔들흔들, 뒤집힐 것 같다.`,false); AUDIO.err(); }
+    else if(w>BLINE){ say(`무게 ${w} N = 부력 ${w} N 인 깊이에서 멈췄다 — <b>초록 선보다 더 잠겼다.</b> 손님이 타면 물이 넘칠 것 같다.`,false); AUDIO.err(); }
+    else { say(`무게 ${w} N = 부력 ${w} N 인 깊이에서 멈췄다 — <b>초록 선보다 덜 잠겨 너무 떴다.</b> 흔들흔들, 뒤집힐 것 같다.`,false); AUDIO.err(); }
     await sleep(2600); bz.tgt=-1.5; AUDIO.tone(90,1,'sawtooth',.05,0,40); await until(()=>Math.abs(bz.tgt-bz.lvl)<.01);
     bz.mode='hang'; bz.busy=false; say('크레인으로 보트를 다시 매달아 올렸다.'); }
   function check(){ const v=rm.querySelector('.rnum').value.trim(), w=W(bz.n), n=+v;
@@ -195,13 +246,11 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     AUDIO.err();
     say(n===w-BLINE?'그건 초록 선까지 잠겼을 때 <b>힘 센서의 값</b>이다. 물에 넣기 전 값과 비교해 보자.'
       :n===w?'그건 물에 넣기 전 힘 센서의 값 — 보트에 작용하는 <b>중력(무게)</b>이다.'
-      :n===BMAX?'그건 5칸까지 다 잠겼을 때다. 초록 선은 3칸.'
       :'보트를 물에 넣으면 힘 센서의 값이 줄어든다. <b>얼마나 줄었는지</b>가 부력이다.',false); }
   rm.querySelector('.rok').onclick=check; rm.querySelector('.rnum').addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
-  rm.querySelector('.rsub').onclick=()=>setBags(-1); rm.querySelector('.radd').onclick=()=>setBags(1); rm.querySelector('.rrel').onclick=release;
-  rm.querySelector('.rexit').onclick=closeCrane;
+  rm.querySelector('.rsub').onclick=()=>setMags(-1); rm.querySelector('.radd').onclick=()=>setMags(1); rm.querySelector('.rrel').onclick=release;
   async function solved(){ syncBags();
-    await mono(['초록 선에 딱 맞게 떴다. 모래주머니는 4개 — 보트 무게 300 N 과 부력 300 N 이 평형이다.','점검 방법 2번 — 다시 타서, 마지막에 물에 떨어졌을 때도 잘 뜨는지 확인하자.']);
+    await mono(['초록 선에 딱 맞게 떴다. 자석은 4개 — 보트 무게 300 N 과 부력 300 N 이 평형이다.','점검 방법 2번 — 다시 타서, 마지막에 물에 떨어졌을 때도 잘 뜨는지 확인하자.']);
     objective('보트에 다시 타서 확인하자'); const b=itemPos('flume_boat'); if(b) setGoal(b.x,b.z,'통나무 보트'); }
 
   /* ---------- 조작실 · 키패드(코스 그림) · 점검 방법 · 조작반 ---------- */
@@ -217,7 +266,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     await mono(['…열렸다. 코스를 그대로 누르는 거였구나.']); objective('조작실 안에서 점검 방법을 찾자'); const m=itemPos('manual_coaster'); if(m) setGoal(m.x,m.z,'점검 방법'); }
   async function readManual(){ AUDIO.click(); await showMsg(R.manual.title,R.manual.body);
     if(S.flags.manual_coaster) return; S.flags.manual_coaster=true; INV.note('manual_coaster',R.manual.title,R.manual.body); setGoal(null);
-    await mono(['직접 타 보라고…? 손님 대신 모래주머니를 싣고.','마지막엔 물에 떨어지니까, 보트가 알맞게 뜨는지 — 부력을 봐야 하는구나.']); objective('조작반 전원을 켜자'); }
+    await mono(['직접 타 보라고…? 손님 무게 대신 자석을 붙여서.','마지막엔 물에 떨어지니까, 보트가 알맞게 뜨는지 — 부력을 봐야 하는구나.']); objective('조작반 전원을 켜자'); }
   function lamps(n){ for(let k=1;k<=3;k++){ const o=PARK.items['cbtn_'+k]; o&&o.traverse(m=>{ if(m.material){ m.material.color.setHex(k<=n?0x3ddc84:0x2c312c); m.material.emissive.setHex(0x3ddc84); m.material.emissiveIntensity=k<=n?1.2:0; } }); } }
   async function console_(){ AUDIO.click();
     if(!S.flags.manual_coaster) return mono('…점검 방법부터 찾자.');
@@ -230,7 +279,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
       await mono(['후룸라이드 점검도 끝. 전원도 껐다.']); objective('다음 점검 : (준비 중)'); return; }
     mono(st.power?'후룸라이드 조작반. 전원이 들어와 있다.':'후룸라이드 조작반. 전원은 꺼져 있다.'); }
   async function tapBoat(){
-    if(!S.flags.flume_rode){ if(!st.power){ AUDIO.click(); return mono(['점검용 통나무 보트. 모래주머니가 잔뜩 실려 있다.','…조작실에서 전원부터 켜야 움직이겠지.']); } return ride1(); }
+    if(!S.flags.flume_rode){ if(!st.power){ AUDIO.click(); return mono(['점검용 통나무 보트. 무게 조절 자석이 잔뜩 붙어 있다.','…조작실에서 전원부터 켜야 움직이겠지.']); } return ride1(); }
     if(!S.flags.buoy_done){ AUDIO.click(); return mono('물에 잠긴 보트. 크레인 리모컨으로 건져서 부력을 재 보자.'); }
     if(!S.flags.flume_ok) return ride2();
     AUDIO.click(); mono('초록 선까지 딱 맞게 잠겨 떠 있다.'); }
@@ -243,13 +292,14 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     for(let k=1;k<=3;k++) I['cbtn_'+k]&&I['cbtn_'+k].traverse(o=>{ if(o.material) o.material=o.material.clone(); });
     add('keypad_coaster','조작실 키패드',openPad,2.4,()=>!S.flags.open_cbooth);
     add('keynote_coaster','키패드 옆 쪽지',readNote);
-    add('manual_coaster','후룸라이드 야간 점검 방법',readManual);
-    add('console_coaster','후룸라이드 조작반',console_);
-    add('mic_coaster','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 저기, 아무도 없습니까?',{ms:1600,voice:'mic_bumper'}); await mono('…역시 대답이 없다.'); });
+    add('manual_coaster','후룸라이드 야간 점검 방법',readManual,2.4,inBooth);
+    add('console_coaster','후룸라이드 조작반',console_,2.4,inBooth);
+    add('mic_coaster','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 저기, 아무도 없습니까?',{ms:1600,voice:'mic_bumper'}); await mono('…역시 대답이 없다.'); },2.4,inBooth);
     add('flume_pool','스플래시 풀',()=>{ AUDIO.noise(.5,.08,0,1200); mono(['후룸라이드가 마지막에 떨어지는 물. 스플래시 풀이다.','…물에 뜨는 힘, 부력.']); },3.4);
     add('flume_boat','통나무 보트',tapBoat,3.6);
-    add('flume_crane','크레인 리모컨 · 힘 센서',openCrane,2.6);
+    add('flume_crane','크레인 리모컨',openCrane,2.6);
     GATE_TAP.cbooth=async()=>{ AUDIO.click(); AUDIO.noise(.3,.25,0,400); await mono(['…잠겨 있다. 문 옆에 키패드가 있다.']); };
+    makeRabbit();
     rope=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1,6),new THREE.MeshLambertMaterial({color:0x2a2a2a})); rope.visible=false; scene.add(rope);
     uw=document.createElement('div'); uw.style.cssText='position:fixed;inset:0;z-index:55;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(ellipse at 50% 25%,rgba(70,160,180,.4),rgba(4,30,45,.93));';
     document.body.appendChild(uw);

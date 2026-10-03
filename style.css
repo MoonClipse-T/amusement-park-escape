@@ -302,20 +302,27 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .ftab div b{color:#cfc8b8;font-size:12px;} .ftab div span{font:700 15px/1.2 var(--led);color:#e9e2d2;}
 .ftab div.cur{border-color:var(--amber);} .ftab div.odd span{color:#ff6a50;}
 #fric .fgo{user-select:none;-webkit-user-select:none;touch-action:none;}
-/* ---------------- 후룸라이드 크레인 리모컨 (3D 화면 위 오른쪽 아래) ---------------- */
-#remote{display:none;position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;width:min(300px,calc(100vw - 28px));
- padding:10px 12px 12px;border-radius:18px;background:linear-gradient(#e2b52a,#b88a14);border:3px solid #1b1b1b;box-shadow:0 10px 28px rgba(0,0,0,.6);color:#1b1b1b;}
+/* ---------------- 후룸라이드 크레인 리모컨 : 화면 아래 가운데, 손에 든 리모컨 (들고 걸어 다닌다) ---------------- */
+#remote{display:none;position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:40;width:min(340px,96vw);pointer-events:none;}
 #remote.on{display:block;}
-#remote .rhead{display:flex;justify-content:space-between;align-items:baseline;font:400 17px/1.2 var(--sign);letter-spacing:2px;}
-#remote .rbags{font:700 12px/1 var(--led);letter-spacing:1px;}
-#remote .rq{margin:8px 0 6px;padding:8px;border-radius:6px;background:#10241c;color:#c8f5da;font-size:13px;line-height:1.5;}
-#remote .rq b{color:#7dffb0;}
+#remote .rpanel{pointer-events:auto;margin:0 6px 6px;padding:8px 10px;border-radius:8px;background:rgba(8,20,14,.9);border:1px solid #2c6b48;color:#c8f5da;font-size:13px;line-height:1.5;}
+#remote .rq{margin:0;} #remote .rq b{color:#7dffb0;}
+#remote .rmsg{margin:4px 0 0;min-height:1em;font-size:12.5px;font-weight:700;} #remote .rmsg.ok{color:#7dffb0;} #remote .rmsg.bad{color:#ff8a7a;}
 #remote .rrow{display:flex;gap:6px;margin-top:6px;align-items:center;}
-#remote .rb{flex:1;min-height:44px;border:2px solid #1b1b1b;border-radius:10px;background:#2a2c30;color:#f2ede2;font-size:14px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;}
-#remote .rb:active{background:#45484e;} #remote .rdown,#remote .rup{font-size:16px;} #remote .rrel{background:#a3271c;} #remote .rexit{flex:none;width:100%;min-height:34px;font-size:12px;background:#1b1b1b;}
-#remote .rnum{width:90px;height:44px;font:700 24px/44px var(--led);text-align:center;color:#7dffb0;background:#07130d;border:2px solid #1b1b1b;border-radius:8px;outline:none;}
-#remote .rmsg{margin:6px 0 0;min-height:1em;font-size:12.5px;line-height:1.5;font-weight:700;} #remote .rmsg.ok{color:#0d5a2a;} #remote .rmsg.bad{color:#7a1208;}
-#remote .rkeys{margin:6px 0 0;font-size:11px;opacity:.7;}
+#remote .rnum{width:90px;height:40px;font:700 22px/40px var(--led);text-align:center;color:#7dffb0;background:#07130d;border:2px solid #2c6b48;border-radius:8px;outline:none;}
+#remote .rhand{position:relative;height:262px;}
+#remote .palm{position:absolute;left:10px;bottom:0;width:320px;height:200px;}
+#remote .rbody{position:absolute;left:50%;bottom:-36px;width:196px;height:290px;margin-left:-98px;transform:rotate(-3deg);pointer-events:auto;padding:10px 12px 0;
+ border-radius:28px 28px 20px 20px;background:linear-gradient(#ecc032,#b88a14);border:3px solid #1b1b1b;box-shadow:0 -6px 20px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.35);color:#1b1b1b;}
+#remote .rtop{display:flex;justify-content:space-between;align-items:baseline;font:700 11px/1 var(--led);letter-spacing:2px;}
+#remote .lcd{margin-top:8px;padding:6px 8px;border-radius:6px;background:#0a1a12;border:2px solid #1b1b1b;text-align:right;}
+#remote .lcd i{display:block;font:700 11px/1.2 sans-serif;font-style:normal;color:#9fd8b8;text-align:left;}
+#remote .lcd b{display:block;font:700 32px/1.1 var(--led);color:#9dffc4;} #remote .lcd.line{box-shadow:0 0 12px rgba(61,255,138,.7);} #remote .lcd.line b,#remote .lcd.line i{color:#3dff8a;}
+#remote .rb{flex:1;min-height:40px;border:2px solid #1b1b1b;border-radius:10px;background:#2a2c30;color:#f2ede2;font-size:13px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;}
+#remote .rb:active{background:#45484e;} #remote .rdown,#remote .rup{font-size:15px;min-height:46px;} #remote .rrel{background:#a3271c;} #remote .rok{flex:none;padding:0 14px;background:#2c6b48;}
+#remote .rkeys{margin:6px 0 0;font-size:10px;opacity:.7;text-align:center;}
+#remote .thumb{position:absolute;left:50%;margin-left:-150px;bottom:-6px;width:96px;height:112px;pointer-events:none;transform:rotate(12deg);}
+#remote .fingers{position:absolute;left:50%;margin-left:92px;bottom:10px;width:36px;height:120px;pointer-events:none;}
 
 /* ---------------- 도구 고르기 ---------------- */
 #tools .tq{margin:14px 16px 10px;font-size:15px;line-height:1.6;font-weight:700;}

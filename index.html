@@ -86,16 +86,27 @@
   <div class="frow"><span class="fl">말에 작용하는 중력</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
   <button class="fgo">확인</button><p class="fmsg"></p></div></div>
 
-<!-- 후룸라이드 크레인 리모컨 : 3D 화면 그대로 보트를 오르내리고, 값은 앞의 3D 계기판에 뜬다 (방 4) -->
-<div id="remote"><div class="rhead"><span>크레인 리모컨</span><span class="rbags"></span></div>
-  <p class="rq"></p>
-  <div class="rrow"><button class="rb rdown">▼ 내리기</button><button class="rb rup">▲ 올리기</button></div>
-  <div class="rrow rq1"><input class="rnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="부력" autocomplete="off"><b>N</b><button class="rb rok">입력</button></div>
-  <div class="rrow rq2"><button class="rb rsub">모래주머니 −</button><button class="rb radd">모래주머니 +</button></div>
-  <div class="rrow rq2"><button class="rb rrel">줄 풀고 띄우기</button></div>
-  <p class="rmsg"></p>
-  <div class="rrow"><button class="rb rexit">리모컨 내려놓기 (Q)</button></div>
-  <p class="rkeys">누르고 있으면 계속 움직인다 · 키보드 ↓ ↑ (S W)</p></div>
+<!-- 후룸라이드 크레인 리모컨 : 화면 아래 가운데 — 손에 든 리모컨. 들고 걸어 다니며 3D 보트를 오르내린다 (방 4) -->
+<div id="remote">
+  <div class="rpanel"><p class="rq"></p>
+    <div class="rrow rq1"><input class="rnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="부력" autocomplete="off"><b>N</b><button class="rb rok">입력</button></div>
+    <p class="rmsg"></p></div>
+  <div class="rhand">
+    <svg class="palm" viewBox="0 0 320 200" aria-hidden="true"><path d="M30 200 C 40 120 70 70 120 62 L 205 60 C 250 64 285 110 292 200 Z" fill="#1f2a44"/>
+      <path d="M62 200 C 66 130 92 92 130 86 L 196 84 C 236 90 258 130 262 200 Z" fill="#e7bd94" stroke="#b98a62" stroke-width="3"/></svg>
+    <div class="rbody">
+      <div class="rtop"><span>CRANE</span><span class="rbags"></span></div>
+      <div class="lcd"><i></i><b>0 N</b></div>
+      <div class="rrow"><button class="rb rdown">▼ 내리기</button><button class="rb rup">▲ 올리기</button></div>
+      <div class="rrow rq2"><button class="rb rsub">자석 떼기</button><button class="rb radd">자석 붙이기</button></div>
+      <div class="rrow rq2"><button class="rb rrel">줄 풀기</button></div>
+      <div class="rkeys">Z 내리기 · X 올리기 · Q 내려놓기</div>
+    </div>
+    <svg class="thumb" viewBox="0 0 120 140" aria-hidden="true"><path d="M20 140 C 10 100 18 60 44 40 C 60 28 80 32 84 50 C 88 70 70 96 64 140 Z" fill="#e7bd94" stroke="#b98a62" stroke-width="3"/>
+      <path d="M50 46 C 58 40 70 42 74 50" fill="none" stroke="#c99c74" stroke-width="3"/></svg>
+    <svg class="fingers" viewBox="0 0 60 200" aria-hidden="true"><g fill="#e7bd94" stroke="#b98a62" stroke-width="3">
+      <rect x="6" y="20" width="44" height="34" rx="16"/><rect x="4" y="62" width="48" height="36" rx="17"/><rect x="6" y="106" width="44" height="34" rx="16"/><rect x="10" y="148" width="38" height="30" rx="14"/></g></svg>
+  </div></div>
 
 <!-- 범퍼카 조작반 : 전원 · 범퍼카 전기 램프 6개 (방 3) -->
 <div id="bctrl" class="ov"><button class="close">✕</button><div class="fpad">
