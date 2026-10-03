@@ -476,7 +476,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   renderer.render(scene,camera);
   fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+1~0 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+1~9 · 0 방(퍼즐) 바로 가기 · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+1~9 · 0 · Z · X · C 방(퍼즐) 바로 가기 · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
@@ -486,7 +486,7 @@ function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObj
 function jumpTo(key){ if(CHECKPOINTS.some(c=>c.key===key)) location.search='?cp='+key; }
 // 바로 가기로 새로 불러오면 소리가 잠겨 있다 → 첫 클릭 · 키에서 깨운다
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{ if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume(); },true));
-const CP=(location.search.match(/[?&]cp=(\d)/)||[])[1];
+const CP=(location.search.match(/[?&]cp=(\w)/)||[])[1];
 async function runCheckpoint(key){ const c=CHECKPOINTS.find(c=>c.key===key); if(!c) return;
   while($('#mono').classList.contains('on')) monoNext(); document.querySelectorAll('.ov.on').forEach(el=>{ if(el.id!=='start') ov('#'+el.id,false); });
   camAnim=null; await ensureNight(); while($('#mono').classList.contains('on')) monoNext();
@@ -502,6 +502,7 @@ function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
   if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
   if(e.code==='KeyK'&&typeof skipIntro==='function') skipIntro();
   if(e.code==='KeyL') checkpointList();
+  const L=(e.code.match(/^Key([ZXC])$/)||[])[1]; if(L){ e.preventDefault(); return jumpTo(L); }     // 숫자가 다 차서 Shift+Z · X · C (방 4)
   if(d===undefined) return; e.preventDefault(); jumpTo(d); }
 
 /* 불러오기 : 입장권이 발권기에서 조금씩 나온다 */
