@@ -6,9 +6,9 @@
   dorm_dress.py · carousel_booth.py 의 도우미를 쓴다 (build 스크립트가 parts 를 차례로 exec).
   Sketchfab (CC BY) : log_ride_boat.glb · log_ride_trough.glb · log_ride_support.glb — "FNAF SB | Foxy Logride Assets" by KPMisParrot (보트 · 물길만, 캐릭터 판넬은 지움)
                       keypad_door_lock.glb — "CC0 - Keypad Door Lock" by plaggy
-  엔진이 읽는 이름 : IT_flume_pool(스플래시 풀) · IT_flume_boat(역에 선 점검용 보트, 엔진이 트랙을 따라 움직인다) · IT_fsand_1~9(보트의 모래주머니)
+  엔진이 읽는 이름 : IT_flume_pool(스플래시 풀) · IT_flume_boat(역에 선 점검용 보트, 엔진이 트랙을 따라 움직인다) · IT_fmag_1~9(보트에 붙인 자석 — 붙였다 뗐다 하며 무게를 맞춘다)
             IT_flume_crane(크레인 조작 기둥 · 힘 센서) · COL_flume_pool · COL_flume_gantry_ · LIGHT_flume · SIGN_flume_pool · SIGN_flume_crane
-  Sketchfab (CC BY) : gantry_crane.glb — "Gantry Portica" by speedtwo · sandbag.glb — "Sandbag [Low Poly Realist]" by Islide
+  Sketchfab (CC BY) : gantry_crane.glb — "Gantry Portica" by speedtwo · magnet.glb — "Horseshoe Magnet" by ArchieCGD
             조작실 (tag = coaster) : IT_manual_coaster · IT_console_coaster · IT_mic_coaster · SPOT_booth_coaster · SIGN_booth_coaster
             COL_GATE_cbooth(잠긴 문) · ANIM_cbdoor(문 경첩) · IT_keypad_coaster(키패드) · IT_keynote_coaster(옆에 붙은 쪽지 — 코스 그림)
 """
@@ -18,7 +18,7 @@ POOL = (26.6, 34.0, -3.6, 1.8)        # 스플래시 풀 바깥 x1 x2 z1 z2 (게
 POOL_H, WATER_H = 1.15, 1.0           # 물탱크 벽 높이 · 수면 높이
 BOAT_H = 0.9                          # 보트 높이 (등받이 꼭대기까지) — 테두리(보트 깊이 D)는 아래에서 0.68 m
 LINE_LOCAL = 0.6 * 0.553              # 초록 선(알맞게 잠기는 깊이 = D 의 60 %) · 보트 뿌리 좌표 (크기 1.233 배 전)
-SAND_N = 9                            # 모래주머니 (손님 무게 대신) — 엔진 room4 의 ROOM4.bags 와 같게
+MAG_N = 9                             # 무게 조절 자석 (손님 무게 대신) — 엔진 room4 의 ROOM4.mags 와 같게
 CRANE = (32.3, -0.7)                  # 크레인 가운데 (다리는 풀 남북 바깥)
 
 
@@ -80,7 +80,7 @@ def _import_glb(key, name):
 
 def _flume():
     """낙하 구간 물길 : 홈통 조각을 트랙 아래로 이어 붙이고, 안에 물 띠"""
-    line = _track_line()
+    line = _track_line(35)                          # 물길은 레일 끝(x 34.4)까지 — 그 뒤로 보트가 풀에 떨어진다
     me, w, L, h = _import_glb("sketchfab/log_ride_trough.glb", "flumex_trough")
     sup, sw, sl, sh = _import_glb("sketchfab/log_ride_support.glb", "flumex_support")
     s = 1.6 / w                                       # 홈통 폭 1.6 m
@@ -153,16 +153,16 @@ def _pool():
 
 
 def _boat():
-    """역(빨간 열차가 서 있던 자리)에 점검용 통나무 보트 — 모래주머니 9개 · 옆면 초록 선(알맞게 잠기는 깊이)"""
+    """역(빨간 열차가 서 있던 자리)에 점검용 통나무 보트 — 무게 조절 자석 9개 · 옆면 초록 선(알맞게 잠기는 깊이)"""
     boat = _prop("sketchfab/log_ride_boat.glb", 26.0, -9.0, rot=0, y=1.4, height=BOAT_H, name="IT_flume_boat", child="flumex_")
     bpy.context.view_layer.update()
     s = boat.scale.x
-    # 모래주머니 : 좌석 사이 바닥에 아래 5개 · 위 4개 (보트 뿌리 좌표)
-    spots = [(y, .18) for y in (-.5, -.25, 0, .25, .5)] + [(y, .32) for y in (-.375, -.125, .125, .375)]
+    # 자석 : 좌석 사이 바닥에 겹겹이 붙어 있다 (보트 뿌리 좌표, 하나씩 떼어 낼 수 있게 IT_fmag_k)
+    spots = [((-1) ** i * .06, -.52 + i * .13, .2 + (i % 3) * .05) for i in range(9)]
     first = None
-    for k, (y, z) in enumerate(spots[:SAND_N], 1):
+    for k, (x, y, z) in enumerate(spots[:MAG_N], 1):
         if first is None:
-            bag = first = _prop("sketchfab/sandbag.glb", 0, 0, height=0.15, name=f"IT_fsand_{k}", child="flumex_")
+            bag = first = _prop("sketchfab/magnet.glb", 0, 0, height=0.06, name=f"IT_fmag_{k}", child="flumex_")
         else:                                           # 같은 메시 · 텍스처를 나눠 쓰는 복제
             def dup(o, parent):
                 c = o.copy()
@@ -172,11 +172,11 @@ def _boat():
                     dup(k2, c)
                 return c
             bag = dup(first, boat)
-            bag.name = f"IT_fsand_{k}"
+            bag.name = f"IT_fmag_{k}"
         bag.parent = boat
         bag.matrix_parent_inverse.identity()
-        bag.location = (0, y, z)
-        bag.rotation_euler = (0, 0, 1.5708)
+        bag.location = (x, y, z)
+        bag.rotation_euler = (0, 0, 1.5708 + (k % 2) * 3.1416 + (k * .37) % .4 - .2)
         if bag is first:
             bag.scale = [v / s for v in bag.scale]
     # 초록 선 : 보트 겉면을 선 높이에서 얇게 잘라 낸 띠 (바깥을 보는 면만)
@@ -231,7 +231,12 @@ def _strip_trains():
         P = [mw @ p.co for p in isl]
         if min(p.x for p in P) > 25.2 and max(p.x for p in P) < 26.8 and min(p.y for p in P) > 4.8 and max(p.y for p in P) < 12.6 and min(p.z for p in P) > 1.3:
             kill += isl
+        elif min(p.x for p in P) > 21.6 and max(p.x for p in P) < 22.2 and min(p.y for p in P) > 8.7 and max(p.y for p in P) < 9.3:
+            kill += isl                                  # 계단 입구 한가운데 서 있던 역 기둥
     bmesh.ops.delete(bm, geom=kill, context="VERTS")
+    # 마지막 낙하 뒤 레일을 끊는다 : 보트는 레일 끝(x 34.4)에서 풀로 떨어지고, 풀 → 역 사이 레일은 없다
+    cut = [fc for fc in bm.faces if (lambda c: 26.9 < c.x < 34.4 and -0.6 < c.y < 2.4 and c.z < 4.5)(mw @ fc.calc_center_median())]
+    bmesh.ops.delete(bm, geom=cut, context="FACES")
     bm.to_mesh(o.data)
     bm.free()
     return len(kill)
@@ -241,13 +246,22 @@ def build_flume():
     _clear(("flumex_", "IT_flume_", "COL_flume_", "LIGHT_flume", "SIGN_flume_",
             "bxcoaster_", "COL_bcoaster_", "IT_manual_coaster", "IT_console_coaster", "IT_mic_coaster", "LIGHT_booth_coaster", "SIGN_booth_coaster",
             "SIGN_manual_coaster", "SPOT_booth_coaster", "COL_GATE_cbooth", "ANIM_cbdoor", "IT_keypad_coaster", "IT_keynote_coaster", "IT_keynote2_coaster", "IT_cbtn_",
-            "IT_fsand_", "IT_flume_crane"))
+            "IT_fsand_", "IT_fmag_", "IT_flume_crane", "FLOOR_flume_step", "flumex_signboard", "SIGN_coaster"))
     for me in [m for m in bpy.data.meshes if m.users == 0]:
         bpy.data.meshes.remove(me)
     _strip_trains()
     _flume()
     _pool()
     _boat()
+    # 역 계단 : v1 맵에 밟는 바닥이 없어 끝에서 툭 올라섰다 → 칸마다 FLOOR (높이 0.3 · 0.6 · 0.9 · 1.2)
+    for i in range(4):
+        cx, h = 21.2 - i * .45, 1.2 - i * .3
+        _box(f"FLOOR_flume_step{i}", cx - .225, (21.85 if i == 0 else cx + .225), 0, h, -10.2, -7.8, bpy.data.materials["collider"])
+    # 간판 '후룸라이드 · 키 120cm 이상 탑승' : 계단 가운데 기둥에서 → 역 지붕 위 광고판으로
+    _box("flumex_signboard", 21.3, 21.42, 4.62, 5.62, -11.6, -6.4, bpy.data.materials["paint_red"])
+    for k, z in enumerate((-10.8, -7.2)):
+        _box(f"flumex_signboard_leg{k}", 21.36, 21.46, 4.5, 4.7, z - .05, z + .05, bpy.data.materials["iron"])
+    _empty("SIGN_coaster", 21.27, 5.12, -9.0, -90, w=5, h=0.9)
     # ---- 조작실 : 역 남쪽, 큰 창이 스플래시 풀(동쪽), 문은 남쪽 (광장에서 걸어오는 쪽)
     M = bpy.data.materials
     b = _Booth("coaster", 24.2, 3.4, 180)
