@@ -156,7 +156,7 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     await camTo({yaw:yaw0,pitch:0},.9); P.free=true;
     await mono(['…일단 빨리 점검을 마무리하자.']); }
 
-  /* ---------- 디버그 바로 가기 (Shift+3 ~ 6) · 범퍼카 바로 가기가 쓰는 room2Done() ---------- */
+  /* ---------- 디버그 바로 가기 (Shift+2) · 범퍼카 바로 가기가 쓰는 room2Done() ---------- */
   function prep(n){ room1Done(); Object.assign(S.flags,{booth_in:true}); if(!S.flags.carousel_aligned) alignCarousel();
     if(n>=4){ S.flags.manual_carousel=true; INV.note('manual_carousel',ROOM2.manual.title,ROOM2.manual.body); st.power=true; st.lit=8; S.flags.saw_bad=true; S.flags.jump_hint=true; }
     if(n>=5){ Object.assign(S.flags,{horse_seen:true,horse_tool:true,horse_fixed:true}); const f=PARK.items.horse_5, h=PARK.items.horsehome_5; if(f) f.visible=false; if(h) h.visible=true; }
@@ -164,12 +164,7 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     sync3d(); }
   window.room2Done=()=>prep(6);
   const inBooth=()=>{ const m=itemPos('manual_carousel'); warp(-19.05,13.3,m?m.x:-19.4,m?m.z:14.9); };
-  CHECKPOINTS.push(
-    {key:'3',name:'회전목마 조작실 (점검 방법 · 전원)',go(){ prep(3); inBooth(); objective('조작실 안에서 점검 방법을 찾자'); }},
-    {key:'4',name:'회전목마 5번 구역 · 용수철저울',go(){ prep(4); const h=itemPos('horse_5'); if(!h) return;
-      const d=new THREE.Vector3(h.x-C.x,0,h.z-C.z).normalize(); warp(h.x+d.x*1.8,h.z+d.z*1.8,h.x,h.z,0.5); P.pitch=-0.35; objective('회전목마 무대 '+ROOM2.bad+'번 구역을 점검하자'); }},
-    {key:'5',name:'회전목마 레버 · 전원 끄기',go(){ prep(5); const c=itemPos('console_carousel'); warp(-19.5,13.75,c?c.x:-20.2,c?c.z:13.75); objective('조작실에서 버튼 8개를 확인하고 레버를 내리자'); }},
-    {key:'6',name:'범퍼카로 (회전목마 공포 직전)',go(){ prep(6); warp(-36,23,-36,33); objective('범퍼카로 가서 조작실을 찾자'); const b=PARK.spots.booth_bumper; if(b) setGoal(b.x,b.z,'범퍼카 조작실'); }});
+  CHECKPOINTS.push({key:'2',name:'회전목마 조작실',go(){ prep(3); inBooth(); objective('조작실 안에서 점검 방법을 찾자'); }});
 
   ROOMS.push({id:'room2', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };

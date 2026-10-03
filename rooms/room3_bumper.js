@@ -159,7 +159,7 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     if(!S.flags.bumper_lure&&d>14){ S.flags.bumper_lure=true; AUDIO.noise(.35,.6,0,160); AUDIO.tone(55,.5,'sine',.35,0,-15);     // 뒤돌아보지 않고 멀어지면 등 뒤에서
       mono('…방금 뒤에서, 범퍼카 쪽에서 무슨 소리가?'); } }
 
-  /* ---------- 디버그 바로 가기 (Shift+7 ~ 9) ---------- */
+  /* ---------- 디버그 바로 가기 (Shift+3) ---------- */
   function prep(n){ room2Done(); S.flags.ghost_carousel=true; S.flags.bumper_booth_in=true;
     if(n>=8){ S.flags.manual_bumper=true; INV.note('manual_bumper',R.manual.title,R.manual.body); st.power=true; st.lit=N; Object.assign(S.flags,{bumper_power:true,bumper_tool:true}); }
     if(n>=9){ for(const k in R.start){ const v=R.start[k]; if(v>R.base) oil[k]=Math.ceil((v-R.base)/R.oilStep); else wt[k]=Math.ceil((R.base-v)/R.weightStep); syncBells(k); }
@@ -167,10 +167,7 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     sync3d(); }
   window.room3Done=()=>{ prep(9); st.power=false; st.lit=0; sync3d(); Object.assign(S.flags,{bumper_done:true,bumper_scare:true,bumper_lure:true}); };
   const inBooth=()=>{ const m=itemPos('manual_bumper'); warp(-39.6,31.2,m?m.x:-38.3,m?m.z:31.3); };
-  CHECKPOINTS.push(
-    {key:'7',name:'범퍼카 조작실 (점검 방법 · 전원)',go(){ prep(7); inBooth(); objective('범퍼카 조작실에서 점검 방법을 찾자'); }},
-    {key:'8',name:'범퍼카 마찰력 측정 (4번 · 5번)',go(){ prep(8); const c=itemPos('bcar_4')||{x:-41.8,z:43.6}; warp(-38.6,41.2,c.x,c.z); objective('범퍼카를 하나씩 당겨 보며 확인하자 (0/6)'); }},
-    {key:'9',name:'범퍼카 전원 끄기 → 나와서 범퍼카장 보기 (공포)',go(){ prep(9); const c=itemPos('console_bumper'); warp(-39.4,31.0,c?c.x:-39.5,c?c.z:32.2); objective('점검 끝 — 범퍼카 조작반 전원을 끄자'); }});
+  CHECKPOINTS.push({key:'3',name:'범퍼카 조작실',go(){ prep(7); inBooth(); objective('범퍼카 조작실에서 점검 방법을 찾자'); }});
 
   ROOMS.push({id:'room3', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };

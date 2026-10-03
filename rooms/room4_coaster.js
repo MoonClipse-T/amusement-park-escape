@@ -218,17 +218,8 @@ GATES.cbooth='롤러코스터 조작실 문';
     if(!S.flags.flume_ok) return ride2();
     AUDIO.click(); mono('초록 선까지 딱 맞게 잠겨 떠 있다.'); }
 
-  /* ---------- 디버그 바로 가기 (Shift+0 · Shift+Z · X · C) ---------- */
-  function prep(n){ room3Done(); S.flags.coaster_arrive=true;
-    if(n>=1){ openGate('cbooth'); door.t=1; S.flags.keynote=true; }
-    if(n>=2){ S.flags.manual_coaster=true; INV.note('manual_coaster',R.manual.title,R.manual.body); st.power=true; S.flags.coaster_power=true; lamps(3); openGate('coaster');
-      S.flags.flume_rode=S.flags.flume_sank=true; floatBoat(D+.1); }
-    if(n>=3){ Object.assign(S.flags,{crane_seen:true,buoy_q1:true,buoy_done:true}); bz.n=BLINE/R.bag-R.boat/R.bag; syncBags(); } }
-  CHECKPOINTS.push(
-    {key:'0',name:'롤러코스터(후룸라이드) 조작실 · 키패드',go(){ prep(0); const s=spot(), k=itemPos('keypad_coaster')||s; warp(s.x,s.z+1.6,k.x,k.z); objective('조작실 키패드의 비밀번호를 찾자'); }},
-    {key:'Z',name:'후룸라이드 조작실 안 (점검 방법 · 전원 · 보트 타기)',go(){ prep(1); const m=itemPos('manual_coaster'); warp(23.0,2.3,m?m.x:23,m?m.z:1.1); objective('조작실 안에서 점검 방법을 찾자'); }},
-    {key:'X',name:'후룸라이드 크레인 · 부력 측정 (첫 탑승 뒤)',go(){ prep(2); warp(29.8,3.8,REST.x,REST.z); objective('스플래시 풀 크레인에서 부력을 재자'); const c=itemPos('flume_crane'); if(c) setGoal(c.x,c.z,'크레인 힘 센서'); }},
-    {key:'C',name:'후룸라이드 다시 타기 (무게 맞춘 뒤)',go(){ prep(3); warp(29.8,3.8,REST.x,REST.z); objective('보트에 다시 타서 확인하자'); }});
+  /* ---------- 디버그 바로 가기 (Shift+4) ---------- */
+  CHECKPOINTS.push({key:'4',name:'롤러코스터(후룸라이드) 조작실 앞',go(){ room3Done(); S.flags.coaster_arrive=true; const s=spot(), k=itemPos('keypad_coaster')||s; warp(s.x,s.z+1.6,k.x,k.z); objective('조작실 키패드의 비밀번호를 찾자'); }});
 
   ROOMS.push({id:'room4', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };
