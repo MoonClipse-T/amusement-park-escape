@@ -6,7 +6,9 @@
   dorm_dress.py · carousel_booth.py 의 도우미를 쓴다 (build 스크립트가 parts 를 차례로 exec).
   Sketchfab (CC BY) : log_ride_boat.glb · log_ride_trough.glb · log_ride_support.glb — "FNAF SB | Foxy Logride Assets" by KPMisParrot (보트 · 물길만, 캐릭터 판넬은 지움)
                       keypad_door_lock.glb — "CC0 - Keypad Door Lock" by plaggy
-  엔진이 읽는 이름 : IT_flume_pool(스플래시 풀) · IT_flume_boat · COL_flume_pool · LIGHT_flume · SIGN_flume_pool
+  엔진이 읽는 이름 : IT_flume_pool(스플래시 풀) · IT_flume_boat(역에 선 점검용 보트, 엔진이 트랙을 따라 움직인다) · IT_fsand_1~9(보트의 모래주머니)
+            IT_flume_crane(크레인 조작 기둥 · 힘 센서) · COL_flume_pool · COL_flume_gantry_ · LIGHT_flume · SIGN_flume_pool · SIGN_flume_crane
+  Sketchfab (CC BY) : gantry_crane.glb — "Gantry Portica" by speedtwo · sandbag.glb — "Sandbag [Low Poly Realist]" by Islide
             조작실 (tag = coaster) : IT_manual_coaster · IT_console_coaster · IT_mic_coaster · SPOT_booth_coaster · SIGN_booth_coaster
             COL_GATE_cbooth(잠긴 문) · ANIM_cbdoor(문 경첩) · IT_keypad_coaster(키패드) · IT_keynote_coaster(옆에 붙은 쪽지)
 """
@@ -14,6 +16,10 @@ import bpy, bmesh, math, os, mathutils
 
 POOL = (26.6, 34.0, -3.6, 1.8)        # 스플래시 풀 바깥 x1 x2 z1 z2 (게임 좌표)
 POOL_H, WATER_H = 1.15, 1.0           # 물탱크 벽 높이 · 수면 높이
+BOAT_H = 0.9                          # 보트 높이 (등받이 꼭대기까지) — 테두리(보트 깊이 D)는 아래에서 0.68 m
+LINE_LOCAL = 0.6 * 0.553              # 초록 선(알맞게 잠기는 깊이 = D 의 60 %) · 보트 뿌리 좌표 (크기 1.233 배 전)
+SAND_N = 9                            # 모래주머니 (손님 무게 대신) — 엔진 room4 의 ROOM4.bags 와 같게
+CRANE = (32.3, -0.7)                  # 크레인 가운데 (다리는 풀 남북 바깥)
 
 
 def _track_line(x1=27, x2=45):
@@ -127,25 +133,121 @@ def _pool():
     _box("IT_flume_pool", x1 + t, x2 - t, WATER_H - .02, WATER_H, z1 + t, z2 - t, water)          # 수면 (조사 대상)
     _box("flumex_pool_floor", x1 + t, x2 - t, 0.05, 0.1, z1 + t, z2 - t, _mat("flumex_pool_floor", "#1d3c44", 0.9))
     _box("COL_flume_pool", x1, x2, 0, 2.5, z1, z2, M["collider"])
-    # 떠 있는 통나무 보트 (아래 1/3 쯤 물에 잠김)
-    _prop("sketchfab/log_ride_boat.glb", 31.0, 0.1, rot=96, y=WATER_H - .32, height=0.9, name="IT_flume_boat", child="flumex_")
     _empty("LIGHT_flume", 30.4, 3.2, -0.8, color="#7fd6ff", i=1.1, d=10)
     # 안내판 (풀 남쪽, 광장 쪽을 봄)
-    _box("flumex_board", 28.9, 30.9, 1.25, 2.15, 2.24, 2.30, M["paint_white"])
-    _box("flumex_board_rim", 28.85, 30.95, 1.2, 2.2, 2.20, 2.26, trim)
-    for k, x in enumerate((29.1, 30.7)):
+    _box("flumex_board", 27.0, 29.0, 1.25, 2.15, 2.24, 2.30, M["paint_white"])
+    _box("flumex_board_rim", 26.95, 29.05, 1.2, 2.2, 2.20, 2.26, trim)
+    for k, x in enumerate((27.2, 28.8)):
         _cyl(f"flumex_board_post{k}", x, 1.0, 2.16, 0.04, 2.0, M["iron"], verts=10)
-    _empty("SIGN_flume_pool", 29.9, 1.7, 2.305, 0, w=1.9, h=0.85)
+    _empty("SIGN_flume_pool", 28.0, 1.7, 2.305, 0, w=1.9, h=0.85)
+    # 크레인 (풀을 가로지르는 문형 크레인) + 남쪽 조작 기둥 (힘 센서 화면)
+    cx, cz = CRANE
+    gan = _prop("sketchfab/gantry_crane.glb", cx, cz, rot=90, height=4.6, name="flumex_gantry")
+    gan.scale.z *= 1.35                                  # 키만 6.2 m 로 — 낙하 직전 탄 사람 머리 위로 들보가 지나가게
+    for n, (z1, z2) in {"n": (cz - 3.75, cz - 3.25), "s": (cz + 3.25, cz + 3.75)}.items():
+        _box(f"COL_flume_gantry_{n}", cx - 1.1, cx + 1.1, 0, 2.5, z1, z2, M["collider"])
+    _cyl("flumex_panel_post", 29.5, 0.55, 2.55, 0.06, 1.1, M["iron"], verts=12)
+    pan = _box("IT_flume_crane", 29.2, 29.8, 1.05, 1.45, 2.4, 2.6, _mat("flumex_panel", "#d8a21c", 0.5))
+    _kids(pan, _box("flumex_panel_scr", 29.3, 29.7, 1.18, 1.38, 2.6, 2.63, _mat("flumex_panel_scr", "#10241c", 0.3)))
+    _empty("SIGN_flume_crane", 29.5, 1.28, 2.635, 0, w=0.4, h=0.2)
+
+
+def _boat():
+    """역(빨간 열차가 서 있던 자리)에 점검용 통나무 보트 — 모래주머니 9개 · 옆면 초록 선(알맞게 잠기는 깊이)"""
+    boat = _prop("sketchfab/log_ride_boat.glb", 26.0, -9.0, rot=0, y=1.4, height=BOAT_H, name="IT_flume_boat", child="flumex_")
+    bpy.context.view_layer.update()
+    s = boat.scale.x
+    # 모래주머니 : 좌석 사이 바닥에 아래 5개 · 위 4개 (보트 뿌리 좌표)
+    spots = [(y, .18) for y in (-.5, -.25, 0, .25, .5)] + [(y, .32) for y in (-.375, -.125, .125, .375)]
+    first = None
+    for k, (y, z) in enumerate(spots[:SAND_N], 1):
+        if first is None:
+            bag = first = _prop("sketchfab/sandbag.glb", 0, 0, height=0.15, name=f"IT_fsand_{k}", child="flumex_")
+        else:                                           # 같은 메시 · 텍스처를 나눠 쓰는 복제
+            def dup(o, parent):
+                c = o.copy()
+                bpy.context.scene.collection.objects.link(c)
+                c.parent = parent
+                for k2 in o.children:
+                    dup(k2, c)
+                return c
+            bag = dup(first, boat)
+            bag.name = f"IT_fsand_{k}"
+        bag.parent = boat
+        bag.matrix_parent_inverse.identity()
+        bag.location = (0, y, z)
+        bag.rotation_euler = (0, 0, 1.5708)
+        if bag is first:
+            bag.scale = [v / s for v in bag.scale]
+    # 초록 선 : 보트 겉면을 선 높이에서 얇게 잘라 낸 띠 (바깥을 보는 면만)
+    bpy.context.view_layer.update()
+    hull = next(c for c in boat.children_recursive if c.type == "MESH" and "log_ride_boat" in c.name)
+    bm = bmesh.new()
+    bm.from_mesh(hull.data)
+    bm.transform(boat.matrix_world.inverted() @ hull.matrix_world)
+    h0, h1 = LINE_LOCAL - .012, LINE_LOCAL + .012
+    g = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    bmesh.ops.bisect_plane(bm, geom=g, plane_co=(0, 0, h1), plane_no=(0, 0, 1), clear_outer=True)
+    g = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    bmesh.ops.bisect_plane(bm, geom=g, plane_co=(0, 0, h0), plane_no=(0, 0, -1), clear_outer=True)
+    inner = [f for f in bm.faces if f.normal.x * f.calc_center_median().x + f.normal.y * f.calc_center_median().y <= 0 or abs(f.normal.z) > .7]
+    bmesh.ops.delete(bm, geom=inner, context="FACES")
+    for v in bm.verts:
+        v.co.x *= 1.025
+        v.co.y *= 1.01
+    me = bpy.data.meshes.new("flumex_waterline")
+    bm.to_mesh(me)
+    bm.free()
+    gm = _mat("flumex_waterline", "#2fe07a", 0.5)
+    b = next(n for n in gm.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    b.inputs["Emission Color"].default_value = (0.1, 0.9, 0.35, 1)
+    b.inputs["Emission Strength"].default_value = 1.5
+    me.materials.append(gm)
+    line = bpy.data.objects.new("flumex_waterline", me)
+    bpy.context.scene.collection.objects.link(line)
+    line.parent = boat
+
+
+def _strip_trains():
+    """롤러코스터 역에 서 있던 빨간 열차 3량(따로 떨어진 상자 덩어리)만 지운다 — 레일 · 침목은 길게 이어져 있어 남는다"""
+    o = bpy.data.objects["coaster"]
+    mw = o.matrix_world
+    bm = bmesh.new()
+    bm.from_mesh(o.data)
+    seen, kill = set(), []
+    for v in bm.verts:
+        if v in seen:
+            continue
+        isl, stack = [], [v]
+        seen.add(v)
+        while stack:
+            a = stack.pop()
+            isl.append(a)
+            for e in a.link_edges:
+                w = e.other_vert(a)
+                if w not in seen:
+                    seen.add(w)
+                    stack.append(w)
+        P = [mw @ p.co for p in isl]
+        if min(p.x for p in P) > 25.2 and max(p.x for p in P) < 26.8 and min(p.y for p in P) > 4.8 and max(p.y for p in P) < 12.6 and min(p.z for p in P) > 1.3:
+            kill += isl
+    bmesh.ops.delete(bm, geom=kill, context="VERTS")
+    bm.to_mesh(o.data)
+    bm.free()
+    return len(kill)
 
 
 def build_flume():
     _clear(("flumex_", "IT_flume_", "COL_flume_", "LIGHT_flume", "SIGN_flume_",
             "bxcoaster_", "COL_bcoaster_", "IT_manual_coaster", "IT_console_coaster", "IT_mic_coaster", "LIGHT_booth_coaster", "SIGN_booth_coaster",
-            "SIGN_manual_coaster", "SPOT_booth_coaster", "COL_GATE_cbooth", "ANIM_cbdoor", "IT_keypad_coaster", "IT_keynote_coaster", "IT_cbtn_"))
+            "SIGN_manual_coaster", "SPOT_booth_coaster", "COL_GATE_cbooth", "ANIM_cbdoor", "IT_keypad_coaster", "IT_keynote_coaster", "IT_cbtn_",
+            "IT_fsand_", "IT_flume_crane"))
     for me in [m for m in bpy.data.meshes if m.users == 0]:
         bpy.data.meshes.remove(me)
+    _strip_trains()
     _flume()
     _pool()
+    _boat()
     # ---- 조작실 : 역 남쪽, 큰 창이 스플래시 풀(동쪽), 문은 남쪽 (광장에서 걸어오는 쪽)
     M = bpy.data.materials
     b = _Booth("coaster", 24.2, 3.4, 180)

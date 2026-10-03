@@ -10,4 +10,6 @@
 | sketchfab/kettlebell_old_iron.glb | https://sketchfab.com/3d-models/7bd9ef79fda142f98e224ef57996312b | tomarranskinner | CC BY 4.0 |
 | sketchfab/log_ride_boat.glb · log_ride_trough.glb · log_ride_support.glb (보트 · 물길만, 캐릭터 판넬은 지움) | https://sketchfab.com/3d-models/01a42e514373457785c281b20c5ff4a6 | KPMisParrot | CC BY 4.0 |
 | sketchfab/keypad_door_lock.glb | https://sketchfab.com/3d-models/b722a6496ab344d78e74bf64be6c8eb8 | plaggy | CC BY 4.0 |
+| sketchfab/gantry_crane.glb | https://sketchfab.com/3d-models/d3b21ab5c67a4f11ae19fdc6a18c5b1a | speedtwo | CC BY 4.0 |
+| sketchfab/sandbag.glb | https://sketchfab.com/3d-models/7d52600a15c747749d845d9f906045cf | Islide | CC BY 4.0 |
 | polyhaven/* | https://polyhaven.com/models | Poly Haven | CC0 |

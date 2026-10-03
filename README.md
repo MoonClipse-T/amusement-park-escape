@@ -19,7 +19,7 @@
 | `web/rooms/room1_dorm.js` | 방 1 : 직원 숙소 — 사물함 · 열쇠 · 장력 평형 잠금장치 (글 · 정답은 맨 위 `ROOM1`) |
 | `web/rooms/room2_carousel.js` | 방 2 : 회전목마 — 조작반 · 용수철저울로 말의 중력 재기 (`ROOM2`) |
 | `web/rooms/room3_bumper.js` | 방 3 : 범퍼카 — 마찰력 측정 · 윤활유 (`ROOM3`) |
-| `web/rooms/room4_coaster.js` | 방 4 : 롤러코스터 = 후룸라이드 — 잠긴 조작실 키패드 · 스플래시 풀 (부력, 준비 중) (`ROOM4`) |
+| `web/rooms/room4_coaster.js` | 방 4 : 롤러코스터 = 후룸라이드 — 잠긴 조작실 키패드 · 직접 타기 · 크레인 힘 센서로 부력 재기 · 모래주머니로 무게 맞추기 (`ROOM4`) |
 | `web/main.js` | 시작 |
 | `web/vendor/` | three.js r128, GLTFLoader |
 | `web/assets/` | `park.glb` (Blender 맵), `sky.jpg` (반사광용 HDRI) |
@@ -74,6 +74,9 @@ python tools/optimize_glb.py web/assets/park.glb      # 선택 : 17MB → 13MB
 | Shift+8 | 범퍼카 마찰력 측정 (전원 켬 · 도구 고름) |
 | Shift+9 | 범퍼카 전원 끄기 → 나와서 범퍼카장을 보면 공포 |
 | Shift+0 | 롤러코스터(후룸라이드) 조작실 · 키패드 |
+| Shift+Z | 후룸라이드 조작실 안 (점검 방법 · 전원 · 보트 타기) |
+| Shift+X | 후룸라이드 크레인 · 부력 측정 (첫 탑승 뒤) |
+| Shift+C | 후룸라이드 다시 타기 (무게 맞춘 뒤) |
 | Shift+L | 바로 가기 목록 |
 
 그 밖 : Alt+1~0 구역 위치로만 이동 · Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기
@@ -111,7 +114,7 @@ ROOMS.push({ id:'haunted',
 - 숙소 · 조작실 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등 · 공구함 · 플라스틱 의자
 - 가방 : Quaternius "Backpack" (CC0) · 열쇠 : iPoly3D "Key" (CC0) · 근무복 : Polygonal Mind "Jacket" (CC0) — poly.pizza
 - 안내 방송 목소리 : Microsoft Edge 신경망 음성 (edge-tts 로 생성, web/assets/voice/) — 마감 방송 ko-KR-SunHi · 마이크 테스트(주인공) ko-KR-InJoon
-- Sketchfab (CC BY) : "Rabbit plush / Conejo Peluche" by afzmtm · "Old Iron Kettlebell" by tomarranskinner · "FNAF SB | Foxy Logride Assets" by KPMisParrot (통나무 보트 · 물길만) · "CC0 - Keypad Door Lock" by plaggy (blender/source/sketchfab/)
+- Sketchfab (CC BY) : "Rabbit plush / Conejo Peluche" by afzmtm · "Old Iron Kettlebell" by tomarranskinner · "FNAF SB | Foxy Logride Assets" by KPMisParrot (통나무 보트 · 물길만) · "CC0 - Keypad Door Lock" by plaggy · "Gantry Portica" by speedtwo · "Sandbag [Low Poly Realist]" by Islide (blender/source/sketchfab/)
 - 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
 - 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
 - 배포 전에 각 에셋의 이용 조건을 한 번 확인할 것
