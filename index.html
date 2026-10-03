@@ -86,19 +86,16 @@
   <div class="frow"><span class="fl">말에 작용하는 중력</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
   <button class="fgo">확인</button><p class="fmsg"></p></div></div>
 
-<!-- 후룸라이드 크레인 · 힘 센서 : 보트를 물에 내리며 부력 재기 → 모래주머니로 무게 맞추기 (방 4) -->
-<div id="buoy" class="ov"><button class="close">✕</button><div class="fpad">
-  <div class="fhead"><span class="ft">크레인 · 힘 센서</span><span class="fsub">BUOYANCY · N</span></div>
-  <canvas id="bcv" width="720" height="400"></canvas>
-  <p class="fq"></p>
-  <div class="ftab btab"></div>
-  <div class="frow"><button class="fdir bdown">▼ 물속으로 한 칸 내리기</button><button class="fdir bup">▲ 한 칸 올리기</button></div>
-  <div class="frow bq1"><span class="fl">초록 선까지 잠겼을 때 부력</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
-  <div class="frow bq1"><button class="fgo bok">확인</button></div>
-  <div class="frow bq2"><button class="fdir bsub">모래주머니 내리기</button><button class="fdir badd">모래주머니 싣기</button></div>
-  <div class="frow bq2"><button class="fgo brel">줄 풀고 띄워 보기</button></div>
-  <p class="finfo"></p>
-  <p class="fmsg"></p></div></div>
+<!-- 후룸라이드 크레인 리모컨 : 3D 화면 그대로 보트를 오르내리고, 값은 앞의 3D 계기판에 뜬다 (방 4) -->
+<div id="remote"><div class="rhead"><span>크레인 리모컨</span><span class="rbags"></span></div>
+  <p class="rq"></p>
+  <div class="rrow"><button class="rb rdown">▼ 내리기</button><button class="rb rup">▲ 올리기</button></div>
+  <div class="rrow rq1"><input class="rnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="부력" autocomplete="off"><b>N</b><button class="rb rok">입력</button></div>
+  <div class="rrow rq2"><button class="rb rsub">모래주머니 −</button><button class="rb radd">모래주머니 +</button></div>
+  <div class="rrow rq2"><button class="rb rrel">줄 풀고 띄우기</button></div>
+  <p class="rmsg"></p>
+  <div class="rrow"><button class="rb rexit">리모컨 내려놓기 (Q)</button></div>
+  <p class="rkeys">누르고 있으면 계속 움직인다 · 키보드 ↓ ↑ (S W)</p></div>
 
 <!-- 범퍼카 조작반 : 전원 · 범퍼카 전기 램프 6개 (방 3) -->
 <div id="bctrl" class="ov"><button class="close">✕</button><div class="fpad">
