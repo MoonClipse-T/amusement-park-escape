@@ -102,7 +102,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
       let vt=lifting?3.2:.8*Math.sqrt(2*9.8*Math.max(0,H_PEAK+.5-p.y))+2.5; if(rd.scare&&rd.scare.on&&!rd.scare.done) vt=.45; rd.v+=(vt-rd.v)*Math.min(1,dt*(lifting?3:1.5)); rd.s+=rd.v*dt;
       const pos=p.clone(); pos.y+=.2; placeBoat(pos,f); seat(pos,f); if(rd.scare&&!rd.scare.done) scareTick(dt,pos,f);
       rd.tick-=dt; if(rd.tick<=0){ rd.tick=lifting?.22:.18; if(lifting) AUDIO.tone(70,.05,'square',.07); else AUDIO.noise(.22,Math.min(.22,rd.v/70),0,400+rd.v*70); }
-      if(rd.s>=rd.end){ if(rab){ rab.visible=false; face.visible=false; } rd.mode='drop'; rd.t=0; rd.p0=pos; rd.f0=f; AUDIO.noise(1,.25,0,1400); } }
+      if(rd.s>=rd.end){ if(rab) rab.visible=false; rd.mode='drop'; rd.t=0; rd.p0=pos; rd.f0=f; AUDIO.noise(1,.25,0,1400); } }
     else if(rd.mode==='drop'){ rd.t=Math.min(1,rd.t+dt/.9); const t=rd.t, pos=rd.p0.clone().lerp(REST,t);
       pos.y=rd.p0.y+(WATER-.12-rd.p0.y)*t*t; const f=rd.f0.clone().lerp(restFwd,t); f.y=-.25-.45*t; f.normalize();
       placeBoat(pos,f); seat(pos,f);
@@ -121,35 +121,46 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
 
   /* ---------- 공포 : 꼭대기에서 떨어지기 직전, 시선이 오른쪽 아래로 — 땅에서 달토끼가 올려다보고 있다.
                   눈이 마주치는 순간 입이 찢어지게 벌어지고 눈이 빨갛게 (첫 탑승만) ---------- */
-  let rab=null, face=null;
-  const ease=x=>x*x*(3-2*x), FACE_Y=.535;               // 얼굴(입) 높이 = 인형 키의 FACE_Y
-  function mawTex(){ const c=document.createElement('canvas'); c.width=256; c.height=300; const g=c.getContext('2d');
-    g.fillStyle='#100000'; g.beginPath(); g.ellipse(128,150,120,142,0,0,7); g.fill();
-    const r=g.createRadialGradient(128,175,8,128,160,118); r.addColorStop(0,'#7a0505'); r.addColorStop(1,'#1a0000'); g.fillStyle=r; g.beginPath(); g.ellipse(128,160,98,112,0,0,7); g.fill();
-    g.fillStyle='#efe6cf'; for(let i=0;i<9;i++){ const x=30+i*22, d=Math.abs(4-i);
-      g.beginPath(); g.moveTo(x,34+d*7); g.lineTo(x+11,96+d*2); g.lineTo(x+22,34+d*7); g.fill();
-      g.beginPath(); g.moveTo(x,266-d*7); g.lineTo(x+11,204-d*2); g.lineTo(x+22,266-d*7); g.fill(); }
-    g.fillStyle='#8a1520'; g.beginPath(); g.ellipse(128,212,52,22,0,0,7); g.fill();
+  let rab=null, head=null, face=null;
+  const ease=x=>x*x*(3-2*x), RS=1.35*1.25;          // 광장 달토끼 동상(크기 1.35)을 1.25 배로 — 땅에 선 거대한 달토끼
+  // 바뀐 얼굴 : 눈이 튀어나올 듯 큰 핏발 선 눈(바늘 같은 동공) + 얼굴을 가로지르는 이빨투성이 웃음 (배경은 투명 — 털은 원래 인형 그대로)
+  function creepTex(){ const c=document.createElement('canvas'); c.width=512; c.height=440; const g=c.getContext('2d');
+    const eye=(x,y)=>{ g.fillStyle='rgba(20,8,6,.55)'; g.beginPath(); g.ellipse(x,y+8,112,122,0,0,7); g.fill();                 // 눈 밑 그늘
+      g.fillStyle='#f3ede0'; g.beginPath(); g.ellipse(x,y,100,112,0,0,7); g.fill();
+      g.strokeStyle='#b3141e'; g.lineWidth=2.2; for(let i=0;i<22;i++){ const a=i/22*Math.PI*2+.13*Math.sin(i*7), r0=98, r1=50+((i*37)%30);
+        g.beginPath(); g.moveTo(x+Math.cos(a)*r0,y+Math.sin(a)*r0*1.1); g.quadraticCurveTo(x+Math.cos(a+.18)*(r0+r1)/2,y+Math.sin(a+.18)*(r0+r1)/2*1.1,x+Math.cos(a)*r1,y+Math.sin(a)*r1*1.1); g.stroke(); }
+      g.fillStyle='#060404'; g.beginPath(); g.ellipse(x,y+4,72,88,0,0,7); g.fill();
+      g.fillStyle='#fff8e8'; g.beginPath(); g.ellipse(x,y+6,4,26,0,0,7); g.fill(); g.beginPath(); g.arc(x+22,y-36,7,0,7); g.fill();
+      g.strokeStyle='#120a08'; g.lineWidth=7; g.beginPath(); g.ellipse(x,y,100,112,0,0,7); g.stroke(); };
+    eye(140,138); eye(372,138);
+    // 웃음 : 양쪽 볼 끝까지 찢어진 입, 위아래로 길고 가는 이빨
+    const L=40, Rr=472, top=x=>282-34*Math.pow((x-256)/216,2), bot=x=>425-170*Math.pow((x-256)/216,2);      // 입꼬리가 올라간 웃음
+    g.fillStyle='#160404'; g.beginPath(); g.moveTo(L,top(L)); for(let x=L;x<=Rr;x+=8) g.lineTo(x,top(x)); for(let x=Rr;x>=L;x-=8) g.lineTo(x,bot(x)); g.closePath(); g.fill();
+    g.fillStyle='#5a0b10'; g.beginPath(); g.ellipse(256,390,90,22,0,0,7); g.fill();
+    g.fillStyle='#efe6d0'; g.strokeStyle='#5c5040'; g.lineWidth=1.5;
+    for(let x=L+6;x<Rr-6;x+=17){ const t=top(x), bt=bot(x), h=Math.max(10,(bt-t)*.55);
+      g.beginPath(); g.moveTo(x,t); g.lineTo(x+8.5,t+h); g.lineTo(x+17,t); g.closePath(); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(x,bt); g.lineTo(x+8.5,bt-h*.8); g.lineTo(x+17,bt); g.closePath(); g.fill(); g.stroke(); }
+    g.strokeStyle='#120a08'; g.lineWidth=5; g.beginPath(); g.moveTo(L,top(L)); for(let x=L;x<=Rr;x+=8) g.lineTo(x,top(x)); for(let x=Rr;x>=L;x-=8) g.lineTo(x,bot(x)); g.closePath(); g.stroke();
+    g.fillStyle='#e48f9e'; g.beginPath(); g.moveTo(236,250); g.lineTo(276,250); g.lineTo(256,272); g.closePath(); g.fill();      // 코
     return new THREE.CanvasTexture(c); }
-  function makeRabbit(){ const src=PARK.items.bplush; if(!src) return;
-    rab=src.clone(true); rab.position.set(0,0,0); rab.quaternion.identity(); rab.scale.set(1,1,1); scene.add(rab); rab.updateMatrixWorld(true);
-    const sz=new THREE.Box3().setFromObject(rab).getSize(new THREE.Vector3()), k=3.2/sz.y; rab.scale.setScalar(k); rab.visible=false;
-    rab.userData={w:sz.x*k,d:sz.z*k,h:3.2};                                           // 사람보다 큰 인형
-    face=new THREE.Group(); const w=sz.x*k*.46;          // 머리 폭에 맞춘 입 (눈 바로 아래)
-    face.add(new THREE.Mesh(new THREE.PlaneGeometry(w,w*1.15),new THREE.MeshBasicMaterial({map:mawTex(),transparent:true})));
-    const eg=new THREE.SphereGeometry(w*.1,10,8), em=new THREE.MeshBasicMaterial({color:0xff1a10});
-    [-1,1].forEach(sx=>{ const e=new THREE.Mesh(eg,em); e.position.set(sx*w*.28,w*.66,.03); face.add(e); });
-    face.traverse(m=>{ if(m.material){ m.material.depthTest=false; m.renderOrder=999; } });          // 머리에 묻히지 않게 얼굴 위에 늘 그린다
-    face.visible=false; scene.add(face); }
+  // 광장 달토끼 동상을 그대로 복제한다 (몸 · 리본 · 절구 + 머리) — 처음엔 낮에 본 그 귀여운 모습
+  function makeRabbit(){ const hd=PARK.anim.rabbithead; if(!hd) return;
+    const parts=[]; scene.traverse(o=>{ if(/^rabbit_(body|seam|pad[LR]|ribbon_(knot|L|R)|mortar|mortar_in|pestle|pestle_head)$/.test(o.name)) parts.push(o); });
+    hd.updateMatrixWorld(true); const wp=hd.getWorldPosition(new THREE.Vector3()), inv=new THREE.Matrix4().makeTranslation(-wp.x,-(wp.y-1.25*1.35),-wp.z);
+    const inner=new THREE.Group(); inner.rotation.y=-Math.PI/2;                                       // 동상은 동쪽(+x)을 본다 → 앞을 +z 로
+    const add=o=>{ o.updateMatrixWorld(true); const c=o.clone(true); new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld).decompose(c.position,c.quaternion,c.scale); c.visible=true; inner.add(c); return c; };
+    parts.forEach(add); head=add(hd); head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0));
+    rab=new THREE.Group(); rab.add(inner); rab.scale.setScalar(1.25); rab.visible=false; scene.add(rab);
+    face=new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.03),new THREE.MeshBasicMaterial({map:creepTex(),transparent:true,depthTest:false}));
+    face.renderOrder=999; face.position.set(0,.4*1.35,.52*1.35); face.visible=false; head.add(face); }          // 머리 앞면 (눈 · 주둥이 자리)
   function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
-    const base=pos.clone().addScaledVector(right,5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
+    const base=pos.clone().addScaledVector(right,4.5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
     const eye=new THREE.Vector3(P.x,P.y+P.eye,P.z);
-    rab.position.copy(base); rab.visible=true; rab.updateMatrixWorld(true); rab.lookAt(new THREE.Vector3(eye.x,base.y+(eye.y-base.y)*.7,eye.z));   // 고개를 젖혀 위의 나를 올려다본다 — 얼굴이 정면으로 보이게 rab.updateMatrixWorld(true);
-    rab.position.y+=base.y-new THREE.Box3().setFromObject(rab).min.y;                 // 발을 땅에
-    const fw=new THREE.Vector3(0,0,1).applyQuaternion(rab.quaternion);
-    const up=new THREE.Vector3(0,1,0).applyQuaternion(rab.quaternion), bot=new THREE.Box3().setFromObject(rab).min.y;
-    rab.userData.face=new THREE.Vector3(rab.position.x,bot,rab.position.z).addScaledVector(up,rab.userData.h*FACE_Y).addScaledVector(fw,rab.userData.d*.5+.05);
-    face.position.copy(rab.userData.face); face.lookAt(eye); face.scale.setScalar(.001); face.visible=true; }
+    rab.position.copy(base); rab.visible=true; rab.lookAt(eye.x,base.y,eye.z); rab.updateMatrixWorld(true);       // 몸은 똑바로, 나를 향해
+    const hp=head.getWorldPosition(new THREE.Vector3());
+    head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0)); head.rotateX(-Math.atan2(eye.y-hp.y,Math.hypot(eye.x-hp.x,eye.z-hp.z))*.85);   // 고개만 젖혀 위의 나를 올려다본다
+    rab.updateMatrixWorld(true); rab.userData.face=face.getWorldPosition(new THREE.Vector3()); face.visible=false; }
   function scareTick(dt,pos,f){ const sc=rd.scare;
     if(!sc.on){ if(rd.s<CUM[iPeak]-5) return; sc.on=true; sc.t=0; sc.fov=camera.fov; placeRabbit(pos,f); zoom(30,600); }      // 시선이 내려가며 확 당겨 본다
     sc.t+=dt; const t=sc.t, k=t<.5?ease(t/.5):t<2.1?1:t<2.5?1-ease((t-2.1)/.4):0;
@@ -157,8 +168,9 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     if(rab&&rab.userData.face){ const e=new THREE.Vector3(P.x,P.y+P.eye,P.z), tg=rab.userData.face;
       const ty=Math.atan2(-(tg.x-e.x),-(tg.z-e.z)), tp=Math.atan2(tg.y-e.y,Math.hypot(tg.x-e.x,tg.z-e.z));
       P.yaw+=Math.atan2(Math.sin(ty-P.yaw),Math.cos(ty-P.yaw))*k; P.pitch=lerp(P.pitch,tp,k); }
-    if(t>.8&&!sc.mouth){ sc.mouth=true; AUDIO.noise(.9,.7,0,3200); AUDIO.tone(1900,.9,'sawtooth',.18,0,-1400); AUDIO.tone(70,1.2,'sine',.5,0,-30); zoom(22,200); }
-    if(face) face.scale.setScalar(sc.mouth?Math.max(.001,Math.min(1,(t-.8)/.12)):.001);
+    if(t>.8&&!sc.mouth){ sc.mouth=true; AUDIO.noise(.9,.7,0,3200); AUDIO.tone(1900,.9,'sawtooth',.18,0,-1400); AUDIO.tone(70,1.2,'sine',.5,0,-30); zoom(15,200); }
+    if(face){ const g=t-.8; face.visible=sc.mouth&&(g>.3||Math.floor(g/.05)%2===0); face.scale.setScalar(sc.mouth?1+.12*Math.max(0,1-g/.25):1);   // 지지직 — 원래 얼굴과 번갈아 깜빡이다 바뀐다
+      if(sc.mouth&&g<.3&&head) head.rotation.z=(Math.random()-.5)*.12; }
     if(t>2.2&&!sc.back){ sc.back=true; zoom(sc.fov,400); }
     if(t>2.6) sc.done=true; }
 
@@ -202,14 +214,15 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     rm.querySelector('.rq').innerHTML=q2
       ?`보트가 크레인 없이 <b>혼자</b> 초록 선까지 잠겨 떠 있으려면? 떠서 멈춘 보트는 <b>중력(무게) = 부력</b>. 자석(한 개 ${R.mag} N)을 떼거나 붙여 무게를 맞추고 줄을 풀어 보자.`
       :'보트를 물에 내리면서 힘 센서 값을 보자. 보트 옆면의 <b>초록 선</b>이 물에 닿았을 때, 보트에 작용하는 <b>부력</b>은?';
-    rm.querySelector('.rbags').textContent=`자석 ${bz.n}개`; }
+    rm.querySelector('.rbags').textContent=`자석 ${bz.n}개`; if(cr.on) liftMono(); }
   async function openCrane(){ if(!S.flags.flume_sank){ AUDIO.click(); await mono(['크레인 리모컨이 걸려 있다. 위에는 힘 센서 계기판.','…점검 방법대로 먼저 보트를 타 보자.']); return; }
     if(S.flags.buoy_done){ AUDIO.click(); await mono('보트는 초록 선에 맞게 떠 있다. 크레인은 이제 됐다.'); return; }
     if(cr.on) return closeCrane();
-    setGoal(null); AUDIO.click(); say(''); rm.querySelector('.rnum').value=''; setRemote(); rm.classList.add('on'); cr.on=true; cr.dir=0;
+    setGoal(null); AUDIO.click(); say(''); rm.querySelector('.rnum').value=''; setRemote(); rm.classList.add('on'); liftMono(); cr.on=true; cr.dir=0;
     if(!S.flags.crane_seen){ S.flags.crane_seen=true; bz.mode='hang'; bz.lvl=bz.tgt=-1.5; AUDIO.tone(90,1.2,'sawtooth',.05,0,40);
       await mono(['크레인 리모컨을 집어 들었다. 가라앉은 보트를 건져 올렸다.','리모컨을 들고 풀 가까이 가서, 보트 옆면의 초록 선이 물에 닿게 내려 보자.']); } }
-  function closeCrane(){ if(!cr.on) return; cr.on=false; cr.dir=0; rm.classList.remove('on'); }
+  function closeCrane(){ if(!cr.on) return; cr.on=false; cr.dir=0; rm.classList.remove('on'); document.body.classList.remove('remote-on'); }
+  function liftMono(){ document.body.style.setProperty('--rh',Math.round(rm.getBoundingClientRect().height)+'px'); document.body.classList.add('remote-on'); }
   function hold(btn,dir){ const b=rm.querySelector(btn); b.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); cr.dir=dir; });
     ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>{ if(cr.dir===dir) cr.dir=0; })); }
   hold('.rdown',1); hold('.rup',-1);
@@ -309,7 +322,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     cr.gauge=new THREE.Group(); cr.gauge.position.set(p.x,1.9,2.6); cr.gauge.rotation.x=-.12; scene.add(cr.gauge);       // 조작 기둥 위에 세운 큰 계기판
     const scr=new THREE.Mesh(new THREE.PlaneGeometry(.96,.56),new THREE.MeshBasicMaterial({map:cr.tex})); scr.position.z=.031;
     const box=new THREE.Mesh(new THREE.BoxGeometry(1.06,.66,.06),new THREE.MeshLambertMaterial({color:0x1b1b1b}));
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.5,8),new THREE.MeshLambertMaterial({color:0x55585e})); pole.position.y=-.55;
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.9,8),new THREE.MeshLambertMaterial({color:0x55585e})); pole.position.set(0,-1.1,-.12);   // 노란 조작 상자 뒤 · 속으로 내려가 앞을 가리지 않는다
     cr.gauge.add(scr,box,pole); drawGauge();
   },
   tick(dt){

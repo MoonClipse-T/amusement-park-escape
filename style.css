@@ -332,3 +332,11 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 
 .finfo{margin:8px 0 0;font-size:12px;color:#8a8d93;letter-spacing:1px;}
 #fric .frow{flex-wrap:wrap;}
+/* 리모컨을 들고 있으면 대사 상자를 리모컨 위로 올린다 (--rh = 리모컨 높이) */
+body.remote-on #mono{bottom:calc(var(--rh,380px) + 8px);}
+/* 좁은 화면 : 위쪽 HUD 가 겹치지 않게 — 시계는 오른쪽 버튼 줄 아래로, 목적지 화살표 · 구역 이름은 그 아래로 */
+@media (max-width:820px){
+  #clock{top:calc(64px + env(safe-area-inset-top));left:auto;right:calc(12px + env(safe-area-inset-right));transform:none;}
+  #goal{top:calc(118px + env(safe-area-inset-top));}
+  #zone{top:calc(100px + env(safe-area-inset-top));}
+}
