@@ -147,14 +147,12 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
     toast('숙소 문이 열렸다'); await mono(['…열렸다.','첫 번째 점검 장소는 회전목마. 입구 옆 조작실로 가자.']);
     objective('회전목마 조작실에서 점검 방법을 찾자'); setGoal(-19.05,11.9,'회전목마 조작실'); }
 
-  /* ---------- 디버그 바로 가기 (Shift+1 · 2) · 다른 방 바로 가기가 쓰는 room1Done() ---------- */
+  /* ---------- 디버그 바로 가기 (Shift+1) · 다른 방 바로 가기가 쓰는 room1Done() ---------- */
   function gear(){ ['key','toolbox','scale','rubber','gauge','oil','weight','torch'].forEach(give); S.flags.torch=true; $('#lightBtn').classList.add('on');
     INV.note('note1',ROOM1.note1.title,ROOM1.note1.body); INV.note('lockernote','3번 사물함 쪽지',ROOM1.lockerNote); INV.note('note2',ROOM1.note2.title,ROOM1.note2.body);
     Object.assign(S.flags,{room1_in:true,note1:true,lockernote:true,uniform:true,locker_prev:true,key:true,toolbox:true,note2:true}); show(['key_dorm','toolbox_dorm','torch_dorm','note2_dorm'],false); }
   window.room1Done=()=>{ gear(); openGate('dorm'); Object.assign(S.flags,{door_open:true,room1:true}); door.target=Math.PI/2*0.95; };
-  CHECKPOINTS.push(
-    {key:'1',name:'숙소 앞 (22:00 시작)',go(){ const d=PARK.spawns.dorm_door||{x:-44.5,z:4}; warp(d.x,d.z,-50,4); objective('직원 숙소에서 점검 지시서를 찾자'); setGoal(-50,4,'직원 숙소'); }},
-    {key:'2',name:'숙소 · 장력 평형 잠금장치',go(){ gear(); S.flags.open_dorm=false; door.target=0; const p=itemPos('forcedev_dorm')||{x:-47.3,z:4.98}; warp(-48.6,4.98,p.x,p.z); afterTools(); }});
+  CHECKPOINTS.push({key:'1',name:'숙소 (22:00 시작)',go(){ const d=PARK.spawns.dorm_door||{x:-44.5,z:4}; warp(d.x,d.z,-50,4); objective('직원 숙소에서 점검 지시서를 찾자'); setGoal(-50,4,'직원 숙소'); }});
 
   ROOMS.push({id:'room1', build(){
     const I=it();

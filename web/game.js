@@ -474,11 +474,11 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   else if(hot){ hot=null; $('#label').classList.remove('on'); $('#cross').classList.remove('hot'); $('#interact').classList.remove('on'); }
   ROOMS.forEach(r=>r.tick&&r.tick(dt)); if(typeof CROWD!=='undefined') CROWD.tick(dt);
   renderer.render(scene,camera);
-  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+1~0 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
+  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+숫자 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+1~9 · 0 · Z · X · C 방(퍼즐) 바로 가기 · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 롤러코스터 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
-// 바로 가기 : 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
+// 바로 가기 : 방마다 하나, 방 번호 = 숫자 키. 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
 function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P.vy=0; P.grounded=true; if(lookX!==undefined) P.yaw=Math.atan2(-(lookX-x),-(lookZ-z)); P.pitch=0; P.free=true; }
 function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
@@ -502,7 +502,6 @@ function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
   if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
   if(e.code==='KeyK'&&typeof skipIntro==='function') skipIntro();
   if(e.code==='KeyL') checkpointList();
-  const L=(e.code.match(/^Key([ZXC])$/)||[])[1]; if(L){ e.preventDefault(); return jumpTo(L); }     // 숫자가 다 차서 Shift+Z · X · C (방 4)
   if(d===undefined) return; e.preventDefault(); jumpTo(d); }
 
 /* 불러오기 : 입장권이 발권기에서 조금씩 나온다 */
