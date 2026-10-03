@@ -1,6 +1,9 @@
 /* ============================================================
    방 4 : 롤러코스터 = 후룸라이드 (통나무 보트가 마지막에 물로 떨어지는 놀이기구)   [9과05-04 부력]
    흐름 : 범퍼카 공포 → 롤러코스터 조작실 (문이 잠겨 있다 · 문 옆 키패드 + 쪽지)
+        → 키패드 퍼즐 (과학과 상관없는 추리) : 키패드를 보면 버튼 1 · 4 · 6 · 9 만 닳아 있다
+          쪽지는 반으로 찢겨 있고 (단서 ① ②), 나머지 반쪽(③ ④)은 바람에 날려 롤러코스터 승강장 바닥에 있다
+          ① 맨 앞은 짝수 ② 9는 맨 앞도 맨 끝도 아니다 ③ 6 바로 다음에 9 ④ 1은 4보다 먼저 → 6914 (답은 하나뿐)
         → 점검 방법 : ① 전원을 켜고 점검용 보트에 직접 타서 코스를 끝까지 따라간다 (손님 대신 모래주머니)
                       ② 물에 떨어진 보트는 옆면 초록 선까지만 잠겨 떠야 한다 ③ 아니면 크레인 힘 센서로 부력을 재서 무게를 맞춘다 ④ 전원 종료
         → 조작반 전원 ON → 역의 보트에 타면 1인칭으로 트랙을 따라 달린다 (체인 리프트 → 낙하 → 스플래시 풀에 풍덩)
@@ -15,9 +18,12 @@
    ============================================================ */
 'use strict';
 const ROOM4={
-  code:'0731',                                   // 임시 비밀번호 (= 이해권 출입증 번호)
-  note:{title:'키패드 옆 쪽지',
-    body:`<span style="opacity:.7">(준비 중) 키패드 비밀번호의 단서가 들어갈 자리.</span><br><br>임시 단서 : 비밀번호는 <b>내 출입증 번호</b>.`},
+  code:'6914', worn:'1 · 4 · 6 · 9',            // 비밀번호 · 키패드에서 닳아 있는 버튼 (단서를 바꾸면 둘 다 같이)
+  note:{title:'키패드 옆 쪽지 (찢어진 반쪽)',
+    body:`<i>비밀번호 또 까먹을까 봐 적어 둔다.<br>지문 묻은 버튼 네 개를 한 번씩만 누른다.</i><br><br>
+① 맨 앞 숫자는 <b>짝수</b>.<br>② <b>9</b>는 맨 앞도 아니고, 맨 끝도 아니다.<br><br><span style="opacity:.55">─ ─ ─ 여기서부터 찢겨 나갔다 ─ ─ ─</span>`},
+  note2:{title:'찢어진 쪽지 (나머지 반쪽)',
+    body:`<span style="opacity:.55">─ ─ ─ 찢긴 자국 ─ ─ ─</span><br><br>③ <b>6</b> 바로 다음에 <b>9</b>.<br>④ <b>1</b>은 <b>4</b>보다 먼저.<br><br><i>— 근수. 이 쪽지는 꼭 버릴 것!</i>`},
   manual:{title:'후룸라이드 야간 점검 방법',
     body:`1. 조작반 전원을 켜고, 역에 있는 점검용 보트에 <b>직접 타서</b> 코스를 끝까지 따라가며 제대로 움직이는지 확인한다. (보트에는 손님 무게 대신 <b>모래주머니</b>를 싣는다)<br>
 2. 마지막에 물에 떨어진 보트는 옆면의 <b>초록 선</b>까지만 잠겨서 떠야 한다. 너무 가라앉아도, 너무 떠도 안 된다.<br>
@@ -193,9 +199,19 @@ GATES.cbooth='롤러코스터 조작실 문';
 
   /* ---------- 조작실 · 키패드 · 점검 방법 · 조작반 ---------- */
   async function readNote(){ AUDIO.click(); await showMsg(R.note.title,R.note.body);
-    if(!S.flags.keynote){ S.flags.keynote=true; INV.note('keynote',R.note.title,R.note.body); } }
+    if(S.flags.keynote) return; S.flags.keynote=true; INV.note('keynote',R.note.title,R.note.body);
+    await mono(['김근수 씨 글씨다. …아래쪽이 찢겨 나갔다.','나머지 반쪽은 바람에 날아갔나? 바람이 롤러코스터 승강장 쪽으로 불고 있다.']);
+    if(!S.flags.keynote2) objective('찢어진 쪽지의 나머지 반쪽을 찾자 (승강장 쪽)'); }
+  async function readNote2(){ AUDIO.noise(.3,.12,0,3000); await showMsg(R.note2.title,R.note2.body);
+    if(S.flags.keynote2) return; S.flags.keynote2=true; INV.note('keynote2',R.note2.title,R.note2.body); show2(false);
+    await mono(['찾았다, 나머지 반쪽.','단서가 네 개… 키패드 비밀번호를 풀어 보자.']);
+    objective('쪽지 단서로 키패드 비밀번호를 풀자'); const k=itemPos('keypad_coaster'); if(k) setGoal(k.x,k.z,'키패드'); }
+  const show2=v=>{ const o=PARK.items.keynote2_coaster; if(o) o.visible=v; };
+  let wrong=0;
   async function openPad(){ if(S.flags.open_cbooth) return;
-    const ok=await keypad({title:'조작실 키패드',len:R.code.length,hint:'문 옆 쪽지에 단서가 있다',check:c=>c===R.code}); if(!ok) return;
+    if(!S.flags.pad_seen){ S.flags.pad_seen=true; AUDIO.click(); await mono(['숫자 버튼 네 개만 반질반질하게 닳아 있다. '+R.worn+'…','자주 누른 버튼이겠지. 비밀번호는 이 네 숫자로 되어 있을 거야.']); }
+    const ok=await keypad({title:'조작실 키패드',len:R.code.length,hint:'닳은 버튼 : '+R.worn+' — 쪽지 단서대로 순서를 맞추자',
+      check:c=>{ if(c===R.code) return true; if(++wrong===3) setTimeout(()=>toast('힌트 : ① 맨 앞이 짝수라면 4 아니면 6. 하나씩 넣어 보자'),700); return false; }}); if(!ok) return;
     openGate('cbooth'); door.t=1; AUDIO.unlatch(); toast('조작실 문이 열렸다');
     await mono(['…열렸다.']); objective('조작실 안에서 점검 방법을 찾자'); const m=itemPos('manual_coaster'); if(m) setGoal(m.x,m.z,'점검 방법'); }
   async function readManual(){ AUDIO.click(); await showMsg(R.manual.title,R.manual.body);
@@ -226,6 +242,7 @@ GATES.cbooth='롤러코스터 조작실 문';
     for(let k=1;k<=3;k++) I['cbtn_'+k]&&I['cbtn_'+k].traverse(o=>{ if(o.material) o.material=o.material.clone(); });
     add('keypad_coaster','조작실 키패드',openPad,2.4,()=>!S.flags.open_cbooth);
     add('keynote_coaster','키패드 옆 쪽지',readNote);
+    add('keynote2_coaster','바닥에 떨어진 쪽지',readNote2,2.6);
     add('manual_coaster','후룸라이드 야간 점검 방법',readManual);
     add('console_coaster','후룸라이드 조작반',console_);
     add('mic_coaster','안내 방송 마이크',async()=>{ AUDIO.tone(1800,.4,'sine',.05); await announce('아, 아… 저기, 아무도 없습니까?',{ms:1600,voice:'mic_bumper'}); await mono('…역시 대답이 없다.'); });
