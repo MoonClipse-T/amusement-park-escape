@@ -70,6 +70,17 @@ TEX.sign=(lines,bg,fg,w=1024,h=256)=>cvs(w,h,(g)=>{ g.fillStyle=bg; g.fillRect(0
   lines.forEach((l,i)=>{ const big=i===0; let fs=big?h*(n>1?.42:.56):h*.2; g.font=`${big?900:500} ${fs}px "Malgun Gothic",sans-serif`;
     while(g.measureText(l).width>w*.9&&fs>8){ fs*=.92; g.font=`${big?900:500} ${fs}px "Malgun Gothic",sans-serif`; }
     g.fillText(l,w/2,n>1?(big?h*.42:h*.76):h/2); }); grime(g,w,h); });
+// 조작실 벽의 '점검 방법' 포스터 : 남색 머리띠 + 번호 단계 줄 (글은 화면에서 읽는다)
+TEX.poster=(title,sub,w=1024,h=1024)=>cvs(w,h,(g)=>{ const F='"Noto Sans KR","Malgun Gothic",sans-serif', C='#1d3557';
+  g.fillStyle='#f7f5ef'; g.fillRect(0,0,w,h); g.fillStyle=C; g.fillRect(0,0,w,h*.24); g.fillStyle='#e9b949'; g.fillRect(0,h*.24,w,h*.018);
+  g.fillStyle='#fff'; g.textAlign='left'; g.textBaseline='middle'; g.font=`900 ${h*.1}px ${F}`; g.fillText(title,w*.07,h*.1);
+  g.font=`700 ${h*.035}px ${F}`; g.fillStyle='rgba(255,255,255,.75)'; g.fillText('INSPECTION CHECKLIST',w*.07,h*.19);
+  g.fillStyle='#22252b'; g.font=`800 ${h*.05}px ${F}`; g.fillText(sub,w*.07,h*.33);
+  [0,1,2,3].forEach(i=>{ const y=h*(.46+i*.115), last=i===3, col=last?'#c8322a':C;
+    g.fillStyle=col; g.beginPath(); g.arc(w*.11,y,h*.035,0,7); g.fill(); g.fillStyle='#fff'; g.font=`900 ${h*.04}px ${F}`; g.textAlign='center'; g.fillText(i+1,w*.11,y+2); g.textAlign='left';
+    g.fillStyle=last?'rgba(200,50,42,.55)':'rgba(34,37,43,.32)'; [.62,.45].forEach((l,j)=>{ g.fillRect(w*.18,y-h*.022+j*h*.04,w*l*(1-.12*((i+j)%3)),h*.016); }); });
+  g.strokeStyle='#d8d2c2'; g.lineWidth=3; g.beginPath(); g.moveTo(w*.07,h*.93); g.lineTo(w*.93,h*.93); g.stroke();
+  g.fillStyle='#7a7d84'; g.font=`600 ${h*.03}px ${F}`; g.fillText('루나랜드 시설관리팀',w*.07,h*.965); grime(g,w,h); });
 TEX.scrawl=(text,col='rgba(110,12,10,.9)')=>cvs(1024,384,(g,w,h)=>{ g.fillStyle=col; g.font='900 120px "Malgun Gothic",sans-serif'; g.textAlign='center'; g.textBaseline='middle';
   g.save(); g.translate(w/2,h/2); g.rotate(-.05); g.fillText(text,0,0); g.restore();
   for(let k=0;k<22;k++){ const x=w*.15+Math.random()*w*.7,y=h*.55+Math.random()*h*.1; g.fillRect(x,y,3+Math.random()*3,20+Math.random()*90); } });
@@ -139,7 +150,9 @@ let toastT=null; function toast(s,ms=2200){ const t=$('#toast'); t.textContent=s
 function objective(s){ $('#objtext').textContent=s; $('#objective').classList.toggle('on',!!s&&s!=='…'); }   // 할 일이 없으면 쪽지를 숨긴다
 function ov(id,on){ const el=$(id); el.classList.toggle('on',on); if(!on) S.lastClose=performance.now(); S.busy=!!document.querySelector('.ov.on:not(#start)')||$('#mono').classList.contains('on'); if(S.busy){ stick.dx=stick.dy=0; } }
 document.querySelectorAll('.ov .close').forEach(b=>b.addEventListener('click',()=>{ ov('#'+b.parentElement.id,false); AUDIO.click(); }));
-function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
+// 점검 방법처럼 번호 단계가 있는 글(DOC)은 손글씨 쪽지가 아니라 깔끔한 공식 안내문으로 보여 준다
+const DOC=(steps,note='')=>`<ol class="steps">${steps.map(s=>s[0]==='!'?`<li class="warn">${s.slice(1)}</li>`:`<li>${s}</li>`).join('')}</ol>${note?`<div class="doc-note">${note}</div>`:''}`;
+function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; $('#msg .note').classList.toggle('doc',/class="steps"/.test(p)); ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
 
 /* 소지품 : INV.note(id,제목,본문) — 지시서 · 쪽지 (언제든 다시 읽기) · INV.item(id,이름,설명) — 물건 · INV.has(id) · INV.drop(id) */
 const INV={notes:[],items:[],
@@ -322,7 +335,7 @@ async function buildPark(){
     if(/^(LAMP|LIGHT)_/.test(n)){ const u=o.userData; const l=regLight(new THREE.PointLight(new THREE.Color(u.color||'#ffb46b'),u.i||1,u.d||14,1.6)); o.getWorldPosition(l.position); scene.add(l);
       const e=LIGHTS[LIGHTS.length-1]; PARK.lights[n.slice(n.indexOf('_')+1)]=e; if(n.startsWith('LAMP_')&&Math.random()<.22) e.flicker=Math.random()*10; if((u.d||0)>30) e.far=30; return; }
     if(/^SIGN_/.test(n)){ const k=n.slice(5), u=o.userData, s=SIGNS[k]; if(k==='map') return addMapBoard(o,u); if(!s) return;
-      const tex=TEX.sign(s.slice(0,2).filter(Boolean),s[2],s[3],1024,Math.round(1024*u.h/u.w)||256);
+      const tex=/^manual_/.test(k)?TEX.poster(s[0],s[1]):TEX.sign(s.slice(0,2).filter(Boolean),s[2],s[3],1024,Math.round(1024*u.h/u.w)||256);
       const m=new THREE.Mesh(new THREE.PlaneGeometry(u.w,u.h),new THREE.MeshStandardMaterial({map:tex,roughness:.8,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.08}));
       o.getWorldPosition(m.position); o.getWorldQuaternion(m.quaternion); m.translateZ(0.04); WORLD.add(m); PARK.signs[k]=m; if(/^ANIM_/.test(o.parent&&o.parent.name)) ride.push([o.parent,m]); return; }
     if(/^ZONE_/.test(n)){ o.getWorldPosition(v); PARK.zones.push({id:n.slice(5),title:o.userData.title||n,r:o.userData.r||8,x:v.x,z:v.z}); return; }
