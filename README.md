@@ -105,7 +105,7 @@ ROOMS.push({ id:'haunted',
 - 숙소 · 조작실 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등 · 공구함 · 플라스틱 의자
 - 가방 : Quaternius "Backpack" (CC0) · 열쇠 : iPoly3D "Key" (CC0) · 근무복 : Polygonal Mind "Jacket" (CC0) — poly.pizza
 - 안내 방송 목소리 : Microsoft Edge 신경망 음성 (edge-tts 로 생성, web/assets/voice/) — 마감 방송 ko-KR-SunHi · 마이크 테스트(주인공) ko-KR-InJoon
-- Sketchfab (CC BY) : "Rabbit plush / Conejo Peluche" by afzmtm · "Old Iron Kettlebell" by tomarranskinner · "FNAF SB | Foxy Logride Assets" by KPMisParrot (통나무 보트 · 물길만) · "CC0 - Keypad Door Lock" by plaggy · "Gantry Portica" by speedtwo · "Horseshoe Magnet" by ArchieCGD (blender/source/sketchfab/)
+- Sketchfab (CC BY) : "Rabbit plush / Conejo Peluche" by afzmtm · "Old Iron Kettlebell" by tomarranskinner · "FNAF SB | Foxy Logride Assets" by KPMisParrot (통나무 보트 · 물길만) · "CC0 - Keypad Door Lock" by plaggy · "Gantry Portica" by speedtwo · "Horseshoe Magnet" by ArchieCGD · "Old Patchwork Bunny" by AVOPLAYDEODD (Sketchfab Standard, 광장 달토끼) (blender/source/sketchfab/)
 - 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
 - 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
 - 배포 전에 각 에셋의 이용 조건을 한 번 확인할 것

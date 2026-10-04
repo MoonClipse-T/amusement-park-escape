@@ -20,7 +20,7 @@
 - 맵을 바꾸면 `web/assets/park.glb` 를 다시 내보내고 커밋한다. 엔진은 GLB 만 읽는다.
 - `blender/build_lunaland_v2.py` 는 v1 맵에서 전부 다시 만든다. Blender 화면에서 직접 고친 뒤에는 스크립트를 다시 돌리지 말거나, 고친 내용을 스크립트에 옮긴다.
 - 소품은 직접 상자로 쌓지 말고 **Sketchfab**(Blender MCP 에 API 키 연결됨, CC BY 는 SOURCES.md 에 작가 표기) · Poly Pizza · Poly Haven 모델을 먼저 쓴다. 받은 모델은 blender/source/sketchfab/ 에 GLB 로 저장하고 optimize_glb.py 로 줄인다. 없으면 Blender 로 둥글게(Bevel · Torus · Subdivision) 모델링한다.
-- 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용). 후룸라이드 조작실 · 물길 · 스플래시 풀은 `flume_ride.py`
+- 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용). 후룸라이드 조작실 · 물길 · 스플래시 풀은 `flume_ride.py`, 광장 달토끼 동상은 `moon_rabbit.py` (천 인형 · 입 자리 표식 rabbit_mouth_mark)
 - 맵 부품은 `blender/parts/*.py` 에 나눠 둔다. 새 소품은 도형을 직접 쌓기 전에 카탈로그 · 기존 모델을 먼저 찾고, 직접 만들 땐 모서리 깎기 · 매끈한 음영을 쓴다.
 - 손님은 Quaternius CC0 캐릭터 (`blender/source/people/q_*.glb`, 같은 뼈대) → `blender/build_people.py` 로 Walk · Idle · Wave 만 남긴다. 옷 색은 crowd.js `TINT` 가 재질 이름으로 바꾼다. 사람 GLB 는 압축(quantize)하지 않는다.
 - 맵 GLB 는 quantize 되어 있어서 r128 레이캐스트가 빗나간다. 엔진이 조사 대상(`IT_`)만 좌표를 풀어 둔다 (game.js `dequant`). 조사할 물체는 꼭 `IT_` 로 이름 짓는다.
@@ -35,3 +35,6 @@
 - Git LFS 는 쓰지 않는다 (클라우드에서 LFS 서버가 막혀 있음). 파일 하나 100MB 미만 유지.
 - `dist/` 는 빌드 결과라 커밋하지 않는다 (`python tools/build.py` 로 생성).
 - 대사·문구는 한국어.
+- 점검 방법 같은 공식 안내문은 `DOC([...단계], 참고)` 로 쓴다 (game.js — 번호 체크리스트 모양, '!' 로 시작하면 빨간 마지막 단계). 벽 포스터는 SIGNS 의 manual_ 키가 자동으로 TEX.poster 로 그려진다.
+- 설명 글은 짧게 : 한 줄에 한 동작, 핵심 낱말만 굵게. 리모컨 · 화면 안내는 '1단계 · 2단계 / ① ②' 로.
+- 작업하면서 더 좋은 결과에 필요한 도구 · 에셋 · 연동(유료 포함)이 보이면 선생님께 꼭 먼저 말씀드린다 (선생님이 바로 구입 · 연결해 주신다).

@@ -223,7 +223,7 @@ M["k_pink"] = mat("kiosk_pink", "#f2b3c4", 0.7)
 M["k_mint"] = mat("kiosk_mint", "#a8dcc8", 0.7)
 
 # ---------------------------------------------------------------- 부품 파일 (blender/parts/*.py)
-for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress", "carousel_booth", "bumper_cars", "flume_ride"):
+for part in ("rabbit_plush", "trees", "icecream_kiosk", "catalog_props", "dorm_dress", "carousel_booth", "bumper_cars", "flume_ride", "moon_rabbit"):
     exec(open(os.path.join(HERE, "parts", part + ".py"), encoding="utf-8").read())
 
 # ---------------------------------------------------------------- 1. 폐허 소품 정리
@@ -418,6 +418,7 @@ RX, RZ = -11.0, 17.5
 cyl("rabbit_pedestal", RX, 0, 0.8, RZ, 1.3, M["concrete"], verts=48)
 cyl("rabbit_pedestal_rim", RX, 0.8, 0.9, RZ, 1.4, M["brass"], verts=48)
 build_rabbit(RX, RZ, 90, s=1.35, prefix="rabbit", anim_head=True, base_y=0.9)
+build_moon_rabbit()    # blender/parts/moon_rabbit.py : 동상을 새 천 인형으로 바꾼다 (ANIM_rabbithead · 절구는 그대로)
 sign("rabbit_plate", RX + 1.31, 0.5, RZ, 90, 1.6, 0.35)
 colc("rabbit", RX, RZ, 1.45)
 

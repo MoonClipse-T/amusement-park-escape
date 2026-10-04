@@ -22,10 +22,8 @@
 const ROOM4={
   route:[7,4,1,2,6,9,8,7],            // 키패드 비밀번호 = 코스 그림을 키패드 위에서 따라간 순서 (역 = 7 에서 출발해 다시 역까지)
   manual:{title:'후룸라이드 야간 점검 방법',
-    body:`1. 조작반 전원을 켜고, 역에 있는 점검용 보트에 <b>직접 타서</b> 코스를 끝까지 따라가며 제대로 움직이는지 확인한다. (손님 무게 대신 보트에 <b>무게 조절 자석</b>을 붙인다 — 자석을 붙였다 뗐다 해서 무게를 맞추는 특수 보트)<br>
-2. 마지막에 물에 떨어진 보트는 옆면의 <b>초록 선</b>까지만 잠겨서 떠야 한다. 너무 가라앉아도, 너무 떠도 안 된다.<br>
-3. 맞지 않으면 스플래시 풀의 <b>크레인</b>에 보트를 매달고 힘 센서로 <b>부력</b>을 잰 다음, 자석을 붙이거나 떼어 보트의 무게를 맞춘다.<br>
-<b class="red">4. 점검이 끝나면 전원 장치를 종료한다.</b>`},
+    body:DOC(['조작반 <b>전원 ON</b> → 역의 보트에 <b>직접 타고</b> 코스 끝까지 간다.','물에 떨어진 보트가 옆면 <b>초록 선까지만</b> 잠기는지 본다.','안 맞으면 <b>크레인 힘 센서</b>로 부력을 재고, <b>자석</b>으로 보트 무게를 맞춘다.','!점검이 끝나면 <b>전원을 끈다.</b>'],
+      '※ 점검용 보트는 손님 무게 대신 <b>자석</b>을 붙였다 뗐다 해서 무게를 바꾼다. (자석 1개 = 50 N)')},
   boat:100, mag:50, mags:9,           // 빈 보트 100 N · 무게 조절 자석 한 개 50 N · 처음 9개 → 550 N (특수 보트 : 자석을 붙였다 뗐다 해서 무게를 맞춘다)
   perLevel:100, levels:5, line:3,     // 보트 깊이를 5칸으로 나눠 한 칸 잠길 때마다 부력 +100 N · 초록 선 = 3칸 → 부력 300 N
 };
@@ -125,11 +123,11 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   let rab=null, head=null, tear=null, tg=null, tex=null, mouth0=null;
   const ease=x=>x*x*(3-2*x);
   // 입 둘레를 그린다 (512×320 = 0.8 × 0.5 m, 원래 입 자리 = 캔버스 (256,110)). o : 벌어진 정도 0~1, nb : 끊어진 실 수 0~4
-  // 찢어진 입 (512×320 = 1.2 × 0.75 m, 원래 입 자리 = 캔버스 (256,100)). o : 벌어진 정도 0~1, nb : 끊어진 실 수 0~4
+  // 찢어진 입 (512×320 캔버스, 인형의 입 자리 = 캔버스 (256,165) — 입이 이 점을 가운데로 위아래 고르게 벌어진다). o : 0~1, nb : 끊어진 실 0~4
   //  다 찢어지면 얼굴 아래쪽 절반을 차지하는 웃는 입 — 바늘 같은 이빨이 위아래로 촘촘하게 맞물린다
-  function drawTear(o,nb){ const g=tg, cx=256, cy=100, e=ease(Math.min(1,o)); g.clearRect(0,0,512,320);
+  function drawTear(o,nb){ const g=tg, cx=256, cy=165, e=ease(Math.min(1,o)); g.clearRect(0,0,512,320);
     const hw=56+194*e, X=u=>cx+hw*u;                                                         // u : -1(왼쪽 입꼬리) ~ 1(오른쪽)
-    const up=u=>cy+30*e-52*e*u*u, gap=u=>3+158*e*Math.pow(Math.max(0,1-u*u),.6), lo=u=>up(u)+gap(u);   // 입꼬리가 올라간 초승달
+    const mid=u=>cy-40*e*u*u, gap=u=>3+270*e*Math.pow(Math.max(0,1-u*u),.6), up=u=>mid(u)-gap(u)/2, lo=u=>mid(u)+gap(u)/2;   // 입꼬리가 올라간 초승달
     const path=()=>{ g.beginPath(); for(let i=0;i<=48;i++){ const u=-1+i/24; g.lineTo(X(u),up(u)); } for(let i=48;i>=0;i--){ const u=-1+i/24; g.lineTo(X(u),lo(u)); } g.closePath(); };
     if(o>0.01){
       path(); const gr=g.createLinearGradient(0,cy-40,0,cy+150); gr.addColorStop(0,'#2a0306'); gr.addColorStop(.5,'#050000'); gr.addColorStop(1,'#2a0306'); g.fillStyle=gr; g.fill();
@@ -147,7 +145,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
         if(i%2){ const gl=g.createLinearGradient(0,lo(um),0,lo(um)-L*.8); gl.addColorStop(0,'rgba(95,0,6,.85)'); gl.addColorStop(1,'rgba(140,0,10,0)'); g.fillStyle=gl; g.fillRect(x-w+hw*du*.5,lo(um)-L*.8,w*2,L*.8); } }
       g.restore();
       path(); g.strokeStyle='#1a0c08'; g.lineWidth=5; g.stroke();                                       // 입술 둘레
-      g.fillStyle='#6a0007'; [[-.62,30],[-.3,34],[-.02,22],[.26,30],[.55,24],[.8,16]].forEach(([u,l])=>{ const x=X(u), y=lo(u)+2, L=l*e;   // 아랫입술에서 흘러내리는 피
+      g.fillStyle='#6a0007'; [[-.62,22],[-.3,16],[-.02,10],[.26,14],[.55,18],[.8,14]].forEach(([u,l])=>{ const x=X(u), y=lo(u)+2, L=l*e;   // 아랫입술에서 흘러내리는 피
         g.fillRect(x-2.5,y,5,L); g.beginPath(); g.arc(x,y+L,4.5,0,7); g.fill(); });
       g.fillStyle='#f4eee2'; for(let i=1;i<24;i++){ const u=-1+i/12, d=(3+((i*13)%6))*Math.min(1,o*3);    // 찢어진 천 가장자리
         g.beginPath(); g.moveTo(X(u)-5,up(u)-3); g.lineTo(X(u),up(u)-3-d); g.lineTo(X(u)+5,up(u)-3); g.fill();
@@ -164,7 +162,6 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     tex.needsUpdate=true; }
   // 광장 달토끼 동상을 그대로 복제한다 (몸 · 리본 · 절구 + 머리) — 처음엔 낮에 본 그 귀여운 모습 그대로
   function makeRabbit(){ const hd=PARK.anim.rabbithead; if(!hd) return;
-    hd.traverse(o=>{ if(/^rabbit_eye(shine|glow)?_[LR]$/.test(o.name)) o.position.y+=.1; });         // 달토끼 눈을 조금 위로 (광장 동상도 같게 — 처음 본 모습 그대로)
     const parts=[]; scene.traverse(o=>{ if(/^rabbit_(body|seam|pad[LR]|ribbon_(knot|L|R)|mortar|mortar_in|pestle|pestle_head)$/.test(o.name)) parts.push(o); });
     hd.updateMatrixWorld(true); const wp=hd.getWorldPosition(new THREE.Vector3()), inv=new THREE.Matrix4().makeTranslation(-wp.x,-(wp.y-1.25*1.35),-wp.z);
     const inner=new THREE.Group(); inner.rotation.y=-Math.PI/2;                                       // 동상은 동쪽(+x)을 본다 → 앞을 +z 로
@@ -175,15 +172,17 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     });
     rab=new THREE.Group(); rab.add(inner); rab.scale.setScalar(1.25); rab.visible=false; scene.add(rab);
     const c=document.createElement('canvas'); c.width=512; c.height=320; tg=c.getContext('2d'); tex=new THREE.CanvasTexture(c);
-    tear=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.75),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false}));
-    tear.renderOrder=999; tear.position.set(0,.2,.68); tear.visible=false; head.add(tear); }          // 원래 입 자리 (머리 기준)
+    let mk=null; head.traverse(o=>{ if(o.name==='rabbit_mouth_mark') mk=o; });                       // Blender 에서 잰 입 자리 · 머리 폭 (moon_rabbit.py)
+    const Wp=(mk&&mk.userData.head_w||.8)*1.08, Hp=Wp*.625, m=mk?mk.position:new THREE.Vector3(0,.2,.6);
+    tear=new THREE.Mesh(new THREE.PlaneGeometry(Wp,Hp),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false}));
+    tear.renderOrder=999; tear.position.set(m.x,m.y+.02-Hp*5/320,m.z+.06); tear.visible=false; head.add(tear); }   // 캔버스 (256,165) = 입 자리
   function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
     const base=pos.clone().addScaledVector(right,4.5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
     const eye=new THREE.Vector3(P.x,P.y+P.eye,P.z);
-    rab.position.copy(base); rab.visible=true; rab.lookAt(eye.x,base.y,eye.z); rab.updateMatrixWorld(true);       // 몸은 똑바로, 나를 향해
-    const hp=head.getWorldPosition(new THREE.Vector3());
-    head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0)); head.rotateX(-Math.atan2(eye.y-hp.y,Math.hypot(eye.x-hp.x,eye.z-hp.z))*.85);   // 고개만 젖혀 위의 나를 올려다본다
-    head.userData.q0=head.quaternion.clone(); rab.updateMatrixWorld(true); rab.userData.face=head.localToWorld(new THREE.Vector3(0,.33,.63));      // 눈과 입 사이를 본다
+    rab.position.copy(base); rab.visible=true; rab.lookAt(eye.x,base.y,eye.z);                                   // 나를 향해 앉아
+    rab.rotateX(-Math.min(.55,Math.atan2(eye.y-base.y,Math.hypot(eye.x-base.x,eye.z-base.z))*.45));              // 뒤로 기대 위의 나를 올려다본다
+    head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0)); head.userData.q0=head.quaternion.clone(); rab.updateMatrixWorld(true);
+    rab.userData.face=tear.localToWorld(new THREE.Vector3(0,tear.geometry.parameters.height*.12,0));               // 입 조금 위 (얼굴 가운데)를 본다
     tear.visible=false; if(mouth0) mouth0.visible=true; }
   // 0~.6 시선이 내려간다 · ~2.0 원래 얼굴로 가만히 올려다본다 (심장 소리) · 2.0~2.9 실밥이 툭툭 끊어지며 입이 찢어진다 · ~3.7 쩍 벌린 채 · 4.1 시선 복귀
   const roll=a=>{ if(head&&head.userData.q0) head.quaternion.copy(head.userData.q0).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),a)); };   // 고개를 갸웃 (얼굴 방향은 그대로)
@@ -199,7 +198,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     if(t>=2.0&&t<2.9){ if(!sc.rip){ sc.rip=1; if(mouth0) mouth0.visible=false; tear.visible=true; AUDIO.noise(.9,.35,0,1600); }
       const o=ease(Math.min(1,(t-2.0)/.8)), nb=Math.min(4,Math.floor((t-2.0)/.13)+1);
       if(nb>sc.nb){ sc.nb=nb; AUDIO.tone(2600,.03,'square',.14); AUDIO.noise(.06,.35,0,5200); roll((Math.random()-.5)*.12); }   // 툭 — 실밥이 하나씩 끊어진다
-      drawTear(o,nb); }
+      drawTear(o,nb); tear.lookAt(camera.position); }                                        // 위에서 내려다봐도 입이 납작해 보이지 않게 나를 향한다
     if(t>2.55&&!sc.scream){ sc.scream=1; AUDIO.tone(1900,1.1,'sawtooth',.18,0,-1400); AUDIO.noise(1,.6,0,3000); AUDIO.tone(70,1.3,'sine',.5,0,-30); zoom(zf(14),250); }
     if(sc.scream&&t<3.7) roll(Math.sin(t*38)*.03);                                          // 벌린 입으로 부르르
     if(t>3.7&&!sc.back){ sc.back=true; zoom(sc.fov,400); }
@@ -243,8 +242,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     cr.tex.needsUpdate=true; }
   function setRemote(){ const q2=!!S.flags.buoy_q1; rm.querySelectorAll('.rq1').forEach(r=>r.style.display=q2?'none':''); rm.querySelectorAll('.rq2').forEach(r=>r.style.display=q2?'':'none');
     rm.querySelector('.rq').innerHTML=q2
-      ?`보트가 크레인 없이 <b>혼자</b> 초록 선까지 잠겨 떠 있으려면? 떠서 멈춘 보트는 <b>중력(무게) = 부력</b>. 자석(한 개 ${R.mag} N)을 떼거나 붙여 무게를 맞추고 줄을 풀어 보자.`
-      :'보트를 물에 내리면서 힘 센서 값을 보자. 보트 옆면의 <b>초록 선</b>이 물에 닿았을 때, 보트에 작용하는 <b>부력</b>은?';
+      ?`<span class="rstep">2단계</span> 보트가 <b>혼자</b> 초록 선까지 뜨게 하자<br>① <b>자석</b> 떼기 · 붙이기 (1개 = ${R.mag} N)<br>② <b>줄 풀기</b> — 뜬 보트는 <b>중력 = 부력</b>`
+      :'<span class="rstep">1단계</span> 부력 재기<br>① 보트를 내려 <b>초록 선</b>을 물에 맞춘다<br>② 그때 보트에 작용하는 <b>부력</b>을 입력';
     rm.querySelector('.rbags').textContent=`자석 ${bz.n}개`; if(cr.on) liftMono(); }
   async function openCrane(){ if(!S.flags.flume_sank){ AUDIO.click(); await mono(['크레인 리모컨이 걸려 있다. 위에는 힘 센서 계기판.','…점검 방법대로 먼저 보트를 타 보자.']); return; }
     if(S.flags.buoy_done){ AUDIO.click(); await mono('보트는 초록 선에 맞게 떠 있다. 크레인은 이제 됐다.'); return; }
@@ -262,12 +261,12 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   rm.addEventListener('pointerdown',e=>e.stopPropagation());
   function tickCrane(dt){
     if(bz.mode==='hang'){
-      if(cr.on&&cr.dir&&!bz.busy){ const prev=bz.lvl, L=lim(), nl=Math.max(-1.5,Math.min(L,prev+cr.dir*.55*dt));
+      if(cr.on&&cr.dir&&!bz.busy){ const prev=bz.lvl, L=lim(), nl=Math.max(-1.5,Math.min(L,prev+cr.dir*.72*dt));
         if(cr.dir>0&&nl>=L&&prev<L) say(L<R.levels?'줄이 느슨해졌다 — 보트가 더 내려가지 않고 혼자 떠 버린다.':'보트 테두리까지 다 잠겼다. 더 내리면 물이 들어온다.');
         bz.lvl=nl; cr.tick-=dt; if(cr.tick<=0&&prev!==nl){ cr.tick=.14; AUDIO.tone(95,.12,'sawtooth',.035,0,cr.dir*20); } }
       const ln=onLine(); if(ln&&!cr.was) AUDIO.tone(1300,.08,'square',.06); cr.was=ln;
       if(bz.lvl<=0&&S.flags.crane_seen) cr.air=W(bz.n); if(ln) cr.line=W(bz.n)-BLINE; }
-    else { const d=bz.tgt-bz.lvl; bz.lvl+=Math.sign(d)*Math.min(Math.abs(d),1.1*dt); }
+    else { const d=bz.tgt-bz.lvl; bz.lvl+=Math.sign(d)*Math.min(Math.abs(d),1.45*dt); }
     if(cr.on&&Math.hypot(P.x-REST.x,P.z-REST.z)>15){ closeCrane(); toast('크레인에서 너무 멀어져 리모컨을 내려놓았다'); } }
   function setMags(d){ if(bz.mode!=='hang'||bz.busy) return; const n=bz.n+d; if(n<0||n>R.mags) return;
     bz.n=n; cr.air=cr.line=null; bz.lvl=Math.min(bz.lvl,lim()); syncBags(); setRemote(); AUDIO.tone(d<0?1400:500,.12,'square',.08); AUDIO.tone(d<0?600:900,.1,'sine',.1,.08);

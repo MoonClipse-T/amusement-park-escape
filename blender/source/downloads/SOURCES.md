@@ -11,5 +11,6 @@
 | sketchfab/log_ride_boat.glb · log_ride_trough.glb · log_ride_support.glb (보트 · 물길만, 캐릭터 판넬은 지움) | https://sketchfab.com/3d-models/01a42e514373457785c281b20c5ff4a6 | KPMisParrot | CC BY 4.0 |
 | sketchfab/keypad_door_lock.glb | https://sketchfab.com/3d-models/b722a6496ab344d78e74bf64be6c8eb8 | plaggy | CC BY 4.0 |
 | sketchfab/gantry_crane.glb | https://sketchfab.com/3d-models/d3b21ab5c67a4f11ae19fdc6a18c5b1a | speedtwo | CC BY 4.0 |
+| sketchfab/patchwork_bunny.glb (광장 달토끼 동상 · 46k 면으로 줄임) | https://sketchfab.com/3d-models/608b0d3df58d4ca192ff93edda24cc34 | AVOPLAYDEODD | Sketchfab Standard (무료) |
 | sketchfab/magnet.glb | https://sketchfab.com/3d-models/9daa7e197807443cab2f1953372f92f2 | ArchieCGD | CC BY 4.0 |
 | polyhaven/* | https://polyhaven.com/models | Poly Haven | CC0 |
