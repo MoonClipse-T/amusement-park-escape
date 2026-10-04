@@ -120,10 +120,10 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   /* ---------- 공포 : 꼭대기에서 떨어지기 직전, 시선이 오른쪽 아래로 — 땅에 광장 달토끼와 똑같은 거대한 달토끼가 올려다보고 있다.
                   한동안 원래의 귀여운 얼굴 그대로 → 실밥이 툭툭 끊어지는 소리와 함께 얼굴에 붙은 3D 공포 입이 위아래로 찢어지며 벌어진다
                   (맞물린 송곳니 · 피 묻은 잇몸 · 찢어진 천 · 흐르는 피 — moonrabbit.glb 의 rabbit_hmouth, 머리뼈에 붙어 있다) (첫 탑승만) ---------- */
-  let rab=null, head=null, hm=null, hm0=null, nose=null;
+  let rab=null, head=null, hm=null, hm0=null;
   const ease=x=>x*x*(3-2*x);
   function makeRabbit(){ if(!MOONRABBIT.src) return;
-    const o=MOONRABBIT.make('Idle'); head=o.getObjectByName('head'); hm=o.getObjectByName('rabbit_hmouth'); nose=o.getObjectByName('mrab_nose'); if(hm) hm0=hm.scale.clone();
+    const o=MOONRABBIT.make('Idle'); head=o.getObjectByName('head'); hm=o.getObjectByName('rabbit_hmouth'); if(hm) hm0=hm.scale.clone();
     o.userData.mixer.update(0); MOONRABBIT.live.splice(MOONRABBIT.live.indexOf(o),1); if(head) head.userData.rest=head.quaternion.clone();   // 숨도 쉬지 않고 굳은 채 서 있다 (고개는 여기서 직접 돌린다)
     rab=new THREE.Group(); rab.add(o); rab.scale.setScalar(1.3); rab.visible=false; scene.add(rab); }        // 사람보다 훨씬 큰 달토끼
   function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
@@ -132,7 +132,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     rab.position.copy(base); rab.visible=true; rab.lookAt(eye.x,base.y,eye.z);                                   // 나를 향해 서서
     rab.rotateX(-Math.min(.55,Math.atan2(eye.y-base.y,Math.hypot(eye.x-base.x,eye.z-base.z))*.45));             // 몸을 젖혀 위의 나를 올려다본다
     rab.updateMatrixWorld(true); if(head){ head.quaternion.copy(head.userData.rest); head.rotateX(-.6); head.userData.q0=head.quaternion.clone(); rab.updateMatrixWorld(true); }   // 고개를 뒤로 꺾어 얼굴이 정면으로 나를 본다
-    rab.userData.face=(hm||head).localToWorld(new THREE.Vector3(0,.1,0));                                        // 입 조금 위 (얼굴 가운데)를 본다
+    rab.userData.face=(hm||head).localToWorld(new THREE.Vector3(0,.2,0));                                        // 입 조금 위 (얼굴 가운데)를 본다
     MOONRABBIT.face(rab,false); if(hm) hm.scale.copy(hm0); }
   // 0~.6 시선이 내려간다 · ~2.0 원래 얼굴로 가만히 올려다본다 (심장 소리) · 2.0~2.9 실밥이 툭툭 끊어지며 입이 찢어진다 · ~3.7 쩍 벌린 채 · 4.1 시선 복귀
   const roll=a=>{ if(head&&head.userData.q0) head.quaternion.copy(head.userData.q0).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),a)); };   // 고개를 갸웃 (얼굴 방향은 그대로)
@@ -145,8 +145,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
       const ty=Math.atan2(-(tgp.x-e.x),-(tgp.z-e.z)), tp=Math.atan2(tgp.y-e.y,Math.hypot(tgp.x-e.x,tgp.z-e.z));
       P.yaw+=Math.atan2(Math.sin(ty-P.yaw),Math.cos(ty-P.yaw))*k; P.pitch=lerp(P.pitch,tp,k); }
     [1.0,1.55].forEach((b,i)=>{ if(t>b&&!sc['hb'+i]){ sc['hb'+i]=1; AUDIO.tone(52,.18,'sine',.55); AUDIO.tone(48,.16,'sine',.45,.18); } });   // 쿵… 쿵…
-    if(t>=2.0&&t<2.9){ if(!sc.rip){ sc.rip=1; if(hm) hm.visible=true; AUDIO.noise(.9,.35,0,1600); }
-      const o=ease(Math.min(1,(t-2.0)/.8)); if(nose) nose.visible=o<.3;   // 벌어진 입이 코 자리까지 삼킨다
+    if(t>=2.0&&t<2.9){ if(!sc.rip){ sc.rip=1; AUDIO.noise(.9,.35,0,1600); }
+      const o=ease(Math.min(1,(t-2.0)/.8)); MOONRABBIT.face(rab,Math.max(.01,o));   // 벌어지는 입이 코를 삼키고 눈을 위로 밀어 올린다
       const nb=Math.min(4,Math.floor((t-2.0)/.13)+1);
       if(nb>sc.nb){ sc.nb=nb; AUDIO.tone(2600,.03,'square',.14); AUDIO.noise(.06,.35,0,5200); roll((Math.random()-.5)*.12); }   // 툭 — 실밥이 하나씩 끊어진다
       if(hm) hm.scale.set(hm0.x,hm0.y*Math.max(.04,o)*(1+.06*Math.sin(t*60)*(1-o)),hm0.z); }                // 입이 위아래로 찢어지며 벌어진다
