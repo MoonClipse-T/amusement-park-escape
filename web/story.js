@@ -21,7 +21,13 @@ let ORDER=null;
    동작 : Idle · Walk · Run · 공포 입 rabbit_hmouth (평소엔 숨김). 광장 동상 · 공포 장면 · 앞으로 쫓아오는 달토끼가 모두 MOONRABBIT.make() 로 만든다 */
 const MOONRABBIT={src:null, live:[], eyeMat:null,
   async load(){ if(!this.src) this.src=await loadGLB('moonrabbit'); return this.src; },
-  face(o,scary){ o.traverse(m=>{ if(m.name==='rabbit_hmouth'||/^mrab_hbrow/.test(m.name)) m.visible=scary; else if(m.name==='mrab_nose'||m.name==='mrab_eyebrow') m.visible=!scary; }); },   // 평소 얼굴 ↔ 공포 얼굴 (웃는 입 · 성난 눈썹 — 코 · 원래 눈썹은 숨긴다)
+  // 얼굴 : k = 0 평소(귀여운 얼굴) … 1 공포 (false/true 도 된다). 큰 웃는 입 rabbit_hmouth 가 얼굴 가운데까지 벌어지며 코를 삼키고,
+  // 눈 mrab_eye_L/R 은 위로 밀려 올라가고(올라간 자리 = 빈 물체 mrab_eyeT_L/R), 눈썹은 사라진다. 동상은 0, 움직이는 달토끼는 1 로 고정
+  face(o,scary){ const k=+scary;
+    o.traverse(m=>{ const n=m.name; if(n==='rabbit_hmouth') m.visible=k>0; else if(n==='mrab_nose') m.visible=k<.3; else if(n==='mrab_eyebrow') m.visible=k<.2;
+      else if(/^mrab_eye_[LR]$/.test(n)){ const t=m.parent.getObjectByName(n.replace('eye_','eyeT_')); if(!t) return;
+        if(!m.userData.q0){ m.userData.p0=m.position.clone(); m.userData.q0=m.quaternion.clone(); }
+        m.position.lerpVectors(m.userData.p0,t.position,k); m.quaternion.copy(m.userData.q0).slerp(t.quaternion,k); } }); },
   make(anim='Idle'){ const o=this.src.clone(true); this.face(o,false);
     const mixer=new THREE.AnimationMixer(o), clips=this.src.userData.animations||[];
     o.userData.mixer=mixer; o.userData.play=(n,fade=.25)=>{ const c=THREE.AnimationClip.findByName(clips,n); if(!c) return; const a=mixer.clipAction(c);
@@ -34,7 +40,7 @@ ROOMS.push({id:'shift', async build(){
   // 광장 달토끼 동상 : 받침대 위 머리 축(ANIM_rabbithead, 받침대 윗면 위 1.69 m) 아래에 세운다 — 자정엔 축째 돌아 나를 본다
   await MOONRABBIT.load(); const R=PARK.anim.rabbithead;
   if(R){ const st=MOONRABBIT.make('Idle'); st.position.set(0,-1.6875,0); R.add(st);
-    st.traverse(m=>{ if(m.isMesh&&/eyes/.test(m.name)){ m.material=m.material.clone(); m.material.emissive=new THREE.Color(0xff1a10); m.material.emissiveIntensity=0; MOONRABBIT.eyeMat=m.material; } }); }
+    st.traverse(m=>{ if(m.isMesh&&/^mrab_eye_/.test(m.name)){ if(!MOONRABBIT.eyeMat){ const e=MOONRABBIT.eyeMat=m.material.clone(); e.emissive=new THREE.Color(0xff1a10); e.emissiveIntensity=0; } m.material=MOONRABBIT.eyeMat; } }); }
   Object.keys(FLAVOR).forEach(f=>{ const m=PARK.items['tub_'+f]; if(!m) return;
     INTER.push({mesh:m,name:FLAVOR[f]+' 아이스크림 통',range:2.8,fn:()=>scoop(f),enabled:()=>S.stage==='shift'}); });
   addBox(13.3,17.85,13.6,20.1,()=>S.stage==='shift');

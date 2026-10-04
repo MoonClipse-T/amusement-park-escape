@@ -4,8 +4,8 @@
   부품(머리 · 귀 · 눈 · 눈썹 · 코 · 몸 · 스카프 · 꼬리 · 팔 L/R · 다리 L/R)을 뼈에 그대로 붙인다 (리지드 리깅 : 관절에서 꺾인다)
     뼈 : root · hips · head · arm_L · arm_R · leg_L · leg_R      (L = 캐릭터 왼쪽 = +X)
     동작 : Idle (숨쉬기 · 고개 갸웃) · Walk · Run                (24 fps, 반복)
-  공포 표정 : 입 rabbit_hmouth (볼까지 올라간 웃는 입 · 크고 날카로운 맞물린 이빨 · 피 묻은 잇몸 · 찢어진 천 · 흐르는 피) + 성난 눈썹 mrab_hbrow_L/R
-    머리뼈에 붙어 같이 움직인다. 엔진(story.js MOONRABBIT.face)이 평소엔 숨기고, 공포 얼굴일 때 코 · 원래 눈썹과 바꿔 낀다.
+  공포 표정 : 입 rabbit_hmouth (얼굴 가운데부터 턱까지 덮는 웃는 입 · 크고 날카로운 맞물린 송곳니 · 피가 흐르는 잇몸과 이빨 · 피에 젖은 찢어진 입술)
+    머리뼈에 붙어 같이 움직인다. 엔진(story.js MOONRABBIT.face)이 평소엔 숨기고, 공포 얼굴일 때 코 · 눈썹을 숨기고 눈(mrab_eye_L/R)을 mrab_eyeT_L/R 자리로 올린다.
   앞 = Blender -Y (glTF / three.js +Z) · 발밑 가운데 = 원점 · 키 H
   실행 (Blender) : dorm_dress.py 를 exec(_mat · _B) → 이 파일 exec → build_rabbit_character()
   만든 물체는 내보낸 뒤 장면에서 지운다 (park.glb 에 섞이지 않게)
@@ -15,6 +15,7 @@ from mathutils import Matrix, Vector, Quaternion
 
 H = 2.4                                      # 키 (귀 끝까지)
 FPS = 24
+LIFT = .23                                   # 공포 얼굴 : 눈이 위로 올라가는 높이
 
 
 def _bounds(objs):
@@ -45,8 +46,8 @@ def _lin(h):
     return Vector([x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c])
 
 
-def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
-    """머리 앞 곡면에 붙인 3D 공포 입 (원점 = 입 가운데, 높이 cz). 앞 = -Y
+def _horror_mouth(head, cz, width, gap, oz, grin=.09, n_teeth=7):
+    """머리 앞 곡면에 붙인 3D 공포 입 (입 가운데 높이 cz · 원점 높이 oz = 원래 입 자리 — 엔진이 여기서부터 scale.y 로 벌린다). 앞 = -Y
        볼까지 치켜 올라간 웃는 입 — 도톰하게 말린 찢어진 입술 · 이 사이로 내려온 잇몸 · 두께가 있는 송곳니가 위아래로 맞물린다
        색은 꼭짓점 색으로 (뿌리는 누렇게 · 끝은 희게 · 잇몸에서 피가 타고 내린다) → glTF COLOR_0
        머리 텍스처에 그려진 원래 입('ㅅ')이 비치지 않게 입속 면을 촘촘한 그물로 곡면 위에 띄운다"""
@@ -55,11 +56,16 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
     P = [v.co for v in head.data.vertices]
     b0, b1 = Vector([min(p[i] for p in P) for i in range(3)]), Vector([max(p[i] for p in P) for i in range(3)])
     hc, hr = (b0 + b1) / 2, (b1 - b0) / 2
-    c = Vector((0, 0, cz))
+    c = Vector((0, 0, oz))
     nrm = lambda p: Vector(((p.x - hc.x) / hr.x ** 2, (p.y - hc.y) / hr.y ** 2, (p.z - hc.z) / hr.z ** 2)).normalized()   # 머리를 타원체로 본 매끈한 법선
 
+    cast = lambda x, z: bvh.ray_cast(Vector((x, -3, z)), Vector((0, 1, 0)))[0]
+
     def surf(x, z, h):                                      # 얼굴 곡면 위 (x, z) 에서 바깥으로 h
-        hit = bvh.ray_cast(Vector((x, -3, z)), Vector((0, 1, 0)))[0]
+        hit, n = cast(x, z), 0
+        while hit is None and n < 40:                       # 턱 밑 · 얼굴 옆으로 벗어나면 가장 가까운 얼굴 위로 당긴다
+            n, z, x = n + 1, z + .01, x * .98
+            hit = cast(x, z)
         if hit is None:
             hit = Vector((x, b0.y, z))
         return hit + nrm(hit) * h
@@ -74,7 +80,9 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
     rnd = lambda i, k: (math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1
     DARK, DARK2 = _lin("#070001"), _lin("#2a0305")
     GUM, GUM_D = _lin("#a01a24"), _lin("#45050a")
-    IVORY, STAIN, TIP, BLOOD, CLOTH = _lin("#ece4d0"), _lin("#9a7646"), _lin("#fbf8ee"), _lin("#7c0409"), _lin("#e6e3de")
+    IVORY, STAIN, TIP, CLOTH = _lin("#ece4d0"), _lin("#9a7646"), _lin("#fbf8ee"), _lin("#e6e3de")
+    BLOOD, FRESH = _lin("#4a0206"), _lin("#b00a10")          # 굳은 피 · 갓 흐른 피
+    axis = {}                                               # 핏방울 면 번호 → 그 축 위의 점 (면 방향을 축 바깥으로)
     verts, cols, faces, mats = [], [], [], []
 
     def add(vs, cs, fs, m):
@@ -94,13 +102,28 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
     # ---- 입속 (어둠)
     grid([[(surf(X(u), lerp(lo(u), up(u), r / 8), .005), DARK2.lerp(DARK, math.sin(math.pi * r / 8))) for u in us] for r in range(9)], 0)
     # ---- 송곳니 : 반원통 고리를 뿌리에서 끝까지 좁혀 간다 (앞으로 볼록 · 뿌리는 잇몸 속)
-    K, J = 8, 6
+    K, J = 10, 10
+
+    def drop(x, z, h, L):                                   # 이 끝에 맺혀 길게 늘어진 핏방울
+        if cast(x, z - L * 1.1) is None:
+            return
+        prof = ((0, .008), (.35, .0055), (.7, .008), (.9, .014), (1, .009))
+        vs = [surf(x + r * math.cos(math.tau * n / 6), z - L * t, h + r * math.sin(math.tau * n / 6)) for t, r in prof for n in range(6)]
+        vs.append(surf(x, z - L * 1.08, h))
+        R = len(prof) - 1
+        fs = [(k * 6 + n, k * 6 + (n + 1) % 6, (k + 1) * 6 + (n + 1) % 6, (k + 1) * 6 + n) for k in range(R) for n in range(6)]
+        fs += [(R * 6 + n, R * 6 + (n + 1) % 6, R * 6 + 6) for n in range(6)]
+        for n, fc in enumerate(fs):
+            axis[len(faces) + n] = surf(x, z - L * prof[min(R, n // 6)][0], h)
+        add(vs, [FRESH] * len(vs), fs, 1)
 
     def tooth(i, uc, hw, base, far, sgn, h0):
         hw *= .78 + .14 * rnd(i, 1)
         zr = base(uc) - sgn * .012
         zt = lerp(zr, far, .84 + .13 * rnd(i, 2))
-        bend, bloody, L = (rnd(i, 3) - .5) * .22 * du, rnd(i, 4) < .7, .45 + .5 * rnd(i, 5)
+        bend = (rnd(i, 3) - .5) * .22 * du
+        streaks = [(J * (.2 + .6 * rnd(i, 4 + n)), .45 + .55 * rnd(i, 7 + n)) for n in range(2)]      # 잇몸에서 흘러내린 핏줄기 (자리, 길이)
+        wet = max(L for _, L in streaks) > .8
         vs, cs = [], []
         for k in range(K):
             t = k / K
@@ -112,13 +135,15 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
                 th = math.pi * j / J
                 vs.append(surf(x0 - a * math.cos(th), z, h0 + .006 * math.sin(math.pi * t) + bb * math.sin(th)))
                 q = col * ((.45 + .55 * math.sin(th) ** .7) * (.55 + .45 * clamp(t * 5)))
-                if bloody:                                  # 잇몸에서 흘러내린 피
-                    q = q.lerp(BLOOD, clamp(1 - t / L) ** .8 * (1 if abs(j - J / 2 - (rnd(i, 6) - .5) * 2) < 1.2 else .35))
+                bl = max([clamp(1 - t / .22) ** 1.5] + [clamp(1 - t / L) ** .4 * clamp(1.6 - abs(j - js) / 1.1) for js, L in streaks])
+                q = q.lerp(BLOOD.lerp(FRESH, clamp(bl * 1.4 - .3)), clamp(bl))
                 cs.append(q)
         vs.append(surf(X(uc + bend), zt, h0 + .004))
-        cs.append(TIP)
+        cs.append(FRESH if wet else TIP)
         fs = [(k * (J + 1) + j, k * (J + 1) + j + 1, (k + 1) * (J + 1) + j + 1, (k + 1) * (J + 1) + j) for k in range(K - 1) for j in range(J)]
         add(vs, cs, fs + [((K - 1) * (J + 1) + j, (K - 1) * (J + 1) + j + 1, K * (J + 1)) for j in range(J)], 1)
+        if wet and sgn > 0:
+            drop(X(uc + bend), zt, h0 + .004, .05 + .06 * rnd(i, 9))
     for i in range(n_teeth):                                # 윗니 (앞쪽) — 끝이 아랫니 사이로
         uc = -1 + (i + .5) * du
         tooth(i, uc, X(du) / 2, up, lo(uc), 1, .012)
@@ -128,18 +153,20 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
     # ---- 잇몸 (이 사이로 내려온 도톰한 띠) · 입술 (도톰하게 말린 찢어진 천, 안쪽은 피에 젖었다)
     for edge, sgn, ph0 in ((up, 1, 0), (lo, -1, .5)):
         thin = lambda u: clamp(g(u) / (gap * .5))
-        gh = lambda u: (.02 + .02 * abs(math.cos(math.pi * ((u + 1) / du + ph0))) ** 1.5) * thin(u)
-        grid([[(surf(X(u), edge(u) + sgn * .008 - sgn * (gh(u) + .008) * k / 5, .004 + .021 * thin(u) * math.sin(math.pi * k / 5) ** .8),
+        gh = lambda u: gap * (.09 + .1 * abs(math.cos(math.pi * ((u + 1) / du + ph0))) ** 1.5) * thin(u)
+        grid([[(surf(X(u), edge(u) + sgn * .008 - sgn * (gh(u) + .008) * k / 5, .004 + .026 * thin(u) * math.sin(math.pi * k / 5) ** .8),
                 GUM_D.lerp(GUM, math.sin(math.pi * k / 5) * (.75 + .25 * rnd(i, 7)))) for i, u in enumerate(us)] for k in range(6)], 1)
-        prof = ((.036, .0006, 0), (.026, .008, 0), (.014, .013, .3), (.004, .009, .75), (-.004, .003, 1))     # (가장자리 밖으로, 높이, 피)
-        grid([[(surf(X(u), edge(u) + sgn * d * (1 + (.35 * rnd(i, 8) if d > .02 else 0)), hh), CLOTH.lerp(BLOOD, bl)) for i, u in enumerate(us)]
+        prof = ((.085, .0004, 0), (.04, .0008, .2), (.026, .008, .5), (.014, .013, .85), (.004, .009, 1), (-.004, .003, 1))     # (가장자리 밖으로, 높이, 피) — 피가 천에 번져 있다
+        grid([[(surf(X(u), edge(u) + sgn * d * (1 + (.35 * rnd(i, 8) if .02 < d < .05 else 0)), hh), CLOTH.lerp(BLOOD.lerp(FRESH, .45), clamp(bl * (.45 + 1.2 * (.5 + .5 * math.sin(i * .9 + sgn) * math.sin(i * .37)))))) for i, u in enumerate(us)]
               for d, hh, bl in prof], 1)
     # ---- 아랫입술 밑으로 흐른 피
     for n, (u, L) in enumerate(((-.66, .09), (-.4, .05), (-.22, .13), (.1, .08), (.36, .14), (.6, .06), (.78, .1))):
         x, z = X(u), lo(u) - .03
-        L = min(L, z - b0.z - .04)
+        L = min(L * 1.5, z - b0.z - .015)
+        while L > 0 and cast(x, z - L) is None:
+            L -= .01
         if L > .015:
-            grid([[(surf(x + dx * (1 - .6 * k / 5), z - L * k / 5, hh), BLOOD) for dx, hh in ((-.011, .001), (0, .006), (.011, .001))] for k in range(6)], 1)
+            grid([[(surf(x + dx * (1 - .6 * k / 5), z - L * k / 5, hh), FRESH.lerp(BLOOD, .35)) for dx, hh in ((-.011, .001), (0, .006), (.011, .001))] for k in range(6)], 1)
     m = bpy.data.meshes.new("rabbit_hmouth")
     m.from_pydata([v - c for v in verts], [], faces)
     for poly, mi in zip(m.polygons, mats):
@@ -155,7 +182,8 @@ def _horror_mouth(head, cz, width, gap, grin=.09, n_teeth=9):
     bm = bmesh.new()
     bm.from_mesh(m)
     for fc in bm.faces:                                  # 모두 얼굴 바깥을 보게
-        if fc.normal.dot(nrm(fc.calc_center_median() + c)) < 0:
+        ctr = fc.calc_center_median() + c
+        if fc.normal.dot(ctr - axis[fc.index] if fc.index in axis else nrm(ctr)) < 0:
             fc.normal_flip()
     bm.to_mesh(m)
     bm.free()
@@ -244,24 +272,40 @@ def build_rabbit_character(out_path):
         bone("leg_R", (-lx, 0, hz), (-lx, 0, .02), "hips")
         bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.update()
-    # ---- 공포 표정 (엔진 MOONRABBIT.face 가 평소 얼굴과 바꿔 낀다)
-    #      입 rabbit_hmouth : 얼굴 아래쪽은 턱 밑으로 말려 들어가니 코 자리까지 덮는다 (공포 얼굴에선 코 mrab_nose · 눈썹 mrab_eyebrow 를 숨긴다)
-    mouth = _horror_mouth(parts["head"][0], cz=nose0.z - .05, width=(head1.x - head0.x) * .8, gap=(head1.z - head0.z) * .21)
-    #      눈썹 mrab_hbrow_L/R : 안쪽 끝이 눈 위로 내리꽂힌 성난 눈썹
-    hb = parts["eyebrow"][0].copy()
-    hb.data = hb.data.copy()
-    bpy.context.scene.collection.objects.link(hb)
-    hbrows = _split_x(hb, 0)
-    for o, side in zip(hbrows, "LR"):
-        xs = [abs(v.co.x) for v in o.data.vertices]
-        bx = (min(xs) + max(xs)) / 2
-        for v in o.data.vertices:
-            v.co.z += .62 * (abs(v.co.x) - bx) - .02
-        o.name = "mrab_hbrow_" + side
+    # ---- 공포 표정 (엔진 MOONRABBIT.face 가 평소 얼굴에서 바꿔 간다)
+    #      입 rabbit_hmouth : 얼굴 가운데부터 턱까지 덮는 큰 입 (코 mrab_nose · 눈썹 mrab_eyebrow 는 숨긴다 — 눈썹이 없어야 더 섬뜩하다)
+    hc = (head0 + head1) / 2
+    top, bot = hc.z, head0.z + .1
+    mouth = _horror_mouth(parts["head"][0], cz=(top + bot) / 2, width=(head1.x - head0.x) * .84, gap=top - bot, oz=nose0.z - .03)
+    #      눈 mrab_eye_L/R : 큰 입에 밀려 얼굴 곡면을 따라 위로 올라간다 — 올라간 자리를 빈 물체 mrab_eyeT_L/R 로 내보내고, 엔진이 그 사이를 잇는다
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromObject(parts["head"][0], bpy.context.evaluated_depsgraph_get())
+
+    def on_face(x, z):                                    # 얼굴 곡면 위의 점 · 매끈한 법선 (둘레 평균)
+        hits = [bvh.ray_cast(Vector((x + dx, -3, z + dz)), Vector((0, 1, 0))) for dx in (-.05, 0, .05) for dz in (-.05, 0, .05)]
+        return hits[4][0], sum((h[1] for h in hits if h[0] is not None), Vector()).normalized()
+
+    def lifted(ctr):                                      # ctr 에 있는 부품을 곡면을 따라 LIFT 만큼 올리는 변환
+        p0, n0 = on_face(ctr.x, ctr.z)
+        p1, n1 = on_face(ctr.x, ctr.z + LIFT)
+        return Matrix.Translation(p1) @ n0.rotation_difference(n1).to_matrix().to_4x4() @ Matrix.Translation(-p0)
+    eyes = _split_x(parts.pop("eyes")[0], 0)
+    targets = []
+    for o, side in zip(eyes, "LR"):
+        e0, e1 = _bounds([o])
+        ctr = (e0 + e1) / 2
+        o.data.transform(Matrix.Translation(-ctr))
+        o.location = ctr
+        o.name = "mrab_eye_" + side
+        t = bpy.data.objects.new("mrab_eyeT_" + side, None)
+        bpy.context.scene.collection.objects.link(t)
+        t.matrix_world = lifted(ctr) @ Matrix.Translation(ctr)
+        targets.append(t)
+    bpy.context.view_layer.update()
     # ---- 부품을 뼈에 붙인다 (메시는 월드 좌표 그대로)
     where = {"head": "head", "ears": "head", "ears_pink": "head", "eyebrow": "head", "eyes": "head", "nose": "head",
              "body": "hips", "scraf": "hips", "tail": "hips"}
-    pairs = [(o, where[k]) for k, v in parts.items() for o in v] + [(arms[0], "arm_L"), (arms[1], "arm_R"), (legs[0], "leg_L"), (legs[1], "leg_R"), (mouth, "head"), (hbrows[0], "head"), (hbrows[1], "head")]
+    pairs = [(o, where[k]) for k, v in parts.items() for o in v] + [(arms[0], "arm_L"), (arms[1], "arm_R"), (legs[0], "leg_L"), (legs[1], "leg_R"), (mouth, "head")] + [(o, "head") for o in eyes + targets]
     for o, bn in pairs:
         mw = o.matrix_world.copy()
         o.parent, o.parent_type, o.parent_bone = rig, "BONE", bn
