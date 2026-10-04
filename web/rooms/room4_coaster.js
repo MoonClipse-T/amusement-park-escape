@@ -122,50 +122,61 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   /* ---------- 공포 : 꼭대기에서 떨어지기 직전, 시선이 오른쪽 아래로 — 땅에 광장 달토끼 동상과 똑같은 거대한 달토끼가 올려다보고 있다.
                   한동안 원래의 귀여운 얼굴 그대로 → 실로 꿰맨 W 자 입의 실밥이 툭툭 끊어지며 천이 찢어지고, 입이 쩍 벌어진다
                   (찢어진 천 가장자리 · 삐져나온 솜 · 안쪽의 바늘 같은 이빨) · 단추 눈에 빨간 불 (첫 탑승만) ---------- */
-  let rab=null, head=null, tear=null, tg=null, tex=null, mouth0=null, glows=[];
+  let rab=null, head=null, tear=null, tg=null, tex=null, mouth0=null;
   const ease=x=>x*x*(3-2*x);
   // 입 둘레를 그린다 (512×320 = 0.8 × 0.5 m, 원래 입 자리 = 캔버스 (256,110)). o : 벌어진 정도 0~1, nb : 끊어진 실 수 0~4
-  function drawTear(o,nb){ const g=tg, cx=256, cy=110; g.clearRect(0,0,512,320);
-    const hw=70+175*ease(Math.min(1,o*1.4)), hh=4+185*o, sn=a=>Math.pow(Math.sin(Math.PI*Math.min(1,Math.max(0,a))),.8);
-    const up=a=>cy-.3*hh*sn(a), lo=a=>cy+hh*sn(a), X=a=>cx-hw+2*hw*a;
+  // 찢어진 입 (512×320 = 1.2 × 0.75 m, 원래 입 자리 = 캔버스 (256,100)). o : 벌어진 정도 0~1, nb : 끊어진 실 수 0~4
+  //  다 찢어지면 얼굴 아래쪽 절반을 차지하는 웃는 입 — 바늘 같은 이빨이 위아래로 촘촘하게 맞물린다
+  function drawTear(o,nb){ const g=tg, cx=256, cy=100, e=ease(Math.min(1,o)); g.clearRect(0,0,512,320);
+    const hw=56+194*e, X=u=>cx+hw*u;                                                         // u : -1(왼쪽 입꼬리) ~ 1(오른쪽)
+    const up=u=>cy+30*e-52*e*u*u, gap=u=>3+158*e*Math.pow(Math.max(0,1-u*u),.6), lo=u=>up(u)+gap(u);   // 입꼬리가 올라간 초승달
+    const path=()=>{ g.beginPath(); for(let i=0;i<=48;i++){ const u=-1+i/24; g.lineTo(X(u),up(u)); } for(let i=48;i>=0;i--){ const u=-1+i/24; g.lineTo(X(u),lo(u)); } g.closePath(); };
     if(o>0.01){
-      g.beginPath(); for(let i=0;i<=40;i++){ const a=i/40; g.lineTo(X(a),up(a)+((i*7)%5-2)*o*1.5); } for(let i=40;i>=0;i--){ const a=i/40; g.lineTo(X(a),lo(a)+((i*11)%5-2)*o*2); } g.closePath();
-      const gr=g.createRadialGradient(cx,cy+hh*.35,4,cx,cy+hh*.35,hw); gr.addColorStop(0,'#000'); gr.addColorStop(.7,'#1a0204'); gr.addColorStop(1,'#4a070c'); g.fillStyle=gr; g.fill();
-      g.save(); g.clip();
-      g.fillStyle='#e8dfc6'; g.strokeStyle='#6b5a44'; g.lineWidth=1;                                         // 안쪽에 숨어 있던 바늘 같은 이빨
-      for(let i=0;i<13;i++){ const a=.06+i*.88/12, x=X(a), L=hh*(.32+.18*((i*5)%3)/2);
-        g.beginPath(); g.moveTo(x-6,up(a)-3); g.lineTo(x+(i%2?2:-2),up(a)+L); g.lineTo(x+6,up(a)-3); g.fill(); g.stroke(); }
-      for(let i=0;i<11;i++){ const a=.1+i*.8/10, x=X(a), L=hh*(.28+.16*((i*7)%3)/2);
-        g.beginPath(); g.moveTo(x-6,lo(a)+3); g.lineTo(x+(i%2?-2:2),lo(a)-L); g.lineTo(x+6,lo(a)+3); g.fill(); g.stroke(); }
+      path(); const gr=g.createLinearGradient(0,cy-40,0,cy+150); gr.addColorStop(0,'#2a0306'); gr.addColorStop(.5,'#050000'); gr.addColorStop(1,'#2a0306'); g.fillStyle=gr; g.fill();
+      g.save(); path(); g.clip();
+      const N=20, du=2/N;
+      const tooth=(x0,x1,yb,yt)=>{ const gt=g.createLinearGradient(0,yb,0,yt); gt.addColorStop(0,'#cdbf9e'); gt.addColorStop(.35,'#f4ecd8'); gt.addColorStop(1,'#fffaf0');
+        g.fillStyle=gt; g.beginPath(); g.moveTo(x0,yb); g.lineTo((x0+x1)/2,yt); g.lineTo(x1,yb); g.closePath(); g.fill(); g.stroke(); };
+      g.strokeStyle='#3a2a1c'; g.lineWidth=1.2;
+      for(let i=0;i<N;i++){ const u0=-1+i*du, u1=u0+du, um=(u0+u1)/2; tooth(X(u0),X(u1),up(um)-3,up(um)+gap(um)*.97); }                  // 윗니 : 아랫입술까지
+      for(let i=0;i<=N;i++){ const u0=-1+(i-.5)*du, u1=u0+du, um=Math.max(-1,Math.min(1,(u0+u1)/2)); tooth(X(u0),X(u1),lo(um)+3,lo(um)-gap(um)*.97); }   // 아랫니 : 윗니 사이로 맞물린다
+      g.lineWidth=7*e; g.strokeStyle='rgba(110,0,8,.85)'; g.beginPath(); for(let i=0;i<=48;i++){ const u=-1+i/24; g.lineTo(X(u),up(u)+2); } g.stroke();        // 피 묻은 잇몸
+      g.beginPath(); for(let i=0;i<=48;i++){ const u=-1+i/24; g.lineTo(X(u),lo(u)-2); } g.stroke();
+      for(let i=0;i<N;i++){ if((i*7)%3===0) continue; const um=-1+(i+.5)*du, x=X(um), w=hw*du*.45, L=gap(um)*(.25+((i*5)%4)*.12);     // 이빨에 번진 피
+        const gb=g.createLinearGradient(0,up(um),0,up(um)+L); gb.addColorStop(0,'rgba(95,0,6,.9)'); gb.addColorStop(1,'rgba(140,0,10,0)'); g.fillStyle=gb; g.fillRect(x-w,up(um),w*2,L);
+        if(i%2){ const gl=g.createLinearGradient(0,lo(um),0,lo(um)-L*.8); gl.addColorStop(0,'rgba(95,0,6,.85)'); gl.addColorStop(1,'rgba(140,0,10,0)'); g.fillStyle=gl; g.fillRect(x-w+hw*du*.5,lo(um)-L*.8,w*2,L*.8); } }
       g.restore();
-      g.fillStyle='#f4eee2';                                                                                  // 찢어진 천 가장자리 (안으로 삐죽삐죽)
-      for(let i=1;i<20;i++){ const a=i/20, x=X(a), d=(3+((i*13)%7))*Math.min(1,o*3);
-        g.beginPath(); g.moveTo(x-7,up(a)-2); g.lineTo(x,up(a)+d); g.lineTo(x+7,up(a)-2); g.fill();
-        g.beginPath(); g.moveTo(x-7,lo(a)+2); g.lineTo(x,lo(a)-d); g.lineTo(x+7,lo(a)+2); g.fill(); }
-      g.fillStyle='#fffdf8'; [[.02,.5],[.98,.5],[.2,0],[.75,1],[.45,1],[.6,0]].forEach(([a,w],i)=>{ const x=X(a), y=w?lo(a):up(a);   // 삐져나온 솜
-        for(let j=0;j<3;j++){ g.beginPath(); g.arc(x+(j-1)*7,y+(w?-1:1)*(j%2)*4,(5+j*2)*Math.min(1,o*2.2),0,7); g.fill(); } });
+      path(); g.strokeStyle='#1a0c08'; g.lineWidth=5; g.stroke();                                       // 입술 둘레
+      g.fillStyle='#6a0007'; [[-.62,30],[-.3,34],[-.02,22],[.26,30],[.55,24],[.8,16]].forEach(([u,l])=>{ const x=X(u), y=lo(u)+2, L=l*e;   // 아랫입술에서 흘러내리는 피
+        g.fillRect(x-2.5,y,5,L); g.beginPath(); g.arc(x,y+L,4.5,0,7); g.fill(); });
+      g.fillStyle='#f4eee2'; for(let i=1;i<24;i++){ const u=-1+i/12, d=(3+((i*13)%6))*Math.min(1,o*3);    // 찢어진 천 가장자리
+        g.beginPath(); g.moveTo(X(u)-5,up(u)-3); g.lineTo(X(u),up(u)-3-d); g.lineTo(X(u)+5,up(u)-3); g.fill();
+        g.beginPath(); g.moveTo(X(u)-5,lo(u)+3); g.lineTo(X(u),lo(u)+3+d); g.lineTo(X(u)+5,lo(u)+3); g.fill(); }
+      g.fillStyle='#fffdf8'; [-1,1].forEach(u=>{ for(let j=0;j<3;j++){ g.beginPath(); g.arc(X(u)+u*(4+j*5),up(u)+(j-1)*6,(5+j*2)*Math.min(1,o*2),0,7); g.fill(); } });   // 입꼬리에 삐져나온 솜
     }
-    // 원래의 W 자 실밥 입 (4 땀) — 끊어진 땀은 위아래 가장자리에 실 끝이 늘어진다
-    const W=[[-69,-6],[-35,13],[0,-3],[35,13],[69,-6]];
+    // 원래의 W 자 실밥 입 (4 땀) — 끊어진 땀은 실 끝이 입가에 늘어진다
+    const Wp=[[-69,-6],[-35,13],[0,-3],[35,13],[69,-6]];
     g.strokeStyle='#4a1e26'; g.lineWidth=6; g.lineCap='round';
-    for(let i=0;i<4;i++){ const [x1,y1]=W[i], [x2,y2]=W[i+1];
-      if(i>=nb){ g.beginPath(); g.moveTo(cx+x1*(hw/70),cy+y1+(o>0?(y1<0?-.3*hh:hh)*.5:0)); g.lineTo(cx+x2*(hw/70),cy+y2+(o>0?(y2<0?-.3*hh:hh)*.5:0)); g.stroke(); }
-      else { const xm=cx+(x1+x2)/2*(hw/70), a=(xm-(cx-hw))/(2*hw);
-        g.beginPath(); g.moveTo(xm-10,up(a)); g.quadraticCurveTo(xm-14,up(a)+12,xm-6,up(a)+24); g.moveTo(xm+10,lo(a)); g.quadraticCurveTo(xm+14,lo(a)-12,xm+6,lo(a)-22); g.stroke(); } }
+    for(let i=0;i<4;i++){ const [x1,y1]=Wp[i], [x2,y2]=Wp[i+1];
+      if(i>=nb){ g.beginPath(); g.moveTo(cx+x1*(hw/56),cy+y1); g.lineTo(cx+x2*(hw/56),cy+y2); g.stroke(); }
+      else { const u=((x1+x2)/2)/70;
+        g.beginPath(); g.moveTo(X(u)-10,up(u)); g.quadraticCurveTo(X(u)-14,up(u)-12,X(u)-6,up(u)-24); g.moveTo(X(u)+10,lo(u)); g.quadraticCurveTo(X(u)+14,lo(u)+12,X(u)+6,lo(u)+22); g.stroke(); } }
     tex.needsUpdate=true; }
   // 광장 달토끼 동상을 그대로 복제한다 (몸 · 리본 · 절구 + 머리) — 처음엔 낮에 본 그 귀여운 모습 그대로
   function makeRabbit(){ const hd=PARK.anim.rabbithead; if(!hd) return;
+    hd.traverse(o=>{ if(/^rabbit_eye(shine|glow)?_[LR]$/.test(o.name)) o.position.y+=.1; });         // 달토끼 눈을 조금 위로 (광장 동상도 같게 — 처음 본 모습 그대로)
     const parts=[]; scene.traverse(o=>{ if(/^rabbit_(body|seam|pad[LR]|ribbon_(knot|L|R)|mortar|mortar_in|pestle|pestle_head)$/.test(o.name)) parts.push(o); });
     hd.updateMatrixWorld(true); const wp=hd.getWorldPosition(new THREE.Vector3()), inv=new THREE.Matrix4().makeTranslation(-wp.x,-(wp.y-1.25*1.35),-wp.z);
     const inner=new THREE.Group(); inner.rotation.y=-Math.PI/2;                                       // 동상은 동쪽(+x)을 본다 → 앞을 +z 로
     const add=o=>{ o.updateMatrixWorld(true); const c=o.clone(true); new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld).decompose(c.position,c.quaternion,c.scale); c.visible=true; inner.add(c); return c; };
     parts.forEach(add); head=add(hd); head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0));
     head.traverse(o=>{ if(o.name==='rabbit_mouth') mouth0=o;
-      if(/^rabbit_eyeglow/.test(o.name)){ o.traverse(m=>{ if(m.material){ m.material=new THREE.MeshBasicMaterial({color:0xff1408,depthTest:false}); m.renderOrder=1000; } }); o.scale.multiplyScalar(1.4); o.visible=false; glows.push(o); } });   // 단추 눈 위로 빨갛게   // 처음엔 빨간 눈 없음
+      if(/^rabbit_eyeglow/.test(o.name)) o.visible=false;                                              // 빨간 눈은 쓰지 않는다
+    });
     rab=new THREE.Group(); rab.add(inner); rab.scale.setScalar(1.25); rab.visible=false; scene.add(rab);
     const c=document.createElement('canvas'); c.width=512; c.height=320; tg=c.getContext('2d'); tex=new THREE.CanvasTexture(c);
-    tear=new THREE.Mesh(new THREE.PlaneGeometry(.8,.5),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false}));
-    tear.renderOrder=999; tear.position.set(0,.246,.65); tear.visible=false; head.add(tear); }          // 원래 입 자리 (머리 기준)
+    tear=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.75),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false}));
+    tear.renderOrder=999; tear.position.set(0,.2,.68); tear.visible=false; head.add(tear); }          // 원래 입 자리 (머리 기준)
   function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
     const base=pos.clone().addScaledVector(right,4.5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
     const eye=new THREE.Vector3(P.x,P.y+P.eye,P.z);
@@ -173,7 +184,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     const hp=head.getWorldPosition(new THREE.Vector3());
     head.quaternion.setFromEuler(new THREE.Euler(0,Math.PI/2,0)); head.rotateX(-Math.atan2(eye.y-hp.y,Math.hypot(eye.x-hp.x,eye.z-hp.z))*.85);   // 고개만 젖혀 위의 나를 올려다본다
     head.userData.q0=head.quaternion.clone(); rab.updateMatrixWorld(true); rab.userData.face=head.localToWorld(new THREE.Vector3(0,.33,.63));      // 눈과 입 사이를 본다
-    tear.visible=false; if(mouth0) mouth0.visible=true; glows.forEach(o=>o.visible=false); }
+    tear.visible=false; if(mouth0) mouth0.visible=true; }
   // 0~.6 시선이 내려간다 · ~2.0 원래 얼굴로 가만히 올려다본다 (심장 소리) · 2.0~2.9 실밥이 툭툭 끊어지며 입이 찢어진다 · ~3.7 쩍 벌린 채 · 4.1 시선 복귀
   const roll=a=>{ if(head&&head.userData.q0) head.quaternion.copy(head.userData.q0).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),a)); };   // 고개를 갸웃 (얼굴 방향은 그대로)
   const zf=v=>camera.aspect<1?Math.min(60,v/camera.aspect*.9):v;                                    // 세로 화면에서도 얼굴이 잘리지 않게
@@ -188,7 +199,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     if(t>=2.0&&t<2.9){ if(!sc.rip){ sc.rip=1; if(mouth0) mouth0.visible=false; tear.visible=true; AUDIO.noise(.9,.35,0,1600); }
       const o=ease(Math.min(1,(t-2.0)/.8)), nb=Math.min(4,Math.floor((t-2.0)/.13)+1);
       if(nb>sc.nb){ sc.nb=nb; AUDIO.tone(2600,.03,'square',.14); AUDIO.noise(.06,.35,0,5200); roll((Math.random()-.5)*.12); }   // 툭 — 실밥이 하나씩 끊어진다
-      drawTear(o,nb); if(o>.55&&!sc.red){ sc.red=1; glows.forEach(g=>g.visible=true); } }
+      drawTear(o,nb); }
     if(t>2.55&&!sc.scream){ sc.scream=1; AUDIO.tone(1900,1.1,'sawtooth',.18,0,-1400); AUDIO.noise(1,.6,0,3000); AUDIO.tone(70,1.3,'sine',.5,0,-30); zoom(zf(14),250); }
     if(sc.scream&&t<3.7) roll(Math.sin(t*38)*.03);                                          // 벌린 입으로 부르르
     if(t>3.7&&!sc.back){ sc.back=true; zoom(sc.fov,400); }
