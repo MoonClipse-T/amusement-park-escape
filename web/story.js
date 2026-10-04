@@ -17,15 +17,31 @@ const ORDERS=[
 ];
 let ORDER=null;
 
+/* 달토끼 캐릭터 (assets/moonrabbit.glb, Blender moon_rabbit_char.py) — 뼈대 : root · hips · head · arm_L/R · leg_L/R
+   동작 : Idle · Walk · Run · 공포 입 rabbit_hmouth (평소엔 숨김). 광장 동상 · 공포 장면 · 앞으로 쫓아오는 달토끼가 모두 MOONRABBIT.make() 로 만든다 */
+const MOONRABBIT={src:null, live:[], eyeMat:null,
+  async load(){ if(!this.src) this.src=await loadGLB('moonrabbit'); return this.src; },
+  face(o,scary){ o.traverse(m=>{ if(m.name==='rabbit_hmouth'||/^mrab_hbrow/.test(m.name)) m.visible=scary; else if(m.name==='mrab_nose'||m.name==='mrab_eyebrow') m.visible=!scary; }); },   // 평소 얼굴 ↔ 공포 얼굴 (웃는 입 · 성난 눈썹 — 코 · 원래 눈썹은 숨긴다)
+  make(anim='Idle'){ const o=this.src.clone(true); this.face(o,false);
+    const mixer=new THREE.AnimationMixer(o), clips=this.src.userData.animations||[];
+    o.userData.mixer=mixer; o.userData.play=(n,fade=.25)=>{ const c=THREE.AnimationClip.findByName(clips,n); if(!c) return; const a=mixer.clipAction(c);
+      if(o.userData.act&&o.userData.act!==a) o.userData.act.fadeOut(fade); a.reset().fadeIn(fade).play(); o.userData.act=a; };
+    o.userData.play(anim,0); this.live.push(o); return o; },
+  tick(dt){ this.live.forEach(o=>{ if(o.visible&&(!o.parent||o.parent.visible!==false)) o.userData.mixer.update(dt); }); } };
+
 /* 근무지 설정 : 냉동고 통 3개를 조사 대상으로, 판매대 옆문은 근무 중에 막는다 */
-ROOMS.push({id:'shift', build(){
+ROOMS.push({id:'shift', async build(){
+  // 광장 달토끼 동상 : 받침대 위 머리 축(ANIM_rabbithead, 받침대 윗면 위 1.69 m) 아래에 세운다 — 자정엔 축째 돌아 나를 본다
+  await MOONRABBIT.load(); const R=PARK.anim.rabbithead;
+  if(R){ const st=MOONRABBIT.make('Idle'); st.position.set(0,-1.6875,0); R.add(st);
+    st.traverse(m=>{ if(m.isMesh&&/eyes/.test(m.name)){ m.material=m.material.clone(); m.material.emissive=new THREE.Color(0xff1a10); m.material.emissiveIntensity=0; MOONRABBIT.eyeMat=m.material; } }); }
   Object.keys(FLAVOR).forEach(f=>{ const m=PARK.items['tub_'+f]; if(!m) return;
     INTER.push({mesh:m,name:FLAVOR[f]+' 아이스크림 통',range:2.8,fn:()=>scoop(f),enabled:()=>S.stage==='shift'}); });
   addBox(13.3,17.85,13.6,20.1,()=>S.stage==='shift');
   S.flags.open_dorm=true;                          // 숙소 문은 처음엔 열려 있다 (방 1 에서 닫힌다)
   const d=PARK.anim.dormdoor; if(d) d.rotation.y=Math.PI/2*0.95;
   const eye=PARK.mat.rabbit_eye; if(eye) eye.emissiveIntensity=0;
-}, tick(dt){ tickRabbit(dt); }});
+}, tick(dt){ tickRabbit(dt); MOONRABBIT.tick(dt); }});
 
 async function scoop(f){ if(!ORDER){ await mono('…다음 손님을 기다리자.'); return; } if(ORDER.busy) return;
   if(f!==ORDER.flavor){ AUDIO.err(); ORDER.busy=true; await mono([`어… 그거 말고 ${FLAVOR[ORDER.flavor]}요!`],ORDER.who); ORDER.busy=false; return; }
@@ -55,7 +71,7 @@ async function kidWarning(){
 /* 화면 확대 (시야각 바꾸기) */
 function zoom(fov,ms){ return new Promise(res=>{ const f0=camera.fov, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms), e=k<.5?2*k*k:-1+(4-2*k)*k; camera.fov=f0+(fov-f0)*e; camera.updateProjectionMatrix(); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
-function rabbitGlint(){ const m=PARK.mat.rabbit_eye; if(!m) return; const t0=performance.now();
+function rabbitGlint(){ const m=MOONRABBIT.eyeMat||PARK.mat.rabbit_eye; if(!m) return; const t0=performance.now();
   const step=()=>{ const k=(performance.now()-t0)/700; m.emissiveIntensity=k<1?Math.sin(k*Math.PI)*4:S.rabbitAwake?2.5:0; if(k<1) requestAnimationFrame(step); }; step(); }
 
 /* 자정 이후 : 달토끼 동상이 고개를 돌려 플레이어를 본다 */

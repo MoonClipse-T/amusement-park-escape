@@ -7,7 +7,7 @@ import base64, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WEB, DIST = ROOT / "web", ROOT / "dist"
-ASSETS = {"park": "park.glb", "sky": "sky.jpg", **{f"people_{k}": f"people_{k}.glb" for k in ("woman", "dress", "man", "suit", "hoodie")},
+ASSETS = {"park": "park.glb", "sky": "sky.jpg", "moonrabbit": "moonrabbit.glb", **{f"people_{k}": f"people_{k}.glb" for k in ("woman", "dress", "man", "suit", "hoodie")},
           **{p.stem: f"voice/{p.name}" for p in sorted((WEB / "assets" / "voice").glob("*.mp3"))}}   # 안내 방송 녹음
 
 def read(p): return (WEB / p).read_text(encoding="utf-8")

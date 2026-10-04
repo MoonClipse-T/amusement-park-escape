@@ -418,7 +418,7 @@ RX, RZ = -11.0, 17.5
 cyl("rabbit_pedestal", RX, 0, 0.8, RZ, 1.3, M["concrete"], verts=48)
 cyl("rabbit_pedestal_rim", RX, 0.8, 0.9, RZ, 1.4, M["brass"], verts=48)
 build_rabbit(RX, RZ, 90, s=1.35, prefix="rabbit", anim_head=True, base_y=0.9)
-build_moon_rabbit()    # blender/parts/moon_rabbit.py : 동상을 새 천 인형으로 바꾼다 (ANIM_rabbithead · 절구는 그대로)
+build_moon_rabbit()    # blender/parts/moon_rabbit.py : 동상 자리 비우기 (달토끼는 엔진이 moonrabbit.glb 로 세운다 — moon_rabbit_char.py)
 sign("rabbit_plate", RX + 1.31, 0.5, RZ, 90, 1.6, 0.35)
 colc("rabbit", RX, RZ, 1.45)
 

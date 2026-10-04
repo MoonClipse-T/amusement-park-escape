@@ -20,7 +20,8 @@
 - 맵을 바꾸면 `web/assets/park.glb` 를 다시 내보내고 커밋한다. 엔진은 GLB 만 읽는다.
 - `blender/build_lunaland_v2.py` 는 v1 맵에서 전부 다시 만든다. Blender 화면에서 직접 고친 뒤에는 스크립트를 다시 돌리지 말거나, 고친 내용을 스크립트에 옮긴다.
 - 소품은 직접 상자로 쌓지 말고 **Sketchfab**(Blender MCP 에 API 키 연결됨, CC BY 는 SOURCES.md 에 작가 표기) · Poly Pizza · Poly Haven 모델을 먼저 쓴다. 받은 모델은 blender/source/sketchfab/ 에 GLB 로 저장하고 optimize_glb.py 로 줄인다. 없으면 Blender 로 둥글게(Bevel · Torus · Subdivision) 모델링한다.
-- 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용). 후룸라이드 조작실 · 물길 · 스플래시 풀은 `flume_ride.py`, 광장 달토끼 동상은 `moon_rabbit.py` (천 인형 · 입 자리 표식 rabbit_mouth_mark)
+- 놀이기구 조작실은 `carousel_booth.py` 의 `_Booth` · `_booth_shell` 로 짓는다 (자리 · 각도만 바꿔 재사용). 후룸라이드 조작실 · 물길 · 스플래시 풀은 `flume_ride.py`, 광장 달토끼 자리(받침대 · 절구)는 `moon_rabbit.py`
+- 달토끼는 맵과 따로인 캐릭터 모델 `web/assets/moonrabbit.glb` (`moon_rabbit_char.py` 를 Blender 에서 수동 실행 — 뼈 root · hips · head · arm/leg_L/R, 동작 Idle · Walk · Run). 엔진은 `MOONRABBIT.make(동작)` 로 세우고 `o.userData.play('Walk')` 로 동작을 바꾼다. 얼굴은 `MOONRABBIT.face(o, true/false)` : 평소(귀여운 얼굴) ↔ 공포(웃는 입 rabbit_hmouth · 성난 눈썹 mrab_hbrow, 코 · 원래 눈썹 숨김). **동상은 평소 얼굴, 움직이는 달토끼는 공포 얼굴로 고정.**
 - 맵 부품은 `blender/parts/*.py` 에 나눠 둔다. 새 소품은 도형을 직접 쌓기 전에 카탈로그 · 기존 모델을 먼저 찾고, 직접 만들 땐 모서리 깎기 · 매끈한 음영을 쓴다.
 - 손님은 Quaternius CC0 캐릭터 (`blender/source/people/q_*.glb`, 같은 뼈대) → `blender/build_people.py` 로 Walk · Idle · Wave 만 남긴다. 옷 색은 crowd.js `TINT` 가 재질 이름으로 바꾼다. 사람 GLB 는 압축(quantize)하지 않는다.
 - 맵 GLB 는 quantize 되어 있어서 r128 레이캐스트가 빗나간다. 엔진이 조사 대상(`IT_`)만 좌표를 풀어 둔다 (game.js `dequant`). 조사할 물체는 꼭 `IT_` 로 이름 짓는다.
