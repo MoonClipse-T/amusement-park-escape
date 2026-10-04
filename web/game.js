@@ -300,7 +300,7 @@ const SIGNS={
   carousel:['회전목마','CAROUSEL','#e8dcc0','#8e231c'], circus:['서커스','매일 밤 8시 공연','#1b1b1b','#e3b54a'], wheel:['관람차','MOON WHEEL','#e8dcc0','#2f4f7a'],
   coaster:['후룸라이드','키 120cm 이상 탑승','#8e231c','#f2ede2'], haunted:['유령의 집','들어간 사람은 있어도…','#151515','#b8b0a0'],
   game_0:['오리 낚시','','#8e231c','#f2ede2'], game_1:['사 격','','#2f4f7a','#f2ede2'], game_2:['고리 던지기','','#2f6a4a','#f2ede2'],
-  food_8:['핫도그','','#f0e6d0','#8e231c'], food_15:['음료','','#f0e6d0','#2f4f7a'], tower:['자이로드롭','','#e8dcc0','#8e231c'], bumper:['범퍼카','BUMPER CARS','#e3b54a','#1b1b1b'],
+  food_8:['핫도그','','#f0e6d0','#8e231c'], food_15:['음료','','#f0e6d0','#2f4f7a'], tower:['자이로드롭','GYRO DROP · 키 130cm 이상 탑승','#e8dcc0','#8e231c'], bumper:['범퍼카','BUMPER CARS','#e3b54a','#1b1b1b'],
   shed:['창고','','#d8d2c2','#2a2a2a'], staff:['관계자 외 출입금지','STAFF ONLY','#e8dcc0','#8e231c'], office:['관리동','통제실 2F','#d8d2c2','#2a2a2a'], exit:['비상구','','#1f6a3a','#f2ede2'],
   // v2 맵
   icecream:['달토끼 아이스크림','MOON BUNNY ICE CREAM','#fbe9ef','#c0405f'], icecream_menu:['딸기 · 초코 · 바닐라','한 스쿱 3,000원 · 보름달 콘 +500원','#3a2430','#ffd9e4'],
@@ -489,7 +489,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   renderer.render(scene,camera);
   fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+숫자 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 방마다 하나, 방 번호 = 숫자 키. 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
@@ -497,7 +497,7 @@ function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P
 function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
 // 앞 단계로 돌아가도 상태가 섞이지 않게, 바로 가기는 늘 새로 불러온 뒤(?cp=번호) 그 자리로 간다
 // 앞 방으로 가는 건 그 자리에서 바로 옮긴다. 이미 지나온 방으로 돌아갈 때만 새로 불러온다 (입장권 연출 없이 바로 시작)
-function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
+function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.coaster_done?5:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
 function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
   if(S.phase!=='title'&&+key>cpLevel()) return runCheckpoint(key);
   location.search='?cp='+key; }
