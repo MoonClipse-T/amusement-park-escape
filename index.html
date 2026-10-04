@@ -127,6 +127,15 @@
   <p class="finfo"></p>
   <p class="fmsg"></p></div></div>
 
+<!-- 자이로드롭 힘 화면 : 올라갈 때 · 떨어질 때 · 브레이크 구간 · 멈춘 뒤의 알짜힘 (방 5) -->
+<div id="gyropad" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">자이로드롭 힘 화면</span><span class="fsub">NET FORCE · N</span></div>
+  <canvas id="gcv" width="720" height="380"></canvas>
+  <p class="fq"></p>
+  <div class="frow gdir"><span class="fl">알짜힘의 방향</span><button data-d="up" class="fdir">▲ 위쪽</button><button data-d="none" class="fdir">0 (없음)</button><button data-d="down" class="fdir">▼ 아래쪽</button></div>
+  <div class="frow gnum"><span class="fl">알짜힘의 크기</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
+  <button class="fgo">확인</button><p class="fmsg"></p></div></div>
+
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
   <div class="ctitle">운행 일시 정지<small>OPERATION PAUSED</small></div>
@@ -190,6 +199,7 @@
 <script src="rooms/room2_carousel.js"></script>
 <script src="rooms/room3_bumper.js"></script>
 <script src="rooms/room4_coaster.js"></script>
+<script src="rooms/room5_gyro.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

@@ -7,7 +7,6 @@
         → 점검 방법 : ① 전원을 켜고 점검용 보트에 직접 타서 코스를 끝까지 ② 물에 떨어진 보트는 옆면 초록 선까지만 잠겨 떠야 한다
                       ③ 아니면 크레인 힘 센서로 부력을 재서 무게를 맞춘다 ④ 전원 종료
         → 조작반 전원 ON → 역의 보트에 타면 1인칭으로 트랙을 따라 달린다 (뒷자리 : 앞쪽 보트 · 자석가 보인다)
-        → (공포) 꼭대기에서 떨어지기 직전 시선이 오른쪽 아래로 — 땅에서 달토끼가 올려다보다가, 눈이 마주치면 입이 찢어지게 벌어진다
         → 첫 탑승 : 자석 9개(550 N) — 보트가 다 잠겨도 부력은 500 N 까지라 보트째 꼬르륵 가라앉는다 (물속 연출)
         → 크레인 리모컨 (게임 화면 그대로, 3D) : 리모컨으로 보트를 물에 내리고 올리면 실제로 내려가고,
           바로 앞 크레인 계기판(3D 화면)에 힘 센서 값이 실시간으로 뜬다 · 1칸마다 계기판 아래 기록
@@ -15,7 +14,8 @@
             Q. 초록 선(3칸)까지 잠겼을 때 부력은? → 550 − 250 = 300 N   (부력 = 물에 넣기 전 값 − 잠겼을 때 값)
           리모컨으로 자석(한 개 50 N)를 내리고 줄을 풀어 띄워 본다 : 떠서 멈춘 보트는 중력 = 부력 (힘의 평형)
             500 N 넘으면 가라앉음 · 300 N 보다 무거우면 초록 선 아래로 · 가벼우면 너무 뜬다 · 300 N(4개) 이면 딱 초록 선
-        → 다시 타서 마지막 낙하만 확인 → 초록 선에 맞게 뜬다 → 조작실 전원 OFF
+        → 다시 타서 처음부터 끝까지 확인 — (공포) 꼭대기에서 떨어지기 직전 시선이 오른쪽 아래로 : 땅에서 달토끼가 올려다보다가 입이 찢어지게 벌어진다
+        → 초록 선에 맞게 뜬다 → 조작실 전원 OFF → "달토끼가 왜…" 광장 동상을 확인하러 간다 (rooms/room5_gyro.js 로 이어진다)
    ★ 글 · 숫자는 아래 ROOM4 에서 고친다 (mags 를 바꾸면 Blender flume_ride.py 의 MAG_N 도 같이)
    ============================================================ */
 'use strict';
@@ -67,7 +67,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     for(let i=1;i<T.length;i++) CUM.push(CUM[i-1]+T[i].distanceTo(T[i-1])); LEN=CUM[CUM.length-1]+T[0].distanceTo(T[T.length-1]); })();
   const near=(x,z,from=0)=>{ let b=from, d=1e9; for(let i=from;i<T.length;i++){ const e=Math.hypot(T[i].x-x,T[i].z-z); if(e<d){ d=e; b=i; } } return b; };
   const iPeak=T.reduce((b,p,i)=>p.y>T[b].y?i:b,0), H_PEAK=T[iPeak].y;
-  const iStation=near(26,-9), iDrop=near(34.4,-.6,iPeak), iLast=near(50.5,-18,iPeak);
+  const iStation=near(26,-9), iDrop=near(34.4,-.6,iPeak);
   function at(s){ s=((s%LEN)+LEN)%LEN; let k=CUM.length-1; for(let i=1;i<CUM.length;i++) if(CUM[i]>s){ k=i-1; break; }
     const a=T[k], b=T[(k+1)%T.length], seg=(k+1<CUM.length?CUM[k+1]:LEN)-CUM[k];
     return { p:a.clone().lerp(b,(s-CUM[k])/seg), f:b.clone().sub(a).normalize() }; }
@@ -93,8 +93,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
 
   /* ---------- 타기 : 트랙 → 낙하 → 물 (보트와 함께) ---------- */
   let rd=null, parked=false;      // parked : 다시 타기 전 보트를 트랙에 올려 둔 동안 (풀 출렁임이 덮어쓰지 않게)
-  function ride(fromI,last){ return new Promise(res=>{ setGoal(null); P.free=false; zoom(camera.fov+10,800);
-    rd={mode:'track',s:CUM[fromI],end:CUM[iDrop]+(iDrop<fromI?LEN:0),lift:fromI<iPeak?CUM[iPeak]:-1,t:0,v:last?5:0,tick:0,res,sink:W(bz.n)>BMAX,scare:last?null:{}}; }); }
+  function ride(fromI,scare){ return new Promise(res=>{ setGoal(null); P.free=false; zoom(camera.fov+10,800);
+    rd={mode:'track',s:CUM[fromI],end:CUM[iDrop]+(iDrop<fromI?LEN:0),lift:fromI<iPeak?CUM[iPeak]:-1,t:0,v:0,tick:0,res,sink:W(bz.n)>BMAX,scare:scare?{}:null}; }); }
   function stepRide(dt){
     if(rd.mode==='track'){ const {p,f}=at(rd.s), lifting=rd.s<rd.lift;
       let vt=lifting?3.2:.8*Math.sqrt(2*9.8*Math.max(0,H_PEAK+.5-p.y))+2.5; if(rd.scare&&rd.scare.on&&!rd.scare.done) vt=.45; rd.v+=(vt-rd.v)*Math.min(1,dt*(lifting?3:1.5)); rd.s+=rd.v*dt;
@@ -119,7 +119,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
 
   /* ---------- 공포 : 꼭대기에서 떨어지기 직전, 시선이 오른쪽 아래로 — 땅에 광장 달토끼와 똑같은 거대한 달토끼가 올려다보고 있다.
                   한동안 원래의 귀여운 얼굴 그대로 → 실밥이 툭툭 끊어지는 소리와 함께 얼굴에 붙은 3D 공포 입이 위아래로 찢어지며 벌어진다
-                  (맞물린 송곳니 · 피 묻은 잇몸 · 찢어진 천 · 흐르는 피 — moonrabbit.glb 의 rabbit_hmouth, 머리뼈에 붙어 있다) (첫 탑승만) ---------- */
+                  (맞물린 송곳니 · 피 묻은 잇몸 · 찢어진 천 · 흐르는 피 — moonrabbit.glb 의 rabbit_hmouth, 머리뼈에 붙어 있다)
+                  ★ 두 번째 탑승(부력을 맞춘 뒤 다시 탈 때)에만 나온다. 첫 탑승은 그냥 지나간다 ---------- */
   let rab=null, head=null, hm=null, hm0=null;
   const ease=x=>x*x*(3-2*x);
   function makeRabbit(){ if(!MOONRABBIT.src) return;
@@ -163,9 +164,10 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     await mono(['푸핫…! 콜록, 콜록.','보트가 물에 떨어지자마자 나랑 같이 통째로 가라앉았다.','자석을 너무 많이 붙여 놨어. 이대로면 손님이 다 물에 빠지겠어.','점검 방법 3번 — 크레인에 보트를 매달고 힘 센서로 부력을 재 보자.']);
     objective('크레인 리모컨으로 보트를 건져 부력을 재자'); const c=itemPos('flume_crane'); if(c) setGoal(c.x,c.z,'크레인 리모컨'); }
   async function ride2(){ AUDIO.click(); P.free=false; parked=true; setGoal(null); const f=$('#fade'); f.classList.remove('clear'); await sleep(1300);
-    const {p,f:fw}=at(CUM[iLast]); p.y+=.2; placeBoat(p,fw); seat(p,fw); f.classList.add('clear');
-    await mono(['보트를 다시 트랙에 올렸다. 자석은 4개.','마지막 낙하 구간부터 다시. …간다!']); parked=false; await ride(iLast,true);
-    S.flags.flume_ok=true; await mono(['…풍덩!','초록 선까지 딱 맞게 잠겨서 떠 있다. 중력과 부력이 평형을 이룬다.','점검 끝. 점검 방법 4번 — 조작실로 가서 전원을 끄자.']);
+    const {p,f:fw}=at(CUM[iStation]); p.y+=.2; placeBoat(p,fw); seat(p,fw); f.classList.add('clear');
+    await mono(['보트를 다시 역으로 옮겼다. 자석은 4개.','이번엔 처음부터 끝까지 다시. …출발!']); parked=false; await ride(iStation,true);
+    S.flags.flume_ok=true; S.rabbitCalm=true; if(MOONRABBIT.eyeMat) MOONRABBIT.eyeMat.emissiveIntensity=0;      // 확인하러 갈 때까지 동상은 얌전하다 (story.js tickRabbit)
+    await mono(['…풍덩!','초록 선까지 딱 맞게 잠겨서 떠 있다. 중력과 부력이 평형을 이룬다.','…그런데 방금, 꼭대기에서 본 건 뭐지.','달토끼…? 달토끼가 왜 저기에. 그리고 그 입은…','…일단 점검 방법 4번. 조작실로 가서 전원부터 끄자.']);
     const fd=$('#fade'); fd.classList.remove('clear'); await sleep(1300); warp(29.8,3.8,REST.x,REST.z); fd.classList.add('clear');
     objective('조작실에서 후룸라이드 전원을 끄자'); const s=spot(); setGoal(s.x,s.z,'후룸라이드 조작실'); }
 
@@ -270,13 +272,18 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
       await mono(['전원이 들어왔다. 멀리서 체인 돌아가는 소리가 난다.','점검 방법 1번 — 역에 있는 점검용 보트에 타 보자.']);
       objective('역에서 점검용 보트에 타자'); const b=itemPos('flume_boat'); if(b) setGoal(b.x,b.z,'점검용 보트'); return; }
     if(S.flags.flume_ok&&!S.flags.coaster_done){ st.power=false; S.flags.coaster_done=true; lamps(0); AUDIO.tone(300,.15,'square',.08); setGoal(null);
-      await mono(['후룸라이드 점검도 끝. 전원도 껐다.']); objective('다음 점검 : (준비 중)'); return; }
+      await mono(['후룸라이드 점검도 끝. 전원도 껐다.','…아무래도 신경 쓰인다. 광장의 달토끼 동상을 확인하러 가 보자.']);
+      objective('광장의 달토끼 동상을 확인하자'); setGoal(STATUE.x+2.6,STATUE.z,'달토끼 동상'); return; }      // 이어지는 이야기 : rooms/room5_gyro.js
     mono(st.power?'후룸라이드 조작반. 전원이 들어와 있다.':'후룸라이드 조작반. 전원은 꺼져 있다.'); }
   async function tapBoat(){
     if(!S.flags.flume_rode){ if(!st.power){ AUDIO.click(); return mono(['점검용 통나무 보트. 무게 조절 자석이 잔뜩 붙어 있다.','…조작실에서 전원부터 켜야 움직이겠지.']); } return ride1(); }
     if(!S.flags.buoy_done){ AUDIO.click(); return mono('물에 잠긴 보트. 크레인 리모컨으로 건져서 부력을 재 보자.'); }
     if(!S.flags.flume_ok) return ride2();
     AUDIO.click(); mono('초록 선까지 딱 맞게 잠겨 떠 있다.'); }
+
+  // 방 4 를 모두 끝낸 상태 (방 5 바로 가기용)
+  window.room4Done=()=>{ room3Done(); bz.n=(BLINE-R.boat)/R.mag; bz.mode='float'; st.power=false; door.t=1; syncBags(); lamps(0);
+    Object.assign(S.flags,{coaster_arrive:true,keynote:true,open_cbooth:true,manual_coaster:true,coaster_power:true,flume_rode:true,flume_sank:true,crane_seen:true,buoy_q1:true,buoy_done:true,flume_ok:true,coaster_done:true}); };
 
   /* ---------- 디버그 바로 가기 (Shift+4) ---------- */
   CHECKPOINTS.push({key:'4',name:'후룸라이드 조작실 앞',go(){ room3Done(); S.flags.coaster_arrive=true; const s=spot(), k=itemPos('keypad_coaster')||s; warp(s.x,s.z+1.6,k.x,k.z); objective('조작실 키패드의 비밀번호를 찾자'); }});
