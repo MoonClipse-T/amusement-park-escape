@@ -20,7 +20,7 @@ let ORDER=null;
 /* 달토끼 캐릭터 (assets/moonrabbit.glb, Blender moon_rabbit_char.py) — 뼈대 : root · hips · head · arm_L/R · leg_L/R
    동작 : Idle · Walk · Run · 공포 입 rabbit_hmouth (평소엔 숨김). 광장 동상 · 공포 장면 · 앞으로 쫓아오는 달토끼가 모두 MOONRABBIT.make() 로 만든다 */
 const STATUE={x:-11,z:17.5};      // 광장 달토끼 동상 (받침대 가운데)
-const MOONRABBIT={src:null, live:[], eyeMat:null, statue:null,
+const MOONRABBIT={src:null, live:[], statue:null,
   async load(){ if(!this.src) this.src=await loadGLB('moonrabbit'); return this.src; },
   // 얼굴 : k = 0 평소(귀여운 얼굴) … 1 공포 (false/true 도 된다). 큰 웃는 입 rabbit_hmouth 가 얼굴 가운데까지 벌어지며 코를 삼키고,
   // 눈 mrab_eye_L/R 은 위로 밀려 올라가고(올라간 자리 = 빈 물체 mrab_eyeT_L/R), 눈썹은 사라진다. 동상은 0, 움직이는 달토끼는 1 로 고정
@@ -29,25 +29,24 @@ const MOONRABBIT={src:null, live:[], eyeMat:null, statue:null,
       else if(/^mrab_eye_[LR]$/.test(n)){ const t=m.parent.getObjectByName(n.replace('eye_','eyeT_')); if(!t) return;
         if(!m.userData.q0){ m.userData.p0=m.position.clone(); m.userData.q0=m.quaternion.clone(); }
         m.position.lerpVectors(m.userData.p0,t.position,k); m.quaternion.copy(m.userData.q0).slerp(t.quaternion,k); } }); },
-  make(anim='Idle'){ const o=this.src.clone(true); this.face(o,false);
+  // still = true : 그 동작의 첫 자세로 굳힌다 (숨도 쉬지 않는 동상 · 공포 장면). 움직이는 달토끼만 live 에 넣어 매 프레임 돌린다
+  make(anim='Idle',still=false){ const o=this.src.clone(true); this.face(o,false);
     const mixer=new THREE.AnimationMixer(o), clips=this.src.userData.animations||[];
     o.userData.mixer=mixer; o.userData.play=(n,fade=.25)=>{ const c=THREE.AnimationClip.findByName(clips,n); if(!c) return; const a=mixer.clipAction(c);
       if(o.userData.act&&o.userData.act!==a) o.userData.act.fadeOut(fade); a.reset().fadeIn(fade).play(); o.userData.act=a; };
-    o.userData.play(anim,0); this.live.push(o); return o; },
+    o.userData.play(anim,0); if(still) mixer.update(0); else this.live.push(o); return o; },
   tick(dt){ this.live.forEach(o=>{ if(o.visible&&(!o.parent||o.parent.visible!==false)) o.userData.mixer.update(dt); }); } };
 
 /* 근무지 설정 : 냉동고 통 3개를 조사 대상으로, 판매대 옆문은 근무 중에 막는다 */
 ROOMS.push({id:'shift', async build(){
   // 광장 달토끼 동상 : 받침대 위 머리 축(ANIM_rabbithead, 받침대 윗면 위 1.69 m) 아래에 세운다 — 자정엔 축째 돌아 나를 본다
   await MOONRABBIT.load(); const R=PARK.anim.rabbithead;
-  if(R){ const st=MOONRABBIT.statue=MOONRABBIT.make('Idle'); st.position.set(0,-1.6875,0); R.add(st);
-    st.traverse(m=>{ if(m.isMesh&&/^mrab_eye_/.test(m.name)){ if(!MOONRABBIT.eyeMat){ const e=MOONRABBIT.eyeMat=m.material.clone(); e.emissive=new THREE.Color(0xff1a10); e.emissiveIntensity=0; } m.material=MOONRABBIT.eyeMat; } }); }
+  if(R){ const st=MOONRABBIT.statue=MOONRABBIT.make('Idle',true); st.position.set(0,-1.6875,0); R.add(st); }      // 동상 : 완전히 멈춰 있다 (까만 눈 그대로)
   Object.keys(FLAVOR).forEach(f=>{ const m=PARK.items['tub_'+f]; if(!m) return;
     INTER.push({mesh:m,name:FLAVOR[f]+' 아이스크림 통',range:2.8,fn:()=>scoop(f),enabled:()=>S.stage==='shift'}); });
   addBox(13.3,17.85,13.6,20.1,()=>S.stage==='shift');
   S.flags.open_dorm=true;                          // 숙소 문은 처음엔 열려 있다 (방 1 에서 닫힌다)
   const d=PARK.anim.dormdoor; if(d) d.rotation.y=Math.PI/2*0.95;
-  const eye=PARK.mat.rabbit_eye; if(eye) eye.emissiveIntensity=0;
 }, tick(dt){ tickRabbit(dt); MOONRABBIT.tick(dt); }});
 
 async function scoop(f){ if(!ORDER){ await mono('…다음 손님을 기다리자.'); return; } if(ORDER.busy) return;
@@ -67,24 +66,23 @@ async function serve(od,c){ await c.toCounter(); if(S.introSkip) return;
 function passTime(to,ms=2500){ return new Promise(res=>{ const from=S.introMin, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms); S.introMin=from+(to-from)*k; drawClock(); tickSky(0,true); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
 
-/* 아이 손님 : 괴담 한 조각 + 달토끼 동상 눈이 잠깐 빛난다 */
+/* 아이 손님 : 괴담 한 조각 + 달토끼 동상이 슬쩍 이쪽으로 고개를 돌린다 (눈은 까만 그대로) */
 async function kidWarning(){
   await mono(['알바생님, 그거 알아요?','밤 12시가 넘으면 저 달토끼가 움직인다는 소문이 있어요.','…혹시 들어 본 적 있으세요?'],'아이');
   const yaw0=P.yaw, R=PARK.anim.rabbithead; P.free=false;
   if(R){ const p=new THREE.Vector3(); R.getWorldPosition(p); await camTo({yaw:Math.atan2(-(p.x-P.x),-(p.z-P.z)),pitch:0.08},1.2); }
-  await zoom(24,700); rabbitGlint(); AUDIO.tone(70,1.2,'sine',.25); await sleep(1100); await zoom(72,500);
-  await camTo({yaw:yaw0,pitch:0},0.8); P.free=true;
-  await mono(['…요즘 애들 괴담이란.','방금, 저 동상 눈이… 빛났나?']); }
+  await zoom(24,700); S.rabbitTwitch=.45; AUDIO.tone(70,1.2,'sine',.25); await sleep(1300); await zoom(72,500);
+  await camTo({yaw:yaw0,pitch:0},0.8); S.rabbitTwitch=0; P.free=true;
+  await mono(['…요즘 애들 괴담이란.','방금, 저 동상… 이쪽을 봤나?']); }
 /* 화면 확대 (시야각 바꾸기) */
 function zoom(fov,ms){ return new Promise(res=>{ const f0=camera.fov, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms), e=k<.5?2*k*k:-1+(4-2*k)*k; camera.fov=f0+(fov-f0)*e; camera.updateProjectionMatrix(); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
-function rabbitGlint(){ const m=MOONRABBIT.eyeMat||PARK.mat.rabbit_eye; if(!m) return; const t0=performance.now();
-  const step=()=>{ const k=(performance.now()-t0)/700; m.emissiveIntensity=k<1?Math.sin(k*Math.PI)*4:S.rabbitAwake&&!S.rabbitCalm?2.5:0; if(k<1) requestAnimationFrame(step); }; step(); }
 
 /* 자정 이후 : 달토끼 동상이 고개를 돌려 플레이어를 본다 (S.rabbitCalm 인 동안은 얌전히 앞만 본다 — 후룸라이드에서 본 뒤 확인하러 갈 때) */
 const _rp=new THREE.Vector3(); let rabbitBase=null;
 function tickRabbit(dt){ const R=PARK.anim.rabbithead; if(!R) return; if(rabbitBase===null) rabbitBase=R.rotation.y;
-  let want=rabbitBase; if(S.rabbitAwake&&!S.rabbitCalm){ R.getWorldPosition(_rp); want=rabbitBase+Math.atan2(P.x-_rp.x,P.z-_rp.z)-Math.PI/2; }
+  let want=rabbitBase; const k=S.rabbitAwake&&!S.rabbitCalm?1:S.rabbitTwitch||0;      // rabbitTwitch : 인트로에서 슬쩍 (절반쯤) 돌아본다
+  if(k){ R.getWorldPosition(_rp); const a=Math.atan2(P.x-_rp.x,P.z-_rp.z)-Math.PI/2-rabbitBase; want=rabbitBase+Math.atan2(Math.sin(a),Math.cos(a))*k; }
   let d=want-R.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); R.rotation.y+=d*Math.min(1,dt*1.5); }
 
 /* ---------------- 인트로 ---------------- */
@@ -131,8 +129,9 @@ function skipIntro(){ if(S.stage!=='shift') return; S.introSkip=true; if(ORDER){
 /* ---------------- 밤의 사건 ---------------- */
 EVENTS.push(
   // 자정 : 시각만 알린다 (회전목마가 혼자 도는 일은 범퍼카에 도착했을 때 · rooms/room2_carousel.js)
-  {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true; rabbitGlint();
+  {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true;
     if(PARK.scrawl) PARK.scrawl.visible=true; await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
-  {at:24*60+240, fn:()=>card('04:00','새벽 4시','해 뜨기까지 두 시간','dead',3000)},
+  // 새벽 4시 : 달이 붉어지며 눈을 뜬다 (game.js 하늘 셰이더 eye)
+  {at:24*60+240, fn:async()=>{ await card('04:00','새벽 4시','달빛이 붉어졌다','dead',3000); mono(['…달이 붉다.','달 한가운데에 — 눈?','…달이, 나를 보고 있다.']); }},
 );

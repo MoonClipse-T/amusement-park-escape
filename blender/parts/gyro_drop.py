@@ -6,7 +6,9 @@
       IT_gyro_seat = 남쪽(광장 쪽) 의자 — 플레이어가 앉는 자리
   - 승강장 : 원형 단(FLOORC_gyro, 높이 0.25) · 울타리(남쪽이 입구) · 입구 문틀 + 간판(SIGN_tower)
   - 조작실 : 탑 서쪽, 큰 창이 탑(동쪽) · 문은 남쪽 (carousel_booth.py 의 _Booth · _booth_shell, tag = gyro)
-      IT_console_gyro · IT_gbtn_1~3 · IT_manual_gyro · IT_mic_gyro · IT_gnote_gyro(책상 위 찢어진 근무 일지) · SPOT_booth_gyro
+      IT_console_gyro(조작반 받침) · IT_gpower(전원 버튼) · IT_glamp(표시등) · IT_gforce(브레이크 힘 다이얼) · IT_gscreen(힘 화면)
+      IT_manual_gyro · IT_mic_gyro · IT_gnote_gyro(책상 위 찢어진 근무 일지) · SPOT_booth_gyro
+  _console(b, tag, k) : 전원 장치 + 조절 장치(화면 · 다이얼 · 레버)가 따로 보이는 조작반 — 관람차 조작실(ferris_booth.py)도 같이 쓴다
   - 불 : LIGHT_gyro_a · LIGHT_gyro_b(입구) · LIGHT_gyro_top(꼭대기 빨간 등) · LIGHT_booth_gyro — 정전 때도 켜져 있다 (비상 전원, 엔진 room5_gyro.js)
   dorm_dress.py · carousel_booth.py 의 도우미를 쓴다 (build 스크립트가 parts 를 차례로 exec).
   엔진 쪽 숫자(room5_gyro.js 의 TX · TZ · TOP · BRK)와 맞춘다.
@@ -72,13 +74,52 @@ def _seat(k, steel, dark, bar):
     return parts
 
 
+def _adopt(parent, *objs):
+    """자식으로 붙이되 제자리에 그대로 둔다 (원기둥처럼 위치가 있는 부모)"""
+    for o in objs:
+        o.parent = parent
+        o.matrix_parent_inverse = parent.matrix_basis.inverted()
+    return parent
+
+
+def _console(b, tag, k):
+    """조작반 (부스 좌표, 책상 위) : 왼쪽 = 전원 장치(노란 상자 · 빨간 버섯 버튼 · 표시등) / 오른쪽 = 조절 장치(세운 화면 · 큰 다이얼 · 레버)
+       엔진이 읽는 이름 : IT_console_<tag> · IT_<k>power · IT_<k>lamp · IT_<k>force · IT_<k>screen(엔진이 그 앞에 화면을 그린다) · SIGN_<k>power · SIGN_<k>force"""
+    M, top, up = bpy.data.materials, 0.8, (0, 0, 1)
+    dark, iron, red = M["locker_dark"], M["iron"], M["paint_red"]
+    yellow = M.get("paint_yellow") or _mat("paint_yellow", "#e9b82a", 0.6)
+    b.box(f"IT_console_{tag}", BT + .04, BT + .5, top, top + .05, .5, 1.85, dark)
+    # 전원 장치
+    b.box(f"bx{tag}_pwbox", BT + .1, BT + .44, top + .05, top + .16, 1.5, 1.8, yellow)
+    b.box(f"bx{tag}_pwplate", BT + .12, BT + .42, top + .16, top + .165, 1.52, 1.78, dark)
+    b.cyl(f"bx{tag}_pwring", BT + .3, top + .175, 1.68, .068, .02, iron, verts=24)
+    b.cyl(f"IT_{k}power", BT + .3, top + .215, 1.68, .055, .07, red, verts=24)
+    b.cyl(f"IT_{k}lamp", BT + .17, top + .18, 1.57, .024, .03, _mat(f"boothx_btn_{k}pw", "#2c312c", 0.35), verts=16)
+    _orient(b.emp(f"SIGN_{k}power", BT + .4, top + .167, 1.62, w=0.16, h=0.05), up, b.D(-1, 0))
+    # 조절 장치 : 창 쪽에 세운 화면 + 앞에 큰 다이얼(눈금 · 바늘) + 레버
+    b.box(f"bx{tag}_scrbox", BT + .04, BT + .12, top + .05, top + .52, .56, 1.38, dark)
+    b.box(f"IT_{k}screen", BT + .12, BT + .128, top + .1, top + .48, .6, 1.34, _mat(f"boothx_scr_{k}", "#07130d", 0.3))
+    b.cyl(f"bx{tag}_dialbase", BT + .33, top + .06, .82, .105, .02, iron, verts=28)
+    for n in range(9):                                   # 눈금
+        a = math.radians(-120 + 30 * n)
+        b.box(f"bx{tag}_tick{n}", BT + .33 - .095 * math.cos(a) - .006, BT + .33 - .095 * math.cos(a) + .006, top + .07, top + .074,
+              .82 + .095 * math.sin(a) - .006, .82 + .095 * math.sin(a) + .006, yellow)
+    dial = b.cyl(f"IT_{k}force", BT + .33, top + .105, .82, .07, .07, _mat("boothx_knob", "#c9ccd2", 0.3), verts=28)
+    _adopt(dial, b.box(f"bx{tag}_dialptr", BT + .265, BT + .33, top + .14, top + .147, .813, .827, red),
+           b.box(f"bx{tag}_slot", BT + .2, BT + .46, top + .05, top + .058, 1.1, 1.16, iron),
+           b.cyl(f"bx{tag}_lever", BT + .36, top + .13, 1.13, .012, .16, iron, verts=8),
+           b.cyl(f"bx{tag}_leverknob", BT + .36, top + .23, 1.13, .03, .05, red, verts=14))
+    _orient(b.emp(f"SIGN_{k}force", BT + .455, top + .052, .98, w=0.42, h=0.06), up, b.D(-1, 0))
+
+
 def build_gyro():
     for n in ("tower", "SIGN_tower", "LIGHT_tower_top", "COL_tower", "COL_tower_booth"):
         o = bpy.data.objects.get(n)
         if o:
             bpy.data.objects.remove(o, do_unlink=True)
     _clear(("gyrox_", "IT_gyro_", "COLC_gyro_", "FLOORC_gyro", "LIGHT_gyro_", "SIGN_gyro_", "ANIM_gyro", "bxgyro_", "COL_bgyro_", "IT_manual_gyro", "IT_console_gyro",
-            "IT_mic_gyro", "LIGHT_booth_gyro", "SIGN_booth_gyro", "SIGN_manual_gyro", "SPOT_booth_gyro", "IT_gbtn_", "IT_gnote_gyro"))
+            "IT_mic_gyro", "LIGHT_booth_gyro", "SIGN_booth_gyro", "SIGN_manual_gyro", "SPOT_booth_gyro", "IT_gbtn_", "IT_gnote_gyro",
+            "IT_gpower", "IT_glamp", "IT_gforce", "IT_gscreen", "SIGN_gpower", "SIGN_gforce"))
     M = bpy.data.materials
     red, white, iron, col = M["paint_red"], M["paint_white"], M["iron"], M["collider"]
     conc = M.get("concrete") or _mat("concrete", "#8d8a84", 0.9)
@@ -153,9 +194,7 @@ def build_gyro():
     # ---- 조작실 : 탑 서쪽 · 큰 창이 탑 쪽(동) · 문은 남쪽
     b = _Booth("gyro", -26.4, -46.6, 180)
     _booth_shell(b)
-    con = b.box("IT_console_gyro", BT + .05, BT + .42, 0.8, 0.9, .55, 1.75, M["locker_dark"])
-    for k in range(1, 4):
-        _kids(con, _lamp(b, f"IT_gbtn_{k}", .32, 0.91, .8 + k * .22, f"g{k}"))
+    _console(b, "gyro", "g")
     b.box("IT_gnote_gyro", BT + .1, BT + .42, 0.8, 0.806, .2, .46, _mat("gyrox_note", "#e6dcb8", 0.9))      # 찢어진 근무 일지 (글은 엔진)
     for me in [m for m in bpy.data.meshes if m.users == 0]:
         bpy.data.meshes.remove(me)

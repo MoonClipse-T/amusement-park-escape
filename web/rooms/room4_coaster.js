@@ -124,8 +124,8 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   let rab=null, head=null, hm=null, hm0=null;
   const ease=x=>x*x*(3-2*x);
   function makeRabbit(){ if(!MOONRABBIT.src) return;
-    const o=MOONRABBIT.make('Idle'); head=o.getObjectByName('head'); hm=o.getObjectByName('rabbit_hmouth'); if(hm) hm0=hm.scale.clone();
-    o.userData.mixer.update(0); MOONRABBIT.live.splice(MOONRABBIT.live.indexOf(o),1); if(head) head.userData.rest=head.quaternion.clone();   // 숨도 쉬지 않고 굳은 채 서 있다 (고개는 여기서 직접 돌린다)
+    const o=MOONRABBIT.make('Idle',true); head=o.getObjectByName('head'); hm=o.getObjectByName('rabbit_hmouth'); if(hm) hm0=hm.scale.clone();
+    if(head) head.userData.rest=head.quaternion.clone();   // 숨도 쉬지 않고 굳은 채 서 있다 (고개는 여기서 직접 돌린다)
     rab=new THREE.Group(); rab.add(o); rab.scale.setScalar(1.3); rab.visible=false; scene.add(rab); }        // 사람보다 훨씬 큰 달토끼
   function placeRabbit(pos,f){ if(!rab) return; const fh=new THREE.Vector3(f.x,0,f.z).normalize(), right=new THREE.Vector3(-fh.z,0,fh.x);
     const base=pos.clone().addScaledVector(right,4.5).addScaledVector(fh,2); base.y=floorAt(base.x,base.z);
@@ -166,7 +166,7 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
   async function ride2(){ AUDIO.click(); P.free=false; parked=true; setGoal(null); const f=$('#fade'); f.classList.remove('clear'); await sleep(1300);
     const {p,f:fw}=at(CUM[iStation]); p.y+=.2; placeBoat(p,fw); seat(p,fw); f.classList.add('clear');
     await mono(['보트를 다시 역으로 옮겼다. 자석은 4개.','이번엔 처음부터 끝까지 다시. …출발!']); parked=false; await ride(iStation,true);
-    S.flags.flume_ok=true; S.rabbitCalm=true; if(MOONRABBIT.eyeMat) MOONRABBIT.eyeMat.emissiveIntensity=0;      // 확인하러 갈 때까지 동상은 얌전하다 (story.js tickRabbit)
+    S.flags.flume_ok=true; S.rabbitCalm=true;      // 확인하러 갈 때까지 동상은 얌전하다 (story.js tickRabbit)
     await mono(['…풍덩!','초록 선까지 딱 맞게 잠겨서 떠 있다. 중력과 부력이 평형을 이룬다.','…그런데 방금, 꼭대기에서 본 건 뭐지.','달토끼…? 달토끼가 왜 저기에. 그리고 그 입은…','…일단 점검 방법 4번. 조작실로 가서 전원부터 끄자.']);
     const fd=$('#fade'); fd.classList.remove('clear'); await sleep(1300); warp(29.8,3.8,REST.x,REST.z); fd.classList.add('clear');
     objective('조작실에서 후룸라이드 전원을 끄자'); const s=spot(); setGoal(s.x,s.z,'후룸라이드 조작실'); }

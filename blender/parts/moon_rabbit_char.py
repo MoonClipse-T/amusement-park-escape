@@ -15,6 +15,7 @@ from mathutils import Matrix, Vector, Quaternion
 
 H = 2.4                                      # 키 (귀 끝까지)
 FPS = 24
+ARM = 34                                     # 팔을 내리는 각도
 LIFT = .23                                   # 공포 얼굴 : 눈이 위로 올라가는 높이
 
 
@@ -319,7 +320,7 @@ def build_rabbit_character(out_path):
     parents = {"hips": "root", "head": "hips", "arm_L": "hips", "arm_R": "hips", "leg_L": "hips", "leg_R": "hips"}
     Q = lambda axis, deg: Quaternion(axis, math.radians(deg))
     X, Y, Z = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
-    down_L, down_R = Q(Y, 72), Q(Y, -72)                   # 옆으로 뻗은 팔을 아래로 내린다
+    down_L, down_R = Q(Y, ARM), Q(Y, -ARM)                 # 옆으로 뻗은 팔을 아래로 내린다 (너무 내리면 몸통 · 다리에 파묻혀 팔처럼 안 보인다)
     rig.animation_data_create()
     def clip(name, frames, fn):
         rig.animation_data.action = None
