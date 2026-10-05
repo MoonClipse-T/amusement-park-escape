@@ -249,7 +249,7 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .fhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;background:repeating-linear-gradient(-45deg,#f2c230 0 14px,#1b1b1b 14px 28px);}
 .fhead .ft{font:400 20px/1.2 var(--sign);letter-spacing:3px;color:#111;background:#f2c230;padding:2px 8px;}
 .fhead .fsub{font:700 10px/1 var(--led);letter-spacing:3px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
-#fcv,#lcv,#fcv2,#bcv,#gcv,#wcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
+#fcv,#lcv,#fcv2,#bcv,#gcv,#wcv,#vcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
 .fq{margin:12px 18px 6px;font-size:14px;line-height:1.6;color:#d8cfbd;text-align:left;}
 .fq b{color:#f2c230;}
 .frow{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 14px 0;}

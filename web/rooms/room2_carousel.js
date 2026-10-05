@@ -61,7 +61,9 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     if(!st.power){ AUDIO.err(); m.textContent='전원이 꺼져 있어서 레버가 움직이지 않는다.'; return; }
     if(st.lit<8||!S.flags.horse_fixed){ AUDIO.err(); AUDIO.tone(90,.5,'square',.12); m.textContent='삐— 레버가 잠겨 있다. 버튼 8개가 모두 초록색일 때만 내려간다.'; return; }
     st.lever=true; drawCtrl(); AUDIO.tone(200,.3,'sawtooth',.06,0,-80); AUDIO.noise(.4,.3,0,600);
-    m.className='fmsg ok'; m.textContent='레버를 내렸다. 회전목마가 돌기 시작한다!'; S.carouselRun=true; AUDIO.music('open'); await sleep(1600); ov('#ctrl',false);
+    m.className='fmsg ok'; m.textContent='레버를 내렸다. 회전목마가 돌기 시작한다!'; S.carouselRun=true; AUDIO.music('open');
+    if(typeof HUNT!=='undefined'&&HUNT.on) HUNT.lureAt(-19.4,10.4,60,'회전목마');      // 추격 중이면 — 달토끼가 구경하러 온다 (hunt.js)
+    await sleep(1600); ov('#ctrl',false);
     if(S.flags.carousel_done) return; S.flags.carousel_done=true; setGoal(null);
     await mono(['…돈다. 음악도 나온다. 고장 난 곳은 이제 없다.','점검 방법 3번 — 점검이 끝나면 반드시 전원을 끈다.']); objective('점검 끝 — 조작반 전원(ON/OFF)을 끄자'); }
 

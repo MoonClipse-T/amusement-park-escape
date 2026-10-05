@@ -144,6 +144,13 @@
   <div class="frow wopt"><button data-d="speed" class="fdir">빠르기</button><button data-d="dir" class="fdir">운동 방향</button><button data-d="both" class="fdir">둘 다</button></div>
   <button class="fgo">확인</button><p class="fmsg"></p></div></div>
 
+<!-- 바이킹 밀기 : 배가 가운데를 지날 때 박자를 맞춰 밀어 점검 높이까지 올린다 (방 7) -->
+<div id="vikingpad" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">바이킹 밀기 장치</span><span class="fsub">SWING · PUSH</span></div>
+  <canvas id="vcv" width="720" height="400"></canvas>
+  <p class="fq"></p>
+  <button class="fgo">밀기</button><p class="fmsg"></p></div></div>
+
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
   <div class="ctitle">운행 일시 정지<small>OPERATION PAUSED</small></div>
@@ -210,6 +217,7 @@
 <script src="rooms/room4_coaster.js"></script>
 <script src="rooms/room5_gyro.js"></script>
 <script src="rooms/room6_ferris.js"></script>
+<script src="rooms/room7_viking.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

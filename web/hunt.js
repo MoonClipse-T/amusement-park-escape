@@ -7,6 +7,8 @@
      · 절구 소리(쿵)가 나는 동안에만 움직인다. 소리가 멎으면 그 자리에 굳는다
      · 손전등으로 비추고 있으면 소리가 나도 움직이지 못한다
      · 조작실 · 놀이기구(SAFE) 안으로는 들어오지 못한다
+     · 유인 : 놀이기구가 돌아가면 그쪽으로 구경하러 간다 (장난치던 버릇) — HUNT.lureAt(x, z, 초, 이름). 구경하는 동안은 나를 쫓지 않는다
+       (회전목마 레버 · 점검을 끝낸 관람차의 전원 버튼 · 돌아가는 바이킹)
      · 잡히면 — 얼굴이 화면 가득 (점프 스케어) → 마지막에 들른 조작실에서 깨어나고 공원 시간 30분이 지나간다
    소리는 web/assets/sfx/ (ElevenLabs 로 만든 thump · thump2 · scare · giggle)
    ★ 빠르기 · 간격 · 벌칙은 아래 HUNT 의 숫자, 일지 글은 SCRAPS 에서 고친다
@@ -29,7 +31,7 @@ const SCRAPS=[
    say:['달이… 눈을 뜬다고?','새벽 6시. 달이 질 때까지.']},
 ];
 
-const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:false, lastSafe:null, shake:0,
+const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:false, lastSafe:null, shake:0, lure:null,
   QUIET:[12,18], THUMP:[7,10],      // 조용한 시간 · 절구 소리가 나는 시간 (초, 그 사이에서 무작위)
   SPEED:2.0, CATCH:1.3,             // 달토끼가 걷는 빠르기 (플레이어 걷기 2.6 · 달리기 4.2 m/s) · 잡히는 거리
   LIGHT_R:24, LIGHT_A:.34,          // 손전등이 닿는 거리 · 비추는 각도 (라디안, 화면 가운데에서)
@@ -42,6 +44,7 @@ const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:f
     {n:'후룸라이드 조작실',x1:21.7,x2:24.3,z1:.9,z2:3.5,in:[23,2.3]},
     {n:'자이로드롭 조작실',x1:-28.9,x2:-26.3,z1:-49.1,z2:-46.5,in:[-27.5,-47.9]},
     {n:'관람차 조작실',x1:-43.5,x2:-40.9,z1:-21.1,z2:-18.5,in:[-42.3,-19.6]},
+    {n:'바이킹 조작실',x1:-12.1,x2:-9.5,z1:-40.5,z2:-37.9,in:[-10.9,-39.3]},
     {n:'회전목마',cx:-30,cz:10,r:7.9}, {n:'자이로드롭',cx:-20,cz:-49,r:5.1}, {n:'관람차 승강장',x1:-38.6,x2:-29.4,z1:-29.1,z2:-22.9},
   ],
   safeAt(x,z){ return this.SAFE.find(s=>s.r?(x-s.cx)**2+(z-s.cz)**2<s.r*s.r:x>s.x1&&x<s.x2&&z>s.z1&&z<s.z2)||null; },
@@ -49,14 +52,22 @@ const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:f
   blk(x,z){ const B=PARK.bounds, r=.45; if(x<B.x1+1||x>B.x2-1||z<B.z1+1||z>B.z2-1||this.safeAt(x,z)||ledgeAt(x,z)>.3) return true;
     for(const b of COL){ if(b.on&&!b.on()) continue; if(x+r>b.x1&&x-r<b.x2&&z+r>b.z1&&z-r<b.z2) return true; }
     for(const c of CIRC){ if(c.on&&!c.on()) continue; const dx=x-c.x, dz=z-c.z, rr=c.r+r; if(dx*dx+dz*dz<rr*rr) return true; } return false; },
+  // (x1,z1) 에서 (x2,z2) 쪽으로 곧장 걸어갈 수 있는가 (끝의 stop m 는 보지 않는다 — 목표가 조작실 안일 수 있다)
+  clear(x1,z1,x2,z2,stop=2.5){ const len=Math.hypot(x2-x1,z2-z1), n=Math.ceil(len/1.2); for(let i=1;i<n;i++){ const t=i/n; if(len*(1-t)<stop) break; if(this.blk(x1+(x2-x1)*t,z1+(z2-z1)*t)) return false; } return true; },
   start(){ if(this.on) return; if(!this.rab){ const o=MOONRABBIT.make('Walk'); MOONRABBIT.face(o,1); o.visible=false; o.userData.mixer.timeScale=0; scene.add(o); this.rab=o; }
     this.on=true; this.phase='quiet'; this.t=6; },
-  stop(){ this.on=false; if(this.rab) this.rab.visible=false; },
+  stop(){ this.on=false; this.lure=null; if(this.rab) this.rab.visible=false; },
+  // 유인 : (x, z) 에 있는 놀이기구가 돌아간다 → sec 초 동안 그쪽으로 가서 구경한다. 너무 멀리 있으면 그 근처에서 나타난다
+  lureAt(x,z,sec,name){ if(!this.on||!this.rab||this.busy) return false; const r=this.rab; this.lure={x,z,until:S.t+sec,name};
+    if(!r.visible||Math.hypot(r.position.x-x,r.position.z-z)>24||!this.clear(r.position.x,r.position.z,x,z,3.5)){ for(let k=0;k<40;k++){ const a=Math.random()*6.28, d=11+Math.random()*6, px=x+Math.sin(a)*d, pz=z+Math.cos(a)*d;
+        if(this.blk(px,pz)||Math.hypot(px-P.x,pz-P.z)<7||(k<34&&!this.clear(px,pz,x,z,3.5))) continue; r.position.set(px,floorAt(px,pz),pz); r.visible=true; break; } }
+    toast('달토끼가 '+name+' 쪽으로 간다',2800); return true; },
+  lureOff(name){ if(this.lure&&(!name||this.lure.name===name)) this.lure=null; },
   // 지금 이 자리에 세우고 바로 절구 소리를 낸다 (첫 만남)
   appear(x,z,sec=9){ const r=this.rab; r.position.set(x,floorAt(x,z),z); r.visible=true; r.rotation.y=Math.atan2(P.x-x,P.z-z); this.phase='thump'; this.t=sec; this.beat=.3; },
   // 절구 소리가 다시 시작될 때 : 너무 멀거나 막혀 있으면 플레이어 등 뒤 어딘가로 옮겨 선다
   relocate(near){ const r=this.rab; for(let k=0;k<40;k++){ const back=k<28, a=P.yaw+(back?Math.PI:0)+(Math.random()-.5)*(back?2.2:6.28), dist=(near?9:13)+Math.random()*6;
-      const x=P.x-Math.sin(a)*dist, z=P.z-Math.cos(a)*dist; if(this.blk(x,z)) continue; r.position.set(x,floorAt(x,z),z); r.visible=true; return true; } return false; },
+      const x=P.x-Math.sin(a)*dist, z=P.z-Math.cos(a)*dist; if(this.blk(x,z)||(k<34&&!this.clear(x,z,P.x,P.z))) continue; r.position.set(x,floorAt(x,z),z); r.visible=true; return true; } return false; },      // 되도록 벽에 막히지 않는 자리
   // 손전등 불빛 안에 있는가
   lit(dx,dz,d){ if(!S.torch||d>this.LIGHT_R) return false; const cp=Math.cos(P.pitch), fx=-Math.sin(P.yaw)*cp, fy=Math.sin(P.pitch), fz=-Math.cos(P.yaw)*cp;
     const vy=this.rab.position.y+1.3-(P.y+P.eye), L=Math.hypot(dx,vy,dz)||1; return (-fx*dx+fy*vy-fz*dz)/L>Math.cos(this.LIGHT_A); },
@@ -77,20 +88,21 @@ const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:f
     if(!this.on||!this.rab||this.busy) return; const r=this.rab, mx=r.userData.mixer, rnd=a=>a[0]+Math.random()*(a[1]-a[0]);
     const sz=this.safeAt(P.x,P.z); if(sz&&sz.in) this.lastSafe=sz;
     if(S.busy||!P.free||S.paused){ mx.timeScale=0; return; }                  // 글을 읽거나 놀이기구를 타는 동안은 멈춰 있다
-    this.t-=dt; const dx=P.x-r.position.x, dz=P.z-r.position.z, d=r.visible?Math.hypot(dx,dz):99;
+    if(this.lure&&S.t>this.lure.until) this.lure=null; const L=this.lure;                 // 유인 중이면 놀이기구 쪽이 목표
+    this.t-=dt; const px=P.x-r.position.x, pz=P.z-r.position.z, pd=r.visible?Math.hypot(px,pz):99, dx=L?L.x-r.position.x:px, dz=L?L.z-r.position.z:pz, d=r.visible?Math.hypot(dx,dz):99;
     if(this.phase==='quiet'){ mx.timeScale=0;
-      if(this.t<=0){ this.phase='thump'; this.t=rnd(this.THUMP); this.beat=0; if(!r.visible||d>30||this.stuck>2.5) this.relocate(!!sz); this.stuck=0; } return; }
-    this.beat-=dt; if(this.beat<=0){ this.beat=.95; this.thump(d); }          // 쿵… 쿵…
+      if(this.t<=0){ this.phase='thump'; this.t=rnd(this.THUMP); this.beat=0; if(!L&&(!r.visible||d>30||this.stuck>2.5)) this.relocate(!!sz); this.stuck=0; } return; }
+    this.beat-=dt; if(this.beat<=0){ this.beat=.95; this.thump(pd); }          // 쿵… 쿵…
     if(this.t<=0){ this.phase='quiet'; this.t=rnd(this.QUIET); mx.timeScale=0; return; }
     if(!r.visible) return; r.rotation.y=Math.atan2(dx,dz);
-    if(this.lit(dx,dz,d)){ mx.timeScale=0; return; }                         // 불빛 안에서는 굳는다
+    if(this.lit(px,pz,pd)){ mx.timeScale=0; return; }                         // 불빛 안에서는 굳는다
     const st=this.SPEED*dt, ux=dx/d, uz=dz/d, x=r.position.x, z=r.position.z; let moved=false;
-    if(d>this.CATCH*.8){
+    if(d>(L?3.2:this.CATCH*.8)){
       if(!this.blk(x+ux*st,z+uz*st)){ r.position.x+=ux*st; r.position.z+=uz*st; moved=true; }
       else if(Math.abs(ux)>.2&&!this.blk(x+Math.sign(ux)*st,z)){ r.position.x+=Math.sign(ux)*st; moved=true; }
       else if(Math.abs(uz)>.2&&!this.blk(x,z+Math.sign(uz)*st)){ r.position.z+=Math.sign(uz)*st; moved=true; } }
     r.position.y=floorAt(r.position.x,r.position.z); mx.timeScale=moved?1:0; if(!moved&&!sz) this.stuck+=dt;
-    if(!sz&&d<this.CATCH) this.caught(); } };
+    if(!L&&!sz&&d<this.CATCH) this.caught(); } };
 
 ROOMS.push({id:'hunt', build(){
     const fx=document.createElement('div'); fx.id='thumpfx'; document.body.appendChild(fx);

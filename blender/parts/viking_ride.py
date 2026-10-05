@@ -1,9 +1,10 @@
-"""바이킹 — 유령의 집 자리에 세운다 (모델만. 점검 퍼즐은 나중에)
+"""바이킹 (방 7) — 유령의 집 자리에 세운다
 
   v1 맵의 유령의 집(haunted · 탑 · 울타리 · 현관 · 문)을 지우고 그 자리에 바이킹을 짓는다. 배 가운데 = 게임 좌표 (VX, VZ), 긴 축은 동서(x)
   - 배 : Sketchfab "Viking Longship" by FoxxAssets (CC BY) — 돛 · 돛대를 떼어 낸 용머리 배 (source/sketchfab/viking_longship.glb)
   - ANIM_viking : 축(높이 VPIV)에 매달린 배 + 팔 4개 → 엔진이 rotation.z 로 흔든다
   - A 자 기둥 2쌍 · 축 · 승강대 · 입구 문틀 + 간판(SIGN_viking) · 구역 ZONE_viking · COL_viking(배가 흔들리는 자리 전체)
+  - 조작실 : 배 서쪽, 큰 창이 배(동) · 문은 남쪽 (tag = viking). 조작반은 gyro_drop.py 의 _console : IT_vpower · IT_vlamp · IT_vforce(밀기 장치) · IT_vscreen
   dorm_dress.py · carousel_booth.py 의 도우미를 쓴다.
 """
 import bpy, bmesh, math, mathutils
@@ -30,7 +31,8 @@ def build_viking():
     for o in list(bpy.data.objects):                     # 유령의 집 지우기
         if o.name == "haunted" or o.name.startswith(("COL_haunted", "COLC_haunted", "COL_GATE_haunted", "LIGHT_haunted", "SIGN_haunted", "ZONE_haunted", "COL_porch_post", "FLOOR_porch")):
             bpy.data.objects.remove(o, do_unlink=True)
-    _clear(("vikingx_", "ANIM_viking", "COL_viking", "COLC_viking", "LIGHT_viking", "SIGN_viking", "ZONE_viking"))
+    _clear(("vikingx_", "ANIM_viking", "COL_viking", "COLC_viking", "LIGHT_viking", "SIGN_viking", "ZONE_viking", "bxviking_", "COL_bviking_", "IT_manual_viking", "IT_console_viking",
+            "IT_mic_viking", "LIGHT_booth_viking", "SIGN_booth_viking", "SIGN_manual_viking", "SPOT_booth_viking", "IT_vpower", "IT_vlamp", "IT_vforce", "IT_vscreen", "SIGN_vpower", "SIGN_vforce"))
     M = bpy.data.materials
     red, iron, col, wood, bulb = M["paint_red"], M["iron"], M["collider"], M["darkwood"], M["bulb"]
     conc = M.get("concrete") or _mat("concrete", "#8d8a84", 0.9)
@@ -76,6 +78,10 @@ def build_viking():
     _box("vikingx_gate_beam", VX - 2.4, VX + 2.4, 2.95, 3.6, VZ + 7.1, VZ + 7.3, red)
     _empty("SIGN_viking", VX, 3.27, VZ + 7.31, 0, w=4.2, h=0.55)
     _empty("ZONE_viking", VX, 0, VZ + 10, title="바이킹", r=9)
+    # 조작실 : 배 서쪽 · 큰 창이 배 쪽(동) · 문은 남쪽
+    b = _Booth("viking", -9.6, -38.0, 180)
+    _booth_shell(b)
+    _console(b, "viking", "v")
     for me in [m for m in bpy.data.meshes if m.users == 0]:
         bpy.data.meshes.remove(me)
     print("VIKING_OK")
