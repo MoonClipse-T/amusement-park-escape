@@ -136,6 +136,14 @@
   <div class="frow gnum"><span class="fl">알짜힘의 크기</span><input class="fnum" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="숫자" autocomplete="off"><b class="funit">N</b></div>
   <button class="fgo">확인</button><p class="fmsg"></p></div></div>
 
+<!-- 관람차 알짜힘 방향 화면 : 곤돌라 4개의 알짜힘 방향을 맞춘다 (방 6) -->
+<div id="ferrispad" class="ov"><button class="close">✕</button><div class="fpad">
+  <div class="fhead"><span class="ft">관람차 알짜힘 방향</span><span class="fsub">NET FORCE DIRECTION</span></div>
+  <canvas id="wcv" width="720" height="440"></canvas>
+  <p class="fq"></p>
+  <div class="frow wopt"><button data-d="speed" class="fdir">빠르기</button><button data-d="dir" class="fdir">운동 방향</button><button data-d="both" class="fdir">둘 다</button></div>
+  <button class="fgo">확인</button><p class="fmsg"></p></div></div>
+
 <!-- 일시 정지 (놀이기구 조작반) -->
 <div id="pause" class="ov"><div class="console"><div class="hazard"></div>
   <div class="ctitle">운행 일시 정지<small>OPERATION PAUSED</small></div>
@@ -195,11 +203,13 @@
 <script src="game.js"></script>
 <script src="crowd.js"></script>
 <script src="story.js"></script>
+<script src="hunt.js"></script>
 <script src="rooms/room1_dorm.js"></script>
 <script src="rooms/room2_carousel.js"></script>
 <script src="rooms/room3_bumper.js"></script>
 <script src="rooms/room4_coaster.js"></script>
 <script src="rooms/room5_gyro.js"></script>
+<script src="rooms/room6_ferris.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

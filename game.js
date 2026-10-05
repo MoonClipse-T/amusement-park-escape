@@ -37,6 +37,11 @@ const AUDIO={ctx:null,
      const g=c.createGain(); g.gain.value=broken?1.6:1.25; s.connect(f); f.connect(g); g.connect(c.destination);
      if(broken){ const d=c.createWaveShaper(), cv=new Float32Array(256); for(let i=0;i<256;i++){ const x=i/128-1; cv[i]=Math.tanh(x*4); } d.curve=cv; f.disconnect(); f.connect(d); d.connect(g); }
      s.start(c.currentTime+delay); return buf.duration/(broken?.9:1); }).catch(()=>0); },
+ // 녹음된 효과음 (web/assets/sfx/<key>.mp3 — ElevenLabs 로 만든 절구 소리 · 비명 · 웃음). 한 번 읽어 두고 다시 쓴다
+ sfxBuf:{}, sfx(key,vol=1,rate=1){ const c=this.ctx; if(!c) return; const play=buf=>{ if(!buf) return; const s=c.createBufferSource(); s.buffer=buf; s.playbackRate.value=rate; const g=c.createGain(); g.gain.value=vol; s.connect(g); g.connect(c.destination); s.start(); };
+   if(this.sfxBuf[key]) return play(this.sfxBuf[key]);
+   const get=INLINE?Promise.resolve(ASSETS['sfx_'+key]?b64buf(ASSETS['sfx_'+key]):null):fetch('assets/sfx/'+key+'.mp3').then(r=>r.ok?r.arrayBuffer():null);
+   get.then(b=>b&&c.decodeAudioData(b)).then(buf=>{ this.sfxBuf[key]=buf; play(buf); }).catch(()=>{}); },
  // 걸쇠가 풀림 : 철컥 + 끼익
  unlatch(){ this.tone(1500,.03,'square',.08); this.tone(900,.05,'square',.08,.05); this.noise(.08,.3,0,2500); this.tone(380,.9,'sawtooth',.03,.25,140); },
  // 바람 소리 (계속 재생)
@@ -84,6 +89,13 @@ TEX.poster=(title,sub,w=1024,h=1024)=>cvs(w,h,(g)=>{ const F='"Noto Sans KR","Ma
 TEX.scrawl=(text,col='rgba(110,12,10,.9)')=>cvs(1024,384,(g,w,h)=>{ g.fillStyle=col; g.font='900 120px "Malgun Gothic",sans-serif'; g.textAlign='center'; g.textBaseline='middle';
   g.save(); g.translate(w/2,h/2); g.rotate(-.05); g.fillText(text,0,0); g.restore();
   for(let k=0;k<22;k++){ const x=w*.15+Math.random()*w*.7,y=h*.55+Math.random()*h*.1; g.fillRect(x,y,3+Math.random()*3,20+Math.random()*90); } });
+
+/* 조작반 화면 : 맵의 화면 자리(IT_…screen, 얇은 상자) 바로 앞에 캔버스 화면을 세운다. toward = 화면이 바라볼 쪽(조작실 안)의 점 → {g, tex, w, h, mesh} */
+function screenOn(item,toward,pw=512,ph=288){ const bb=new THREE.Box3().setFromObject(item), c=bb.getCenter(new THREE.Vector3()), s=bb.getSize(new THREE.Vector3());
+  const cv=document.createElement('canvas'); cv.width=pw; cv.height=ph; const tex=new THREE.CanvasTexture(cv); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=4;
+  const alongX=s.x<s.z, m=new THREE.Mesh(new THREE.PlaneGeometry(alongX?s.z:s.x,s.y),new THREE.MeshBasicMaterial({map:tex}));
+  const sg=alongX?Math.sign(toward.x-c.x):Math.sign(toward.z-c.z); m.position.copy(c); if(alongX){ m.position.x+=sg*(s.x/2+.004); m.rotation.y=sg*Math.PI/2; } else { m.position.z+=sg*(s.z/2+.004); m.rotation.y=sg>0?0:Math.PI; }
+  WORLD.add(m); return {g:cv.getContext('2d'),tex,w:pw,h:ph,mesh:m}; }
 
 /* ---------------- 엔진 ---------------- */
 const canvas=$('#c');
@@ -152,7 +164,9 @@ function ov(id,on){ const el=$(id); el.classList.toggle('on',on); if(!on) S.last
 document.querySelectorAll('.ov .close').forEach(b=>b.addEventListener('click',()=>{ ov('#'+b.parentElement.id,false); AUDIO.click(); }));
 // 점검 방법처럼 번호 단계가 있는 글(DOC)은 손글씨 쪽지가 아니라 깔끔한 공식 안내문으로 보여 준다
 const DOC=(steps,note='')=>`<ol class="steps">${steps.map(s=>s[0]==='!'?`<li class="warn">${s.slice(1)}</li>`:`<li>${s}</li>`).join('')}</ol>${note?`<div class="doc-note">${note}</div>`:''}`;
-function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; $('#msg .note').classList.toggle('doc',/class="steps"/.test(p)); ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
+// 찢어진 쪽지(TORN) : 김근수의 일지 조각 — 가장자리가 찢긴 공책 종이로 보여 준다
+const TORN=h=>'<i class="tornmark"></i>'+h;
+function showMsg(t,p){ return new Promise(res=>{ $('#msgT').textContent=t; $('#msgP').innerHTML=p; $('#msg .note').classList.toggle('doc',/class="steps"/.test(p)); $('#msg .note').classList.toggle('torn',/class="tornmark"/.test(p)); ov('#msg',true); $('#msgOk').onclick=()=>{ ov('#msg',false); res(); }; }); }
 
 /* 소지품 : INV.note(id,제목,본문) — 지시서 · 쪽지 (언제든 다시 읽기) · INV.item(id,이름,설명) — 물건 · INV.has(id) · INV.drop(id) */
 const INV={notes:[],items:[],
@@ -298,21 +312,21 @@ const SIGNS={
   shop_0:['기념품 가게','SOUVENIR','#f0e6d0','#8e231c'], shop_1:['솜사탕','COTTON CANDY','#f3e9ef','#a0405a'], shop_2:['사진관','PHOTO','#1d2a36','#e8dcc0'],
   shop_3:['분실물 센터','LOST & FOUND','#e8dcc0','#2a2a2a'], shop_4:['츄러스','CHURROS','#3a2416','#f0c27a'], shop_5:['인형 뽑기','CLAW MACHINE','#f0e6d0','#2f4f7a'],
   carousel:['회전목마','CAROUSEL','#e8dcc0','#8e231c'], circus:['서커스','매일 밤 8시 공연','#1b1b1b','#e3b54a'], wheel:['관람차','MOON WHEEL','#e8dcc0','#2f4f7a'],
-  coaster:['후룸라이드','키 120cm 이상 탑승','#8e231c','#f2ede2'], haunted:['유령의 집','들어간 사람은 있어도…','#151515','#b8b0a0'],
+  coaster:['후룸라이드','키 120cm 이상 탑승','#8e231c','#f2ede2'], viking:['바이킹','VIKING · 키 110cm 이상 탑승','#3a2416','#f0c27a'],
   game_0:['오리 낚시','','#8e231c','#f2ede2'], game_1:['사 격','','#2f4f7a','#f2ede2'], game_2:['고리 던지기','','#2f6a4a','#f2ede2'],
   food_8:['핫도그','','#f0e6d0','#8e231c'], food_15:['음료','','#f0e6d0','#2f4f7a'], tower:['자이로드롭','GYRO DROP · 키 130cm 이상 탑승','#e8dcc0','#8e231c'], bumper:['범퍼카','BUMPER CARS','#e3b54a','#1b1b1b'],
   shed:['창고','','#d8d2c2','#2a2a2a'], staff:['관계자 외 출입금지','STAFF ONLY','#e8dcc0','#8e231c'], office:['관리동','통제실 2F','#d8d2c2','#2a2a2a'], exit:['비상구','','#1f6a3a','#f2ede2'],
   // v2 맵
   icecream:['달토끼 아이스크림','MOON BUNNY ICE CREAM','#fbe9ef','#c0405f'], icecream_menu:['딸기 · 초코 · 바닐라','한 스쿱 3,000원 · 보름달 콘 +500원','#3a2430','#ffd9e4'],
-  dorm:['직원 숙소','STAFF DORM · 야간 점검조','#e8eef2','#2a3a4a'], dorm_rule:['야간 점검조 수칙','자정 이후 혼자 다니지 말 것 · 절구 소리가 들리면 건물 안으로','#f2ede2','#7a1d16'],
+  dorm:['직원 숙소','STAFF DORM · 야간 점검조','#e8eef2','#2a3a4a'], dorm_rule:['야간 점검조 수칙','자정 이후 혼자 다니지 말 것 · 점검 중에는 손전등을 켤 것','#f2ede2','#7a1d16'],
   dorm_safety:['안전 제일','야간 점검 시 손전등 · 무전기 필수 · 혼자 기구에 오르지 말 것','#f2c230','#1b1b1b'],
   rabbit_plate:['달토끼','LUNA LAND 마스코트 · 달에서 떡방아를 찧는 토끼','#c9a23e','#2a1a0a'],
-  dir_0:['← 회전목마 · 직원 숙소','','#2f4f7a','#f2ede2'], dir_1:['서커스 →','','#8e231c','#f2ede2'], dir_2:['↑ 관람차 · 유령의 집','','#2f6a4a','#f2ede2'],
+  dir_0:['← 회전목마 · 직원 숙소','','#2f4f7a','#f2ede2'], dir_1:['서커스 →','','#8e231c','#f2ede2'], dir_2:['↑ 관람차 · 바이킹','','#2f6a4a','#f2ede2'],
   poster_0:['보름달 축제','달토끼와 함께하는 야간 개장 · 매일 19:00','#1b2440','#ffe2a8'], poster_1:['달빛 퍼레이드','오늘 밤 보름달 · 20:30 중앙 광장','#2a1a3a','#f2d2ff'],
 };
 for(let i=1;i<=10;i++) SIGNS['locker_'+i]=[String(i),'','#e8e4da','#1a1a1a'];
 // 잠긴 문 (Blender COL_GATE_<key>) — 방에서 openGate(key) 로 연다
-const GATES={dorm:'숙소 문', coaster:'후룸라이드 탑승구', haunted:'유령의 집 문', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
+const GATES={dorm:'숙소 문', coaster:'후룸라이드 탑승구', staff:'관계자 출입문', office:'관리동 문', exit:'비상구'};
 const GATE_TAP={};   // 방 스크립트가 문마다 동작을 붙인다 : GATE_TAP.dorm=()=>{…}
 function openGate(k){ S.flags['open_'+k]=true; }
 const PARK={mats:[],mat:{},items:{},signs:{},spawns:{},spots:{},lights:{},zones:[],anim:{},gondolas:[],bulbs:[],spawn:{x:0,z:60,yaw:0},bounds:{x1:-58,x2:58,z1:-58,z2:56}};
@@ -409,10 +423,10 @@ const SKY_KEYS=[
 const SKY={};
 function buildSkyDome(){
   const u={top:{value:new THREE.Color()},mid:{value:new THREE.Color()},hor:{value:new THREE.Color()},sunDir:{value:new THREE.Vector3()},
-           sunAmt:{value:1},starAmt:{value:0},moonDir:{value:new THREE.Vector3(-.45,.55,-.7).normalize()},t:{value:0}};
+           sunAmt:{value:1},starAmt:{value:0},moonDir:{value:new THREE.Vector3(-.45,.55,-.7).normalize()},t:{value:0},eye:{value:0}};
   const mat=new THREE.ShaderMaterial({uniforms:u,side:THREE.BackSide,depthWrite:false,fog:false,
     vertexShader:`varying vec3 vD; void main(){ vD=normalize(position); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; gl_Position.z=gl_Position.w*.9999; }`,
-    fragmentShader:`uniform vec3 top,mid,hor,sunDir,moonDir; uniform float sunAmt,starAmt,t; varying vec3 vD;
+    fragmentShader:`uniform vec3 top,mid,hor,sunDir,moonDir; uniform float sunAmt,starAmt,t,eye; varying vec3 vD;
       float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
       void main(){ vec3 d=normalize(vD); float y=d.y;
         vec3 c=mix(hor,mid,smoothstep(-.02,.22,y)); c=mix(c,top,smoothstep(.18,.85,y)); c=mix(c,hor*.55,smoothstep(0.,-.25,y));
@@ -422,7 +436,14 @@ function buildSkyDome(){
         // 보름달 : 원반 + 무늬(바다) + 달무리. 지평선 아래면 안 보인다
         float m=dot(d,moonDir), up=smoothstep(-.02,.03,moonDir.y); float disc=smoothstep(.99935,.9995,m);
         float mar=h3(floor(d*900.))*.12+.88-.18*smoothstep(.4,.9,sin(d.x*700.)*sin(d.y*650.+1.3));
-        c=mix(c,vec3(1.,.98,.9)*mar*1.15,disc*up); c+=vec3(.35,.4,.55)*(pow(max(m,0.),120.)*.5+pow(max(m,0.),12.)*.08)*up;
+        vec3 mc=vec3(1.,.98,.9)*mar*1.15;
+        // 새벽 4시 : 달이 붉어지고 눈을 뜬다 — 눈동자가 천천히 굴러다니고, 가끔 감았다 뜬다
+        if(eye>0.){ vec3 mu=normalize(cross(moonDir,vec3(0.,1.,0.))), mv=cross(mu,moonDir); vec2 q=vec2(dot(d,mu),dot(d,mv))/.034;
+          q-=vec2(sin(t*.31),cos(t*.23)*.6)*.13; float r=length(q), open=clamp(abs(sin(t*.17))*9.,0.,1.);
+          vec3 red=vec3(1.,.36,.26)*mar, iris=mix(vec3(.62,.06,.03),vec3(1.,.74,.18),smoothstep(.16,.5,r))*(.82+.18*sin(atan(q.y,q.x)*26.));
+          float lid=smoothstep(open*.64,open*.52,abs(q.y)), ir=smoothstep(.56,.5,r)*lid, pu=smoothstep(.2,.15,length(q*vec2(2.4,1.)))*lid;
+          vec3 e=mix(red,iris*(1.-.5*smoothstep(.44,.54,r)),ir); e=mix(e,vec3(.02,0.,0.),pu); mc=mix(mc,e,eye); }
+        c=mix(c,mc,disc*up); c+=mix(vec3(.35,.4,.55),vec3(.75,.1,.06),eye)*(pow(max(m,0.),120.)*.5+pow(max(m,0.),12.)*.08)*up;
         gl_FragColor=vec4(c,1.); }`});
   const dome=new THREE.Mesh(new THREE.SphereGeometry(230,32,16),mat); dome.renderOrder=-1; dome.frustumCulled=false; scene.add(dome);
   SKY.u=u; SKY.dome=dome; }
@@ -441,9 +462,11 @@ function tickSky(dt,force){ if(!SKY.u) return; SKY.u.t.value+=dt; skyT+=dt; if(!
   const sy=num('sy'); SKY.u.sunDir.value.set(-.85,sy,-.35).normalize(); SKY.u.sunAmt.value=num('sun'); SKY.u.starAmt.value=num('star');
   // 보름달 : 해가 질 무렵 동쪽에서 떠서, 자정 무렵 남쪽 하늘 가장 높이, 해 뜰 무렵 서쪽으로 진다 (남중 고도 약 50°로 둠)
   const ma=(m-19*60)/(11*60)*Math.PI, alt=50*Math.PI/180; const md=SKY.u.moonDir.value.set(Math.cos(ma),Math.sin(ma)*Math.sin(alt),Math.sin(ma)*Math.cos(alt)).normalize();
-  SKY.moon.position.copy(md).multiplyScalar(100); SKY.moon.intensity=Math.max(0,md.y)*0.55+0.08;
-  col('fog',_c1); scene.fog.color.copy(_c1).convertSRGBToLinear(); scene.fog.density=num('fd'); renderer.toneMappingExposure=DBG.bright?2.6:num('ex');
-  SKY.hemi.intensity=num('hemi'); const env=num('env'); PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; }
+  // 정전(S.blackout) 뒤로는 하늘빛도 낮춘다 — 손전등 없이는 잘 안 보이게. 새벽 4시부터 달이 붉어지며 눈을 뜬다 (달의 눈)
+  const bk=S.blackout?.34:1, eye=clamp((m-28*60)/20,0,1); SKY.u.eye.value=eye; SKY.moon.color.setHex(0xb8c8f0).lerp(_c2.set(0xff4a34),eye);
+  SKY.moon.position.copy(md).multiplyScalar(100); SKY.moon.intensity=(Math.max(0,md.y)*0.55+0.08)*(S.blackout?.5:1);
+  col('fog',_c1); scene.fog.color.copy(_c1).convertSRGBToLinear(); scene.fog.density=num('fd'); renderer.toneMappingExposure=DBG.bright?2.6:num('ex')*(S.blackout?.8:1);
+  SKY.hemi.intensity=num('hemi')*bk; const env=num('env')*bk; PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; }
 
 /* 구역 : 처음 들어가면 이름 표시 */
 let zoneT=0, curZone=null;
@@ -453,9 +476,9 @@ function tickZones(dt){ zoneT+=dt; if(zoneT<0.25) return; zoneT=0; let z=null;
 
 /* ============================================================
    ROOMS : 방(퍼즐)을 하나씩 붙이는 자리
-   ROOMS.push({ id:'haunted', async build(){…INTER.push(…)}, tick(dt){…} })
-   - 구역 위치 : PARK.zones.find(z=>z.id==='haunted')
-   - 잠긴 문 열기 : openGate('haunted')  (Blender 의 COL_GATE_haunted)
+   ROOMS.push({ id:'viking', async build(){…INTER.push(…)}, tick(dt){…} })
+   - 구역 위치 : PARK.zones.find(z=>z.id==='viking')
+   - 잠긴 문 열기 : openGate('coaster')  (Blender 의 COL_GATE_coaster)
    ============================================================ */
 const ROOMS=[];
 
@@ -477,6 +500,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   // 놀이기구 : 운영 중엔 돌고, 폐장하면 서서히 멈추고, 자정엔 회전목마만 혼자 돈다
   const A=PARK.anim, tgtC=S.ridesGhost?0.25:S.carouselRun?0.45:S.closed?0:0.55, tgtW=S.closed?0:0.06;
   S.rC=lerp(S.rC??tgtC,tgtC,1-Math.pow(0.6,dt)); S.rW=lerp(S.rW??tgtW,tgtW,1-Math.pow(0.7,dt));
+  if(A.viking) A.viking.rotation.z=Math.sin(S.t*.55)*.04;      // 바이킹 : 바람에 조금씩 흔들린다 (끼익…)
   if(A.carousel) A.carousel.rotation.y+=dt*S.rC; if(A.wheel){ A.wheel.rotation.z+=dt*S.rW; PARK.gondolas.forEach(g=>g.rotation.z=-A.wheel.rotation.z); }
   tickSky(dt);
   // 깜빡이는 가로등 · 전구
@@ -487,17 +511,17 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   else if(hot){ hot=null; $('#label').classList.remove('on'); $('#cross').classList.remove('hot'); $('#interact').classList.remove('on'); }
   ROOMS.forEach(r=>r.tick&&r.tick(dt)); if(typeof CROWD!=='undefined') CROWD.tick(dt);
   renderer.render(scene,camera);
-  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`Shift+숫자 방 바로 가기 · Shift+L 목록\nfps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
+  fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`fps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
-   Shift+D 정보 · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
+/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 · 6 관람차 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+   Shift+` 정보 (Shift+D 는 달리면서 오른쪽으로 갈 때 눌려서 바꿨다) · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 방마다 하나, 방 번호 = 숫자 키. 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
 function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P.vy=0; P.grounded=true; if(lookX!==undefined) P.yaw=Math.atan2(-(lookX-x),-(lookZ-z)); P.pitch=0; P.free=true; }
 function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
 // 앞 단계로 돌아가도 상태가 섞이지 않게, 바로 가기는 늘 새로 불러온 뒤(?cp=번호) 그 자리로 간다
 // 앞 방으로 가는 건 그 자리에서 바로 옮긴다. 이미 지나온 방으로 돌아갈 때만 새로 불러온다 (입장권 연출 없이 바로 시작)
-function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.coaster_done?5:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
+function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.gyro_done?6:f.coaster_done?5:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
 function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
   if(S.phase!=='title'&&+key>cpLevel()) return runCheckpoint(key);
   location.search='?cp='+key; }
@@ -513,7 +537,7 @@ const DBG={on:false};
 function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
   if(e.altKey&&d!==undefined){ e.preventDefault(); const z=PARK.zones[(+d+9)%10]; if(z){ P.x=z.x; P.z=z.z; P.y=floorAt(z.x,z.z); P.vx=P.vz=0; toast(z.title); } return; }
   if(!e.shiftKey) return;
-  if(e.code==='KeyD'){ DBG.on=!DBG.on; $('#dbg').style.display=DBG.on?'block':'none'; }
+  if(e.code==='Backquote'){ DBG.on=!DBG.on; $('#dbg').style.display=DBG.on?'block':'none'; }
   if(e.code==='KeyG'){ Object.keys(GATES).forEach(openGate); toast('모든 문 열림 (디버그)'); }
   if(e.code==='KeyN'){ DBG.bright=!DBG.bright; tickSky(0,true); }
   if(e.code==='KeyT'){ if(!S.timerOn) return; timeLeft=Math.max(1,timeLeft-300); toast('공원 시간 +1시간 (디버그)'); tickSky(0,true); }
