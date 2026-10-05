@@ -77,6 +77,8 @@ python tools/optimize_glb.py web/assets/park.glb      # 선택 : 17MB → 13MB
 | Shift+7 | 바이킹 조작실 앞 |
 | Shift+L | 바로 가기 목록 |
 
+터치(태블릿) : 왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사 · 화면 오른쪽 아래 **조사 · 점프 · 달리기(누르면 켜짐/꺼짐) · 손전등** 버튼
+
 그 밖 : Alt+1~0 구역 위치로만 이동 · Shift+` 정보(fps · 좌표) · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기
 주소 끝에 `?night` 를 붙이면 (`index.html?night`) 22:00 부터 시작한다.
 

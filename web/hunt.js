@@ -112,8 +112,9 @@ ROOMS.push({id:'hunt', build(){
       g.strokeStyle='rgba(120,140,170,.7)'; g.lineWidth=1.5; for(let y=34;y<h;y+=22){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); }
       g.strokeStyle='rgba(30,40,70,.85)'; g.lineWidth=2.2; for(let y=30;y<h-20;y+=22){ g.beginPath(); let x=26; g.moveTo(x,y); while(x<w-30-Math.random()*60){ x+=6+Math.random()*8; g.lineTo(x,y-3+Math.random()*6); } g.stroke(); }
       g.fillStyle='rgba(110,70,25,.25)'; g.beginPath(); g.arc(200,150,34,0,7); g.fill(); g.restore(); });
-    SCRAPS.forEach(sc=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(.36,.27),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:.5,roughness:.9,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.3,side:THREE.DoubleSide}));
-      m.rotation.set(-Math.PI/2,0,sc.rot); m.position.set(sc.at[0],floorAt(sc.at[0],sc.at[1])+.06,sc.at[1]); WORLD.add(m);
+    HUNT.scrap=(x,y,z,rot)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(.36,.27),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:.5,roughness:.9,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.3,side:THREE.DoubleSide}));
+      m.rotation.set(-Math.PI/2,0,rot); m.position.set(x,y,z); WORLD.add(m); return m; };
+    SCRAPS.forEach(sc=>{ const m=HUNT.scrap(sc.at[0],floorAt(sc.at[0],sc.at[1])+.06,sc.at[1],sc.rot);
       INTER.push({mesh:m,name:'찢어진 쪽지',range:2.8,fn:async()=>{ AUDIO.noise(.12,.25,0,3200); m.visible=false; await showMsg(sc.title,TORN(sc.body)); INV.note(sc.id,sc.title,TORN(sc.body));
         if(sc.sfx) AUDIO.sfx(sc.sfx,.5); await mono(sc.say); }}); });
   },

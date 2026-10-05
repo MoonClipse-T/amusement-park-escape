@@ -65,7 +65,8 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   function makeRabbit(){ const A=PARK.anim.gyro; if(!MOONRABBIT.src||!A) return;
     const o=MOONRABBIT.make('Idle',true); head=o.getObjectByName('head'); MOONRABBIT.face(o,true);
     rab=new THREE.Group(); rab.add(o); rab.scale.setScalar(.75); rab.visible=false; A.add(rab);
-    const a=-.38, r=2.75; rab.position.set(r*Math.sin(a),.25,r*Math.cos(a));      // 옆자리에서 안전바 너머로 몸을 내밀고 rab.rotation.y=Math.atan2(-rab.position.x,RS-rab.position.z);      // 오른쪽 옆자리에서 내 쪽으로 몸을 돌리고
+    const a=-.38, r=2.75; rab.position.set(r*Math.sin(a),.25,r*Math.cos(a));      // 옆자리에서 안전바 너머로 몸을 내밀고
+    rab.rotation.y=Math.atan2(-rab.position.x,RS-rab.position.z)-.3;                 // 내 쪽으로 몸을 돌리고 있다 (얼굴이 거의 정면으로 보인다 — 살짝 비스듬히)
     if(head){ head.rotateX(-.22); head.userData.q0=head.quaternion.clone(); } }
   function showRabbit(){ if(!rab) return; rab.visible=true; PARK.anim.gyro.updateMatrixWorld(true);
     const m=rab.getObjectByName('rabbit_hmouth')||head||rab; rab.userData.face=m.getWorldPosition(new THREE.Vector3()); rab.userData.face.y+=.1; }
@@ -92,7 +93,7 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
         if(t>.8&&once(d,'creak')){ AUDIO.tone(170,.6,'sawtooth',.035,0,-70); AUDIO.noise(.3,.08,0,2400); }            // 끼익 — 옆에서 무슨 소리가
         if(t>2.3&&once(d,'h1')) beat(); if(t>3.9&&once(d,'h2')) beat();
         if(t>4.5){ if(once(d,'snap')){ showRabbit(); blink(50); AUDIO.sfx('scare',1.3); AUDIO.tone(1900,1.1,'sawtooth',.18,0,-1400); AUDIO.noise(.9,.5,0,3000); AUDIO.tone(70,1.2,'sine',.5,0,-30);
-            camera.fov=zf(44); camera.updateProjectionMatrix(); d.shake=1; }
+            camera.fov=zf(50); camera.updateProjectionMatrix(); d.shake=1; }
           if(rab&&rab.userData.face){ sit(0,0); const fc=rab.userData.face, [ty,tp]=aim(fc.x,fc.y,fc.z); d.yaw=ty; d.pitch=tp; } d.shake=Math.max(.35,d.shake-dt); roll(Math.sin(t*38)*.05); }
         if(t>5.5){ d.mode='drop'; d.v=0; d.tick=0; AUDIO.tone(220,.1,'square',.1); AUDIO.noise(.3,.3,0,700); zoom(d.fov+16,500); } } }
     else if(d.mode==='drop'){ d.v+=G*dt; gy-=d.v*dt; d.pitch=lerp(d.pitch,-.38,Math.min(1,dt*3));
@@ -256,7 +257,8 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     add('gforce','힘 조절 장치 (브레이크 힘)',forceDev,2.4,inBooth);
     add('gscreen','힘 조절 장치 화면',forceDev,2.4,inBooth);
     add('console_gyro','자이로드롭 조작반',()=>{ AUDIO.click(); mono(['자이로드롭 조작반.','왼쪽은 전원 장치, 오른쪽은 브레이크 힘을 조절하는 다이얼과 화면이다.']); },2.4,inBooth);
-    add('gnote_gyro','찢어진 쪽지',readNote,2.4,inBooth);
+    if(I.gnote_gyro&&HUNT.scrap){ const p=itemPos('gnote_gyro'); I.gnote_gyro.visible=false;      // 책상 위 일지도 가장자리가 찢긴 종이로 (hunt.js 의 일지 조각과 같은 모양)
+      INTER.push({mesh:HUNT.scrap(p.x,p.y+.012,p.z,.45),name:'찢어진 쪽지',range:2.4,fn:readNote,enabled:inBooth}); }
     add('mic_gyro','안내 방송 마이크',()=>{ AUDIO.click(); mono(S.blackout?'…전기가 나가서 방송이 켜지지 않는다.':'안내 방송 마이크.'); },2.4,inBooth);
     add('gyro_seat','탑승 의자',tapSeat,3.2,()=>!rd);
     if(I.gscreen){ scr=screenOn(I.gscreen,{x:-27.6,z:-47.8}); I.gscreen.visible=true; drawScreen(); }

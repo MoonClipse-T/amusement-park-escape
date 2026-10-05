@@ -55,7 +55,10 @@ button{font-family:inherit;cursor:pointer;}
 #interact.on{display:block;border-color:var(--amber);color:var(--amber);}
 #jumpBtn{bottom:calc(150px + env(safe-area-inset-bottom));width:70px;height:70px;font-size:14px;}
 #lightBtn{bottom:calc(232px + env(safe-area-inset-bottom));width:70px;height:70px;font-size:13px;}
-#jumpBtn.on,#lightBtn.on{display:block;}
+#runBtn{right:calc(132px + env(safe-area-inset-right));bottom:calc(56px + env(safe-area-inset-bottom));width:74px;height:74px;font-size:13px;}
+#runBtn.run{border-color:var(--amber);color:var(--amber);background:rgba(70,45,10,.65);box-shadow:0 0 12px rgba(255,179,64,.35);}
+#jumpBtn.on,#lightBtn.on,#runBtn.on{display:block;}
+@media (max-height:480px){ #lightBtn{right:calc(134px + env(safe-area-inset-right));bottom:calc(142px + env(safe-area-inset-bottom));} }      /* 낮은 화면(가로로 든 휴대폰) : 손전등 버튼이 시계와 겹치지 않게 달리기 위로 */
 #stick{position:absolute;left:calc(30px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);display:none;opacity:.6;pointer-events:none;}
 #stick.on{display:block;} #stick.live{opacity:1;background:rgba(255,255,255,.12);}
 #knob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.5);}

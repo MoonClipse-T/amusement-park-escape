@@ -52,6 +52,14 @@ class _Booth:
         return _prop(key, wx, wz, rot - self.rot, child=self.p, **k)
 
 
+def _keep(parent, *objs):
+    """자식으로 붙이되 제자리에 둔다 — 부모(원기둥 · 빈 물체)에 위치가 있으면 _kids 만으로는 자식이 그만큼 밀려난다 (마이크 · 레버가 공중에 떠 있던 원인)"""
+    for o in objs:
+        o.parent = parent
+        o.matrix_parent_inverse = parent.matrix_basis.inverted()
+    return parent
+
+
 def _booth_shell(b):
     """벽 · 지붕 · 책상 · 마이크 · 의자 · 점검 방법 · 등 · 간판 · 충돌. 조작반은 놀이기구마다 따로 붙인다."""
     M, p, tag = bpy.data.materials, b.p, b.tag
@@ -81,7 +89,7 @@ def _booth_shell(b):
     b.box(p + "desk", t, t + .55, 0.74, 0.8, t + .05, s - t - .05, wood)
     b.box(p + "desk_front", t + .5, t + .55, 0.04, 0.74, t + .05, s - t - .05, wood)
     mic = b.cyl(f"IT_mic_{tag}", t + .3, 0.815, 1.95, 0.05, 0.03, iron, verts=16)
-    _kids(mic, b.cyl(p + "mic_neck", t + .3, 0.98, 1.95, 0.007, 0.32, iron, verts=6),
+    _keep(mic, b.cyl(p + "mic_neck", t + .3, 0.98, 1.95, 0.007, 0.32, iron, verts=6),
           b.cyl(p + "mic_head", t + .27, 1.15, 1.95, 0.022, 0.07, M["locker_dark"], axis="x", verts=12))
     b.prop("plastic_monobloc_chair_01", 1.05, 1.15, -90, height=0.8, decimate=0.4, name=p + "chair")
     # 점검 방법 (문으로 들어오면 정면 벽) · 종이 · 등 · 간판 · 문 앞 자리
@@ -125,7 +133,7 @@ def build_booth():
     _orient(b.emp("SIGN_cpower", .45, top + .003, 1.58, w=0.1, h=0.04), up, b.D(-1, 0))
     # 레버 : 전원과 버튼 사이에 크게 (조작반 화면을 열지 않아도 보이게). 엔진이 IT_clever 를 돌려 내린다
     lever = b.emp("IT_clever", .36, top + .04, 1.37)
-    _kids(lever, b.cyl(p + "lever_rod", .36, top + .2, 1.37, 0.016, 0.32, iron, verts=10),
+    _keep(lever, b.cyl(p + "lever_rod", .36, top + .2, 1.37, 0.016, 0.32, iron, verts=10),
           b.cyl(p + "lever_knob", .36, top + .38, 1.37, 0.045, 0.07, M["paint_red"], verts=16))
     kids += [lever, b.box(p + "lever_base", .27, .45, top, top + .045, 1.29, 1.45, iron)]
     for k in range(1, 9):
