@@ -66,14 +66,14 @@ async function serve(od,c){ await c.toCounter(); if(S.introSkip) return;
 function passTime(to,ms=2500){ return new Promise(res=>{ const from=S.introMin, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms); S.introMin=from+(to-from)*k; drawClock(); tickSky(0,true); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
 
-/* 아이 손님 : 괴담 한 조각 + 달토끼 동상이 슬쩍 이쪽으로 고개를 돌린다 (눈은 까만 그대로) */
+/* 아이 손님 : 괴담 한 조각 — 동상 쪽을 한 번 바라본다 (동상은 가만히 서 있다) */
 async function kidWarning(){
   await mono(['알바생님, 그거 알아요?','밤 12시가 넘으면 저 달토끼가 움직인다는 소문이 있어요.','…혹시 들어 본 적 있으세요?'],'아이');
   const yaw0=P.yaw, R=PARK.anim.rabbithead; P.free=false;
   if(R){ const p=new THREE.Vector3(); R.getWorldPosition(p); await camTo({yaw:Math.atan2(-(p.x-P.x),-(p.z-P.z)),pitch:0.08},1.2); }
-  await zoom(24,700); S.rabbitTwitch=.45; AUDIO.tone(70,1.2,'sine',.25); await sleep(1300); await zoom(72,500);
-  await camTo({yaw:yaw0,pitch:0},0.8); S.rabbitTwitch=0; P.free=true;
-  await mono(['…요즘 애들 괴담이란.','방금, 저 동상… 이쪽을 봤나?']); }
+  await zoom(24,700); AUDIO.tone(70,1.2,'sine',.2); await sleep(1100); await zoom(72,500);
+  await camTo({yaw:yaw0,pitch:0},0.8); P.free=true;
+  await mono(['…요즘 애들 괴담이란.','그냥 동상인데, 뭐.']); }
 /* 화면 확대 (시야각 바꾸기) */
 function zoom(fov,ms){ return new Promise(res=>{ const f0=camera.fov, t0=performance.now();
   const step=()=>{ const k=Math.min(1,(performance.now()-t0)/ms), e=k<.5?2*k*k:-1+(4-2*k)*k; camera.fov=f0+(fov-f0)*e; camera.updateProjectionMatrix(); if(k<1) requestAnimationFrame(step); else res(); }; step(); }); }
@@ -81,15 +81,14 @@ function zoom(fov,ms){ return new Promise(res=>{ const f0=camera.fov, t0=perform
 /* 자정 이후 : 달토끼 동상이 고개를 돌려 플레이어를 본다 (S.rabbitCalm 인 동안은 얌전히 앞만 본다 — 후룸라이드에서 본 뒤 확인하러 갈 때) */
 const _rp=new THREE.Vector3(); let rabbitBase=null;
 function tickRabbit(dt){ const R=PARK.anim.rabbithead; if(!R) return; if(rabbitBase===null) rabbitBase=R.rotation.y;
-  let want=rabbitBase; const k=S.rabbitAwake&&!S.rabbitCalm?1:S.rabbitTwitch||0;      // rabbitTwitch : 인트로에서 슬쩍 (절반쯤) 돌아본다
-  if(k){ R.getWorldPosition(_rp); const a=Math.atan2(P.x-_rp.x,P.z-_rp.z)-Math.PI/2-rabbitBase; want=rabbitBase+Math.atan2(Math.sin(a),Math.cos(a))*k; }
+  let want=rabbitBase; if(S.rabbitAwake&&!S.rabbitCalm){ R.getWorldPosition(_rp); want=rabbitBase+Math.atan2(P.x-_rp.x,P.z-_rp.z)-Math.PI/2; }      // 기준(동쪽을 봄)에서 나를 향한 각도만큼
   let d=want-R.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); R.rotation.y+=d*Math.min(1,dt*1.5); }
 
 /* ---------------- 인트로 ---------------- */
 async function intro(){
   const sp=PARK.spawns.kiosk||PARK.spawn; P.x=sp.x; P.z=sp.z; P.y=0; P.yaw=0; P.pitch=0.02; P.free=false;
   S.stage='shift'; S.introMin=19*60; tickSky(0,true);
-  $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); stickEl.classList.add('on'); }
+  $('#hud').classList.add('on'); if(IS_TOUCH){ $('#jumpBtn').classList.add('on'); $('#runBtn').classList.add('on'); stickEl.classList.add('on'); }
   if(/night/.test(location.search)) return startNight(true);           // 주소 끝에 ?night 를 붙이면 22:00 부터 (시험용)
   if(CP){ await startNight(true); return runCheckpoint(CP); }          // ?cp=번호 : 디버그 바로 가기 (Shift+숫자)
   CROWD.spawnWanderers(IS_TOUCH?12:22); const line=ORDERS.map((od,i)=>CROWD.customer({...od.opts,x:QUEUE[i][0],z:QUEUE[i][1]})); objective('…'); showClock('마감 22:00'); AUDIO.music('open');

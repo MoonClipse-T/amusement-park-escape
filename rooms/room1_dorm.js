@@ -163,6 +163,8 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
     add('uniform_dorm','벤치 위 근무복',seeUniform,2.6);
     add('bag_dorm','김근수의 가방',()=>{ AUDIO.click(); showMsg('가방',ROOM1.bag); });
     add('key_dorm','열쇠',takeKey);
+    { const k=itemPos('key_dorm'); if(k){ const box=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.5),PICK); box.position.copy(k); WORLD.add(box);      // 열쇠가 작아서 잘 안 눌린다 → 둘레를 넓게 잡는다
+        INTER.push({mesh:box,name:'열쇠',range:2.8,fn:takeKey,enabled:()=>it().key_dorm.visible}); } }
     add('toolbox_dorm','점검 공구함',takeToolbox);
     add('torch_dorm','손전등',takeTorch);
     add('note2_dorm','점검 지시서 #2',readNote2);

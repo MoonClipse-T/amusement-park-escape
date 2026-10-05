@@ -53,14 +53,14 @@ const AUDIO={ctx:null,
    const bass=[43,50,50, 43,50,50, 45,52,52, 38,50,50, 43,50,50, 43,50,50, 45,52,52, 38,45,45];
    const slow=mode==='dead', beat=slow?0.42:0.24; let i=0;
    const hz=n=>440*Math.pow(2,(n-69)/12)*(slow?(0.97+Math.random()*.02):1);
-   const step=()=>{ const m=mel[i%mel.length]; if(m) this.tone(hz(m),beat*1.6,slow?'triangle':'square',slow?.035:.03);
-     const b=bass[i%bass.length]; this.tone(hz(b),beat*.9,'triangle',i%3===0?.07:.035); i++;
+   const step=()=>{ const m=mel[i%mel.length]; if(m) this.tone(hz(m),beat*1.6,slow?'triangle':'square',slow?.11:.085);
+     const b=bass[i%bass.length]; this.tone(hz(b),beat*.9,'triangle',i%3===0?.2:.1); i++;
      if(slow&&Math.random()<.08) i+=Math.floor(Math.random()*3); };
    step(); this.musicTimer=setInterval(step,beat*1000); },
  stopMusic(){ clearInterval(this.musicTimer); this.musicTimer=null; this.musicMode=null; },
  wind(){ const c=this.ctx; if(!c||this.windOn) return; this.windOn=true; const n=c.sampleRate*4, b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0); let v=0;
    for(let i=0;i<n;i++){ v=v*.995+(Math.random()*2-1)*.05; d[i]=v; } const s=c.createBufferSource(); s.buffer=b; s.loop=true;
-   const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=380; f.Q.value=.6; const g=c.createGain(); g.gain.value=.35;
+   const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=380; f.Q.value=.6; const g=c.createGain(); g.gain.value=.13;
    const lfo=c.createOscillator(), lg=c.createGain(); lfo.frequency.value=.07; lg.gain.value=160; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
    s.connect(f); f.connect(g); g.connect(c.destination); s.start(); }
 };
@@ -268,7 +268,8 @@ function keypad({title='번호 자물쇠',len=4,hint='',check}){ return new Prom
 let camAnim=null;
 // 지점(x,z)을 바라보는 yaw — 지금 yaw 에서 가까운 쪽으로 돈다
 function yawTo(x,z){ const a=Math.atan2(-(x-P.x),-(z-P.z)); return P.yaw+Math.atan2(Math.sin(a-P.yaw),Math.cos(a-P.yaw)); }
-function camTo(to,dur){ return new Promise(res=>{ camAnim={from:{x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch},to,t:0,dur,res}; }); }
+function camTo(to,dur){ if(to.yaw!==undefined) to={...to,yaw:P.yaw+Math.atan2(Math.sin(to.yaw-P.yaw),Math.cos(to.yaw-P.yaw))};      // 늘 가까운 쪽으로 (반 바퀴 안쪽)
+  return new Promise(res=>{ camAnim={from:{x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch},to,t:0,dur,res}; }); }
 function tickCam(dt){ if(!camAnim) return; camAnim.t+=dt; const k=Math.min(1,camAnim.t/camAnim.dur), e=k<.5?2*k*k:-1+(4-2*k)*k; const f=camAnim.from,t=camAnim.to;
   P.x=lerp(f.x,t.x??f.x,e); P.z=lerp(f.z,t.z??f.z,e); P.y=lerp(f.y,t.y??f.y,e); P.yaw=lerp(f.yaw,t.yaw??f.yaw,e); P.pitch=lerp(f.pitch,t.pitch??f.pitch,e);
   if(k>=1){ const r=camAnim.res; camAnim=null; r(); } }
@@ -285,6 +286,7 @@ function loadImg(key){ return new Promise((res,rej)=>{ const im=new Image(); im.
 /* 점프 · 중력 */
 function jump(){ if(!P.free||S.busy||!P.grounded) return; P.vy=5.4; P.grounded=false; }   // 약 1 m 높이
 $('#jumpBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); AUDIO.init(); jump(); });
+$('#runBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); AUDIO.init(); S.run=!S.run; e.currentTarget.classList.toggle('run',S.run); e.currentTarget.textContent=S.run?'달리는 중':'달리기'; AUDIO.tick(); });      // 터치 : 달리기 켜고 끄기
 function tickJump(dt){ if(!P.free||camAnim) return; const fy=floorAt(P.x,P.z);
   if(!P.grounded||P.y>fy+0.45){ P.vy-=14*dt; P.y+=P.vy*dt; if(P.y<=fy){ P.y=fy; P.vy=0; P.grounded=true; } else P.grounded=false; }
   else P.y=lerp(P.y,fy,1-Math.pow(0.0005,dt)); }   // 계단·단상은 부드럽게 올라섬
@@ -490,7 +492,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   tickCam(dtReal); tickTimer(dtReal);
   if(P.free&&!S.busy&&!camAnim){ let fx=0,fz=0; if(keys.KeyW||keys.ArrowUp) fz+=1; if(keys.KeyS||keys.ArrowDown) fz-=1; if(keys.KeyA||keys.ArrowLeft) fx-=1; if(keys.KeyD||keys.ArrowRight) fx+=1;
     if(stick.id!==null){ fx+=stick.dx; fz-=stick.dy; } const m=Math.hypot(fx,fz); if(m>1){ fx/=m; fz/=m; }
-    const sp=P.speed*(keys.ShiftLeft||keys.ShiftRight||m>0.95&&stick.id!==null?1.6:1); const s=Math.sin(P.yaw),c=Math.cos(P.yaw); // 전방 = (-sin yaw, -cos yaw)
+    const sp=P.speed*(keys.ShiftLeft||keys.ShiftRight||S.run||m>0.95&&stick.id!==null?1.6:1); const s=Math.sin(P.yaw),c=Math.cos(P.yaw); // 전방 = (-sin yaw, -cos yaw)
     const vx=(-s*fz + c*fx)*sp, vz=(-c*fz - s*fx)*sp; P.vx=lerp(P.vx,vx,1-Math.pow(0.001,dt)); P.vz=lerp(P.vz,vz,1-Math.pow(0.001,dt)); move(P.vx*dt,P.vz*dt);
     const sp2=Math.hypot(P.vx,P.vz); P.bob=(P.bob||0)+sp2*dt*7; P.bobA=lerp(P.bobA||0,sp2>0.3?0.025:0,0.1); }
   tickJump(dt);
