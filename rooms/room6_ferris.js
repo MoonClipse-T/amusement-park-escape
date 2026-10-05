@@ -6,7 +6,8 @@
         → 방향 조절 장치 화면
             ① 곤돌라 4개(위 · 왼쪽 · 아래 · 오른쪽)를 눌러 알짜힘 화살표를 돌린다 → 모두 **중심 쪽** (운동 방향과 수직)
             ② 알짜힘이 운동 방향과 수직일 때 변하는 것은? → **운동 방향** (빠르기는 그대로)
-        → 관람차가 일정한 빠르기로 부드럽게 돈다 → 전원 OFF → 다음 점검 : 바이킹 (준비 중)
+        → 관람차가 일정한 빠르기로 부드럽게 돈다 → 전원 OFF → 다음 점검 : 바이킹 (rooms/room7_viking.js)
+        → (유인) 점검을 끝낸 뒤 전원 버튼을 다시 누르면 45초 동안 관람차가 돌고, 달토끼가 구경하러 온다
    조작반 : 전원 장치(IT_fpower · IT_flamp) · 방향 조절 장치(IT_fforce 다이얼 · IT_fscreen 화면) — gyro_drop.py 의 _console
    ★ 글은 아래 ROOM6 에서 고친다
    ============================================================ */
@@ -86,13 +87,19 @@ SIGNS.fpower=['전원','POWER','#111111','#f2c230']; SIGNS.fforce=['알짜힘 �
     await mono(['관람차는 타 보라는 말이 없다. …다행이다.','일정한 빠르기로 도는지만 보면 된다.']); objective('조작반의 전원 버튼을 누르자'); const c=itemPos('fpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
   async function power(){ AUDIO.click();
     if(!S.flags.manual_ferris) return mono('…점검 방법부터 찾자.');
-    if(S.flags.ferris_done) return mono('전원 버튼. 점검을 마치고 꺼 두었다.');
+    if(S.flags.ferris_done) return lureRun();
     if(!st.power){ st.power=true; S.flags.ferris_power=true; lamp(true); drawScreen(); AUDIO.tone(120,.4,'sawtooth',.06,0,60); AUDIO.tone(1100,.08,'square',.07,.4); await sleep(1600);
       await mono(['관람차가 돌기 시작했다. 그런데… 덜컹, 덜컹.','빨라졌다 느려졌다 한다. 일정한 빠르기가 아니다.','점검 방법 2번 — 방향 조절 장치에서 알짜힘 방향을 맞추자.']);
       objective('방향 조절 장치로 곤돌라의 알짜힘 방향을 맞추자'); const c=itemPos('fforce'); if(c) setGoal(c.x,c.z,'방향 조절 장치'); return; }
     if(st.fixed&&!S.flags.ferris_done){ st.power=false; S.flags.ferris_done=true; lamp(false); drawScreen(); AUDIO.tone(300,.15,'square',.08); setGoal(null);
-      await mono(['관람차 점검도 끝. 전원도 껐다.','남은 점검은 바이킹 하나.']); objective('다음 점검 : 바이킹 (준비 중)'); return; }
-    mono(S.flags.ferris_done?'전원 버튼. 꺼 두었다.':'전원 버튼. 점검이 끝나면 꺼야 한다.'); }
+      await mono(['관람차 점검도 끝. 전원도 껐다.','…일지에 쓰여 있었지. 놀이기구가 돌아가면 그것이 구경하러 간다고.','급할 땐 이 전원 버튼을 다시 눌러 관람차를 돌리자. 그 틈에 지나가면 된다.','남은 점검은 바이킹 하나.']);
+      objective('바이킹 조작실로 가자 (관람차를 다시 돌리면 달토끼가 구경하러 간다)'); const v=PARK.spots.booth_viking; if(v) setGoal(v.x,v.z,'바이킹 조작실'); return; }
+    mono('전원 버튼. 점검이 끝나면 꺼야 한다.'); }
+  // 유인 : 점검을 끝낸 관람차를 45초 동안 다시 돌린다 → 달토끼가 승강장 앞으로 구경하러 온다
+  async function lureRun(){ if(st.power) return mono('관람차가 돌고 있다. 달토끼가 구경하는 동안 움직이자.');
+    st.power=true; lamp(true); drawScreen(); AUDIO.tone(120,.4,'sawtooth',.06,0,60); const ok=typeof HUNT!=='undefined'&&HUNT.lureAt(-34,-20.6,45,'관람차');
+    setTimeout(()=>{ st.power=false; lamp(false); drawScreen(); AUDIO.tone(300,.15,'square',.08); if(typeof HUNT!=='undefined') HUNT.lureOff('관람차'); toast('관람차가 멈췄다'); },45000);
+    mono(ok?['전원을 다시 켰다. 관람차가 돈다.','…그것이 관람차 쪽으로 간다. 지금이다.']:['전원을 다시 켰다. 관람차가 돈다. 45초 뒤 저절로 꺼진다.']); }
   function forceDev(){ if(!st.power){ AUDIO.click(); return mono('방향 조절 장치. 화면이 꺼져 있다 — 전원부터 켜야 한다.'); }
     if(!st.fixed) return openPad(); AUDIO.click(); mono('네 곤돌라 모두 알짜힘이 중심 쪽을 향한다. 일정한 빠르기로 돈다.'); }
 

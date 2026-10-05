@@ -513,7 +513,7 @@ function frame(now){ requestAnimationFrame(frame); const dtReal=Math.min(1,(now-
   renderer.render(scene,camera);
   fpsN++; fpsT+=dt; if(fpsT>1){ fps=Math.round(fpsN/fpsT); fpsN=0; fpsT=0; if(DBG.on) $('#dbg').textContent=`fps ${fps}  x ${P.x.toFixed(1)} z ${P.z.toFixed(1)} yaw ${P.yaw.toFixed(2)}  calls ${renderer.info.render.calls} tris ${renderer.info.render.triangles}\nzone ${curZone?curZone.id:'-'}  flags ${Object.keys(S.flags).filter(k=>!k.startsWith('seen_')).join(',')}`; } }
 
-/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 · 6 관람차 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
+/* 제작용 디버그 : Shift+숫자 = 방 바로 가기 (1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 · 6 관람차 · 7 바이킹 …) · Shift+L 바로 가기 목록 · Alt+1~0 구역 이동
    Shift+` 정보 (Shift+D 는 달리면서 오른쪽으로 갈 때 눌려서 바꿨다) · Shift+G 모든 문 열기 · Shift+N 밝게 보기 · Shift+T 공원 시간 +1시간 · Shift+K 인트로 건너뛰기 */
 // 바로 가기 : 방마다 하나, 방 번호 = 숫자 키. 각 방 스크립트가 CHECKPOINTS.push({key:'3', name, go(){…}}) — go 는 그 앞 단계를 모두 끝낸 상태로 만들고 자리를 옮긴다
 const CHECKPOINTS=[];
@@ -521,7 +521,7 @@ function warp(x,z,lookX,lookZ,y){ P.x=x; P.z=z; P.y=y??floorAt(x,z); P.vx=P.vz=P
 function itemPos(k){ const o=PARK.items[k]; return o?new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()):null; }
 // 앞 단계로 돌아가도 상태가 섞이지 않게, 바로 가기는 늘 새로 불러온 뒤(?cp=번호) 그 자리로 간다
 // 앞 방으로 가는 건 그 자리에서 바로 옮긴다. 이미 지나온 방으로 돌아갈 때만 새로 불러온다 (입장권 연출 없이 바로 시작)
-function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.gyro_done?6:f.coaster_done?5:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
+function cpLevel(){ const f=S.flags; return S.stage!=='night'?0:f.ferris_done?7:f.gyro_done?6:f.coaster_done?5:f.coaster_arrive?4:f.bumper_booth_in?3:f.booth_in?2:1; }
 function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
   if(S.phase!=='title'&&+key>cpLevel()) return runCheckpoint(key);
   location.search='?cp='+key; }
