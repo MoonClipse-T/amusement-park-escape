@@ -30,8 +30,8 @@ button{font-family:inherit;cursor:pointer;}
 #clock.late{color:#ff5a4a;border-color:#4a1712;} #clock.late .hm{text-shadow:0 0 10px rgba(255,60,40,.9);}
 #clock.warn .hm{animation:blink 1s steps(2) infinite;}
 /* 할 일 : 찢어진 팸플릿 조각 */
-#objective{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));max-width:min(300px,42vw);
- background:var(--cream);color:#2a2018;padding:8px 12px 15px;font-size:13px;line-height:1.45;transform:rotate(-1.2deg);
+#objective{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));max-width:min(360px,46vw);
+ background:var(--cream);color:#2a2018;padding:8px 12px 15px;font-size:16px;line-height:1.45;transform:rotate(-1.2deg);
  box-shadow:0 3px 10px rgba(0,0,0,.45);clip-path:polygon(0 0,100% 0,100% 88%,96% 100%,90% 90%,84% 100%,76% 92%,68% 100%,60% 91%,50% 100%,40% 92%,30% 100%,20% 91%,10% 100%,4% 92%,0 100%);}
 #objective.on{display:block;}
 #objective b{display:block;font-size:10px;letter-spacing:2px;color:var(--red);font-weight:900;margin-bottom:1px;}
@@ -53,16 +53,16 @@ button{font-family:inherit;cursor:pointer;}
 .rbtn{position:absolute;right:calc(28px + env(safe-area-inset-right));border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#ddd;font-weight:700;pointer-events:auto;display:none;}
 #interact{bottom:calc(46px + env(safe-area-inset-bottom));width:92px;height:92px;font-size:16px;}
 #interact.on{display:block;border-color:var(--amber);color:var(--amber);}
-#jumpBtn{bottom:calc(150px + env(safe-area-inset-bottom));width:70px;height:70px;font-size:14px;}
-#lightBtn{bottom:calc(232px + env(safe-area-inset-bottom));width:70px;height:70px;font-size:13px;}
-#runBtn{right:calc(132px + env(safe-area-inset-right));bottom:calc(56px + env(safe-area-inset-bottom));width:74px;height:74px;font-size:13px;}
-#runBtn.run{border-color:var(--amber);color:var(--amber);background:rgba(70,45,10,.65);box-shadow:0 0 12px rgba(255,179,64,.35);}
+#jumpBtn{bottom:calc(152px + env(safe-area-inset-bottom));width:74px;height:74px;font-size:15px;}
+#lightBtn{bottom:calc(240px + env(safe-area-inset-bottom));width:74px;height:74px;font-size:15px;}
+#runBtn{right:calc(132px + env(safe-area-inset-right));bottom:calc(56px + env(safe-area-inset-bottom));width:74px;height:74px;font-size:15px;}
+#runBtn.run{border-color:var(--amber);color:#1a1420;background:var(--amber);box-shadow:0 0 14px rgba(255,179,64,.55);}      /* 켜진 동안은 채운다 */
 #jumpBtn.on,#lightBtn.on,#runBtn.on{display:block;}
 @media (max-height:480px){ #lightBtn{right:calc(134px + env(safe-area-inset-right));bottom:calc(142px + env(safe-area-inset-bottom));} }      /* 낮은 화면(가로로 든 휴대폰) : 손전등 버튼이 시계와 겹치지 않게 달리기 위로 */
 #stick{position:absolute;left:calc(30px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);display:none;opacity:.6;pointer-events:none;}
 #stick.on{display:block;} #stick.live{opacity:1;background:rgba(255,255,255,.12);}
 #knob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.5);}
-#hint{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.55);white-space:nowrap;}
+#hint{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:14px;color:rgba(255,255,255,.72);white-space:nowrap;text-shadow:0 1px 3px #000;}
 #toast{position:absolute;top:24%;left:50%;transform:translateX(-50%);font:400 22px/1 var(--sign);letter-spacing:3px;color:var(--cream);
  text-shadow:0 0 10px rgba(255,120,80,.6),0 2px 0 #000;opacity:0;transition:opacity .4s;white-space:nowrap;}
 #toast.on{opacity:1;}
@@ -127,7 +127,7 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .note .tape{position:absolute;top:-12px;left:50%;width:110px;height:26px;margin-left:-55px;background:rgba(230,215,160,.75);transform:rotate(2deg);}
 .note h2{margin:0 0 8px;font:400 30px/1.2 var(--hand);color:#7a1d16;}
 .note p{margin:0 0 18px;font:400 22px/30px var(--hand);}
-.note button{float:right;padding:8px 22px;border:1.5px solid #2a2018;background:transparent;color:#2a2018;font-size:14px;border-radius:2px;}
+.note button{float:right;min-height:48px;padding:10px 28px;border:1.5px solid #2a2018;background:transparent;color:#2a2018;font-size:16px;border-radius:2px;}
 
 /* 일시 정지 : 놀이기구 조작반 */
 .console{position:relative;width:min(440px,90vw);background:linear-gradient(#2b2d31,#1a1b1e);border:2px solid #44474d;border-radius:8px;padding:34px 28px 26px;text-align:center;
@@ -251,21 +251,22 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
  box-shadow:0 14px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);color:#e9e2d2;text-align:center;}
 .fhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px;background:repeating-linear-gradient(-45deg,#f2c230 0 14px,#1b1b1b 14px 28px);}
 .fhead .ft{font:400 20px/1.2 var(--sign);letter-spacing:3px;color:#111;background:#f2c230;padding:2px 8px;}
-.fhead .fsub{font:700 10px/1 var(--led);letter-spacing:3px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
+.fhead .fsub{font:700 14px/1 var(--led);letter-spacing:2px;color:#f2c230;background:#1b1b1b;padding:4px 6px;}
+.fpad canvas{display:block;width:auto;max-width:100%;max-height:36vh;margin:0 auto;}      /* 낮은 화면(태블릿 625px)에서도 질문 · 설명이 잘리지 않게 그림을 먼저 줄인다 */
 #fcv,#lcv,#fcv2,#bcv,#gcv,#wcv,#vcv{display:block;width:calc(100% - 28px);height:auto;margin:14px auto 0;background:#0e1013;border:1px solid #3a3d42;border-radius:4px;}
-.fq{margin:12px 18px 6px;font-size:14px;line-height:1.6;color:#d8cfbd;text-align:left;}
+.fq{margin:10px 18px 4px;font-size:16px;line-height:1.55;color:#d8cfbd;text-align:left;}
 .fq b{color:#f2c230;}
 .frow{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 14px 0;}
-.frow .fl{min-width:84px;font-size:12px;letter-spacing:2px;color:#8a8d93;text-align:right;}
-.fdir{min-height:44px;padding:0 14px;border:1px solid #55585e;border-radius:4px;background:#24262a;color:#cfc8b8;font-size:14px;}
+.frow .fl{min-width:84px;font-size:14px;letter-spacing:1px;color:#a9adb4;text-align:right;}
+.fdir{min-height:56px;padding:0 18px;border:1px solid #55585e;border-radius:4px;background:#24262a;color:#cfc8b8;font-size:16px;}
 .fdir.on{border-color:var(--amber);color:var(--amber);background:#2e2616;box-shadow:0 0 10px rgba(255,179,64,.25);}
 .fnum{width:120px;height:48px;font:700 30px/48px var(--led);text-align:center;color:var(--amber);background:#07080a;border:1px solid #55585e;border-radius:4px;outline:none;}
 .fnum:focus{border-color:var(--amber);box-shadow:0 0 10px rgba(255,179,64,.3);}
 .funit{font:700 22px/1 var(--led);color:#cfc8b8;}
-.fgo{margin-top:16px;min-height:48px;padding:0 42px;border:none;border-radius:24px;background:var(--red);color:#fff;font:400 18px/1 var(--sign);letter-spacing:4px;box-shadow:0 4px 0 #6a1612;}
+.fgo{margin-top:10px;min-height:48px;padding:0 42px;border:none;border-radius:24px;background:var(--red);color:#fff;font:400 18px/1 var(--sign);letter-spacing:4px;box-shadow:0 4px 0 #6a1612;}
 .fgo:active{transform:translateY(2px);box-shadow:0 2px 0 #6a1612;}
 .fgo:disabled{opacity:.5;}
-.fmsg{min-height:44px;margin:12px 18px 0;font-size:13px;line-height:1.6;color:#d9b0a8;}
+.fmsg{min-height:46px;margin:8px 18px 0;font-size:16px;line-height:1.5;color:#e2b8b0;}      /* 오답 설명 — 버튼 위에 있어 늘 보인다 (index.html) */
 .fmsg.ok{color:#9be0a8;}
 
 /* ---------------- 소지품 ---------------- */
