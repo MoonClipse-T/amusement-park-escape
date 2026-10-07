@@ -199,27 +199,37 @@ addEventListener('pointerdown',e=>{ if($('#mono').classList.contains('on')&&e.ta
 /* ============================================================
    TIME : 공원 시계 · 남은 시간 · 사건
    - 인트로(타이머 전) : 공원 시각 = S.introMin (이야기가 직접 19:00 → 21:50 으로 옮긴다)
-   - 22:00 startTimer() 이후 : 공원 시각 = 22:00 + 경과 비율 × 8시간 (06:00 에 끝)
+   - 22:00 startTimer() 이후 : 남은 시간(실제 40분, timeLeft)과 공원 시각(S.clock)은 따로 간다
+     공원 시각은 점검 진행으로 정한다 — 점검을 끝내면 CLOCK_MILES 의 시각으로 넘어가고(빠른 학생), 그 사이엔 천천히 흐르다 다음 시각 5분 전에서 기다린다(느린 학생)
+     → 누구나 관람차 뒤 04:00(붉은 달) · 바이킹 쪽지 뒤 05:30 · 해돋이 06:00 을 같은 순서로 겪는다. 남은 시간이 0이 되면 실패 엔딩
    - EVENTS 의 at(공원 시각, 자정 이후는 24*60+)에 도달하면 fn 실행 (story.js · 방 스크립트에서 EVENTS.push)
    ============================================================ */
 const TIMER_SEC=40*60; let timeLeft=TIMER_SEC;
 const CLOCK_START=22*60, CLOCK_SPAN=8*60;            // 22:00 시작, 8시간 → 06:00
-function parkMin(){ return S.timerOn?CLOCK_START+(1-timeLeft/TIMER_SEC)*CLOCK_SPAN:(S.introMin??19*60); }
+const CLOCK_RATE=.2;                                    // 기준 시각 사이에서 흐르는 빠르기 (공원 분 / 실제 초 = 실제 1분에 12분)
+const CLOCK_MILES=[['carousel_off',23*60],['bumper_done',24*60],['coaster_done',25*60+30],['gyro_done',26*60+30],['ferris_done',28*60],['vnote',29*60+30],['viking_end',30*60]];      // 끝낸 점검 → 공원 시각
+function clockFloor(){ let m=CLOCK_START; for(const [f,t] of CLOCK_MILES) if(S.flags[f]) m=Math.max(m,t); return m; }
+function clockCap(){ const fl=clockFloor(), nx=CLOCK_MILES.find(([,t])=>t>fl); return nx?nx[1]-5:30*60; }
+function parkMin(){ return S.timerOn?(S.clock??CLOCK_START):(S.introMin??19*60); }
 function hhmm(m,ap){ m=Math.floor(m)%1440; const h=Math.floor(m/60), mm=String(m%60).padStart(2,'0');
   if(!ap) return String(h).padStart(2,'0')+':'+mm; return [(h>=12?'PM':'AM'), String(h%12||12).padStart(2,'0')+':'+mm]; }
 function fmt(s){ s=Math.max(0,Math.ceil(s)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
-function startTimer(){ S.timerOn=true; $('#clock').classList.add('on'); $('#clock .left').innerHTML='남은 시간 <b></b>'; drawClock(); }
+function startTimer(){ S.clock=CLOCK_START; S.timerOn=true; $('#clock').classList.add('on'); $('#clock .left').innerHTML='남은 시간 <b></b>'; drawClock(); }
 function showClock(label){ $('#clock').classList.add('on'); if(label) $('#clock .left').textContent=label; drawClock(); }
 function drawClock(){ const [ap,hm]=hhmm(parkMin(),true); const el=$('#clock'); el.querySelector('.ap').textContent=ap; el.querySelector('.hm').textContent=hm;
   const b=el.querySelector('.left b'); if(b) b.textContent=fmt(timeLeft); el.classList.toggle('late',S.timerOn&&parkMin()>=24*60+240); el.classList.toggle('warn',S.timerOn&&timeLeft<300); }
-function tickTimer(dt){ if(!S.timerOn||S.paused||S.over) return; const prev=timeLeft; timeLeft-=dt; drawClock();
+function tickTimer(dt){ if(!S.timerOn||S.paused||S.over) return; const prev=timeLeft; timeLeft-=dt;
+  const fl=clockFloor(); if(fl-(S.clock??CLOCK_START)>20&&!S.flags.viking_end) toast('…벌써 '+KICK2(fl),2600);      // 점검을 끝내면 그 시각으로 (빨리 끝낸 학생)
+  S.clock=Math.max(fl,Math.min(clockCap(),(S.clock??CLOCK_START)+dt*CLOCK_RATE)); drawClock();
   if(Math.floor(prev)!==Math.floor(timeLeft)&&timeLeft<60&&timeLeft>0) AUDIO.tick();
   const pm=parkMin(); for(const e of EVENTS){ if(!e.done&&pm>=e.at){ e.done=true; e.fn(); } }
   if(timeLeft<=0){ timeLeft=0; gameOver(); } }
-function gameOver(){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on');
+// 실패 엔딩 (남은 시간 0) : 해가 떴지만 높은 곳에서 해를 보여 주지 못했다 — 달토끼는 다시 동상으로, 다음 보름까지
+function gameOver(){ if(S.over) return; S.over=true; S.clock=30*60; drawClock(); P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on');
   AUDIO.noise(2.4,.25,0,260); setTimeout(()=>AUDIO.noise(.25,.4,0,180),2300);
-  $('#overT').textContent='야간 점검 종료'; $('#overP').innerHTML='아침 6시. 교대 근무자가 숙소 문을 열었지만, 야간 점검조는 어디에도 없었다.<br>사물함 하나가 새로 잠겨 있었을 뿐.'; ov('#over',true); }
-function gameClear(text){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on'); AUDIO.ok();
+  $('#overT').textContent='해가 떴다 — 하지만 늦었다'; $('#overP').innerHTML='달토끼는 높은 곳에서 해를 보지 못한 채, 다시 광장의 동상이 되었다. <b>다음 보름까지.</b><br>아침, 매표소 유리창에 새 전단이 붙었다. 그 아래엔 낡은 작업화 한 켤레.'
+    +'<span class="flyer"><b>야간 아르바이트 구함</b>루나랜드 · 보름 야간 점검<small>숙소 제공 · 즉시 근무 · 경력 무관</small></span>'; ov('#over',true); }
+function gameClear(text,title){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on'); AUDIO.ok(); if(title) $('#clear h2').textContent=title;
   $('#clearP').innerHTML=(text||'정문 너머로 해가 뜬다.')+`<br>공원 시각 ${hhmm(parkMin())} · 걸린 시간 ${fmt(TIMER_SEC-timeLeft)}`; ov('#clear',true); }
 $('#overRe').onclick=()=>location.reload(); $('#clearRe').onclick=()=>location.reload();
 function togglePause(){ if(S.phase!=='play'||S.over) return; S.paused=!S.paused; ov('#pause',S.paused); }
@@ -227,7 +237,8 @@ $('#pauseBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); togglePa
 $('#resume').onclick=()=>togglePause(); $('#restart').onclick=()=>location.reload();
 
 /* 시간 카드 : 화면 위아래 검은 띠 + 큰 시각 */
-const KICK={'19:00':'저녁 7시','22:00':'밤 10시','00:00':'밤 12시 · 자정','02:00':'새벽 2시','04:00':'새벽 4시'};
+const KICK={'19:00':'저녁 7시','22:00':'밤 10시','00:00':'밤 12시 · 자정','02:00':'새벽 2시','04:00':'새벽 4시','05:30':'새벽 5시 반','06:00':'아침 6시'};
+function KICK2(m){ const h=Math.floor(m/60)%24, mm=Math.round(m%60); return (h<6?'새벽 ':h<12?'아침 ':'밤 ')+(h%12||12)+'시'+(mm?(mm===30?' 반':' '+mm+'분'):'')+'이다.'; }
 function card(time,title,sub='',cls='',ms=3600){ return new Promise(res=>{ const c=$('#card'); c.className=cls; c.querySelector('.time').textContent=time;
   c.querySelector('.kick').textContent=time?'지금 공원 시각 · '+(KICK[time]||time):'';
   c.querySelector('.title').textContent=title; c.querySelector('.sub').textContent=sub; void c.offsetWidth; c.classList.add('on');
@@ -482,7 +493,7 @@ function tickSky(dt,force){ if(!SKY.u) return; SKY.u.t.value+=dt; skyT+=dt; if(!
   // 보름달 : 해가 질 무렵 동쪽에서 떠서, 자정 무렵 남쪽 하늘 가장 높이, 해 뜰 무렵 서쪽으로 진다 (남중 고도 약 50°로 둠)
   const ma=(m-19*60)/(11*60)*Math.PI, alt=50*Math.PI/180; const md=SKY.u.moonDir.value.set(Math.cos(ma),Math.sin(ma)*Math.sin(alt),Math.sin(ma)*Math.cos(alt)).normalize();
   // 정전(S.blackout) 뒤로는 하늘빛도 낮춘다 — 손전등 없이는 잘 안 보이게. 새벽 4시부터 달이 붉어지며 눈을 뜬다 (달의 눈)
-  const bk=S.blackout?.1:1, eye=m>=28*60?1:0; S.redMoon=eye>0; SKY.u.eye.value=eye;      // 04:00 이 되는 순간 바로 눈을 뜬다 (붉은 달 — 달빛 웅덩이가 소용없어진다, hunt.js) SKY.moon.color.setHex(0xb8c8f0).lerp(_c2.set(0xff4a34),eye);
+  const bk=S.blackout?.1:1, eye=m>=28*60&&!S.flags.viking_end?1:0; S.redMoon=eye>0; SKY.u.eye.value=eye;      // 04:00 이 되는 순간 바로 눈을 뜬다 (붉은 달 — 달빛 웅덩이가 소용없어진다, hunt.js) SKY.moon.color.setHex(0xb8c8f0).lerp(_c2.set(0xff4a34),eye);
   SKY.moon.position.copy(md).multiplyScalar(100); SKY.moon.intensity=(Math.max(0,md.y)*0.55+0.08)*(S.blackout?.22:1);
   col('fog',_c1); scene.fog.color.copy(_c1).convertSRGBToLinear(); scene.fog.density=num('fd'); renderer.toneMappingExposure=DBG.bright?2.6:num('ex')*(S.blackout?.8:1);
   SKY.hemi.intensity=num('hemi')*bk; const env=num('env')*bk; PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; }
@@ -571,7 +582,7 @@ function loadStep(pct,msg){ $('.paper').style.height=Math.round(150*pct/100)+'px
   for(let i=0;i<16;i++){ const a=i/16*Math.PI*2, l=document.createElementNS(NS,'line'); l.setAttribute('x1',0); l.setAttribute('y1',0); l.setAttribute('x2',Math.cos(a)*190); l.setAttribute('y2',Math.sin(a)*190); sp.appendChild(l); }
   for(let i=0;i<32;i++){ const a=i/32*Math.PI*2, c=document.createElementNS(NS,'circle'); c.setAttribute('cx',Math.cos(a)*190); c.setAttribute('cy',Math.sin(a)*190); c.setAttribute('r',5);
     c.style.animationDelay=(i%4)*0.6+'s'; wb.appendChild(c); }
-  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>야간 점검은 아침 6시에 끝납니다.':'근무 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · Space 점프 · F 손전등 · M 지도 · I 소지품 · Esc 정지<br>밤 10시부터 공원 시간은 실제 1분에 12분씩 흐릅니다. 아침 6시 전에 모든 점검을 끝내야 합니다.'; })();
+  $('#guide').innerHTML=IS_TOUCH?'왼쪽 끌기 이동 · 오른쪽 끌기 시점 · 물체 탭 조사<br>야간 점검은 아침 6시에 끝납니다.':'근무 안내 · WASD 이동 · 마우스 끌기 시점 · E 조사 · Space 점프 · F 손전등 · M 지도 · I 소지품 · Esc 정지<br>남은 시간 40분 안에 모든 점검을 끝내야 합니다. 공원 시각은 점검을 마칠 때마다 아침 6시를 향해 흐릅니다.'; })();
 
 async function boot(){ try{
     loadStep(8,'공원 불을 켜는 중…'); await buildSky(); loadStep(30,'근무표 확인 중…'); await sleep(30);
