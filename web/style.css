@@ -411,6 +411,7 @@ body.remote-on #mono{bottom:calc(var(--rh,380px) + 8px);}
 #vremote .vr-push.hit,#vremote .vr-push:active{transform:translateY(4px);box-shadow:0 2px 0 #0e4a22;}
 #vremote .vr-stop{position:absolute;left:-14px;top:-14px;width:30px;height:30px;border-radius:50%;background:#c8322a;border:3px solid #1b1b1b;}
 body.riding .rbtn,body.riding #stick,body.riding #runBtn{display:none!important;}
+body.riding #mono{bottom:calc(200px + env(safe-area-inset-bottom));}      /* 손에 든 조종기와 겹치지 않게 */
 /* 실패 엔딩의 전단 */
 #over .flyer{display:block;width:min(260px,70vw);margin:16px auto 0;padding:14px 12px;background:#f3ecd8;color:#2a2018;transform:rotate(-2deg);box-shadow:0 6px 18px rgba(0,0,0,.6);font-size:14px;line-height:1.5;}
 #over .flyer b{display:block;font:400 24px/1.2 var(--sign);color:#8e231c;margin-bottom:4px;}
