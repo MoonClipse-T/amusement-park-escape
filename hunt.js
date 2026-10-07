@@ -2,15 +2,15 @@
    HUNT : 달토끼 추격 · 찢어진 일지 조각
    달토끼의 정체 (김근수의 일지 조각을 처음 점검 장소부터 하나씩 주우며 알게 된다)
      처음엔 야간 근무자에게 장난을 친다 (물건을 옮기고, 놀이기구를 망가뜨리고, 킥킥 웃는다)
-     → 장난에 싫증이 나면 배가 고파진다 → 배가 고프면 절구를 찧는다 (쿵, 쿵)
+     → 장난에 싫증이 나면 배가 고파진다 → 배가 고프면 웃는다 (킥킥, 킥킥)
    추격 규칙 (자이로드롭 전원을 끈 뒤 HUNT.start() 부터)
-     · 절구 소리(쿵)가 나는 동안에만 움직인다. 소리가 멎으면 그 자리에 굳는다
+     · 웃음소리(킥킥)가 나는 동안에만 움직인다. 소리가 멎으면 그 자리에 굳는다
      · 손전등으로 비추고 있으면 소리가 나도 움직이지 못한다
      · 조작실 · 놀이기구(SAFE) 안으로는 들어오지 못한다
      · 유인 : 놀이기구가 돌아가면 그쪽으로 구경하러 간다 (장난치던 버릇) — HUNT.lureAt(x, z, 초, 이름). 구경하는 동안은 나를 쫓지 않는다
        (회전목마 레버 · 점검을 끝낸 관람차의 전원 버튼 · 돌아가는 바이킹)
      · 잡히면 — 얼굴이 화면 가득 (점프 스케어) → 마지막에 들른 조작실에서 깨어나고 공원 시간 30분이 지나간다
-   소리는 web/assets/sfx/ (ElevenLabs 로 만든 thump · thump2 · scare · giggle)
+   소리는 web/assets/sfx/ (ElevenLabs 로 만든 laugh · laugh2 · laugh3(추격 중 웃음) · thump(범퍼카 쿵) · scare · giggle)
    ★ 빠르기 · 간격 · 벌칙은 아래 HUNT 의 숫자, 일지 글은 SCRAPS 에서 고친다
    ============================================================ */
 'use strict';
@@ -32,7 +32,8 @@ const SCRAPS=[
 ];
 
 const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:false, lastSafe:null, shake:0, lure:null,
-  QUIET:[12,18], THUMP:[7,10],      // 조용한 시간 · 절구 소리가 나는 시간 (초, 그 사이에서 무작위)
+  QUIET:[12,18], THUMP:[7,10],      // 조용한 시간 · 웃음소리가 나는 시간 (초, 그 사이에서 무작위)
+  LAUGH:['laugh','laugh2','laugh3'], BEAT:2.4,   // 웃음소리 파일 (돌아가며) · 간격 (초)
   SPEED:2.0, CATCH:1.3,             // 달토끼가 걷는 빠르기 (플레이어 걷기 2.6 · 달리기 4.2 m/s) · 잡히는 거리
   LIGHT_R:24, LIGHT_A:.34,          // 손전등이 닿는 거리 · 비추는 각도 (라디안, 화면 가운데에서)
   PENALTY:150,                      // 잡혔을 때 줄어드는 시간 (초) = 공원 시간 30분
@@ -63,15 +64,15 @@ const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:f
         if(this.blk(px,pz)||Math.hypot(px-P.x,pz-P.z)<7||(k<34&&!this.clear(px,pz,x,z,3.5))) continue; r.position.set(px,floorAt(px,pz),pz); r.visible=true; break; } }
     toast('달토끼가 '+name+' 쪽으로 간다',2800); return true; },
   lureOff(name){ if(this.lure&&(!name||this.lure.name===name)) this.lure=null; },
-  // 지금 이 자리에 세우고 바로 절구 소리를 낸다 (첫 만남)
-  appear(x,z,sec=9){ const r=this.rab; r.position.set(x,floorAt(x,z),z); r.visible=true; r.rotation.y=Math.atan2(P.x-x,P.z-z); this.phase='thump'; this.t=sec; this.beat=.3; },
-  // 절구 소리가 다시 시작될 때 : 너무 멀거나 막혀 있으면 플레이어 등 뒤 어딘가로 옮겨 선다
+  // 지금 이 자리에 세우고 바로 웃음소리를 낸다 (첫 만남)
+  appear(x,z,sec=9){ const r=this.rab; r.position.set(x,floorAt(x,z),z); r.visible=true; r.rotation.y=Math.atan2(P.x-x,P.z-z); this.phase='thump'; this.t=sec; this.beat=1.2; },
+  // 웃음소리가 다시 시작될 때 : 너무 멀거나 막혀 있으면 플레이어 등 뒤 어딘가로 옮겨 선다
   relocate(near){ const r=this.rab; for(let k=0;k<40;k++){ const back=k<28, a=P.yaw+(back?Math.PI:0)+(Math.random()-.5)*(back?2.2:6.28), dist=(near?9:13)+Math.random()*6;
       const x=P.x-Math.sin(a)*dist, z=P.z-Math.cos(a)*dist; if(this.blk(x,z)||(k<34&&!this.clear(x,z,P.x,P.z))) continue; r.position.set(x,floorAt(x,z),z); r.visible=true; return true; } return false; },      // 되도록 벽에 막히지 않는 자리
   // 손전등 불빛 안에 있는가
   lit(dx,dz,d){ if(!S.torch||d>this.LIGHT_R) return false; const cp=Math.cos(P.pitch), fx=-Math.sin(P.yaw)*cp, fy=Math.sin(P.pitch), fz=-Math.cos(P.yaw)*cp;
     const vy=this.rab.position.y+1.3-(P.y+P.eye), L=Math.hypot(dx,vy,dz)||1; return (-fx*dx+fy*vy-fz*dz)/L>Math.cos(this.LIGHT_A); },
-  thump(d){ this.n++; AUDIO.sfx(this.n%2?'thump':'thump2',clamp(1.3-d/38,.4,1.15)); const fx=$('#thumpfx'); fx.classList.add('hit'); setTimeout(()=>fx.classList.remove('hit'),90); },
+  thump(d){ this.n++; AUDIO.sfx(this.LAUGH[this.n%this.LAUGH.length],clamp(1.25-d/38,.35,1.05),.94+Math.random()*.12);      /* 킥킥 — 가까울수록 크게 */ const fx=$('#thumpfx'); fx.classList.add('hit'); setTimeout(()=>fx.classList.remove('hit'),90); },
   // 잡혔다 : 얼굴이 화면 가득 → 암전 → 마지막에 들른 조작실에서 깨어난다
   async caught(){ this.busy=true; P.free=false; const r=this.rab, f0=camera.fov, s=r.scale.x;
     if(!S.torch&&S.flags.torch) toggleLight();
@@ -92,7 +93,7 @@ const HUNT={on:false, rab:null, phase:'quiet', t:0, beat:0, n:0, stuck:0, busy:f
     this.t-=dt; const px=P.x-r.position.x, pz=P.z-r.position.z, pd=r.visible?Math.hypot(px,pz):99, dx=L?L.x-r.position.x:px, dz=L?L.z-r.position.z:pz, d=r.visible?Math.hypot(dx,dz):99;
     if(this.phase==='quiet'){ mx.timeScale=0;
       if(this.t<=0){ this.phase='thump'; this.t=rnd(this.THUMP); this.beat=0; if(!L&&(!r.visible||d>30||this.stuck>2.5)) this.relocate(!!sz); this.stuck=0; } return; }
-    this.beat-=dt; if(this.beat<=0){ this.beat=.95; this.thump(pd); }          // 쿵… 쿵…
+    this.beat-=dt; if(this.beat<=0){ this.beat=this.BEAT; this.thump(pd); }          // 킥킥… 킥킥…
     if(this.t<=0){ this.phase='quiet'; this.t=rnd(this.QUIET); mx.timeScale=0; return; }
     if(!r.visible) return; r.rotation.y=Math.atan2(dx,dz);
     if(this.lit(px,pz,pd)){ mx.timeScale=0; return; }                         // 불빛 안에서는 굳는다
