@@ -3,16 +3,16 @@
    흐름 : 후룸라이드 전원 OFF → "달토끼가 왜…" 광장 동상을 확인하러 간다 → 멀쩡하게 서 있다 (원래 얼굴) → "이상하다…" → 자이로드롭으로
         → 조작실 「점검 방법」 : ① 전원을 켜고 탑승 의자에 직접 앉아 꼭대기까지 ② 자석 브레이크 구간에서 부드럽게 멈추는지
                                ③ 세게 부딪히면 조작반 힘 화면에서 브레이크 힘을 다시 맞춘다 ④ 전원 종료
-        → 조작반 전원 ON → (공포) 불이 전부 나간다 — 비상 전원도 없다. 조작실 안도 깜깜하고 브레이크 힘 화면의 초록 글씨만 남는다. 이제부터 손전등 · 받침대의 달토끼가 사라진다
-          "정전인데 왜 이 기구는 아직 돌아가는 거지"
+        → 책상 위 김근수의 찢어진 일지 ④ (마지막 조각) → "쪽지들을 모아 보자" → 달토끼 규칙 카드 (hunt.js RULES) — "동상에서 사라지면 그때부터 쫓아온다"
+        → 조작반 전원 ON → (공포) 불이 전부 꺼진다. 조작실 안도 깜깜하고 브레이크 힘 화면의 초록 글씨만 남는다. 이제부터 손전등 · 받침대의 달토끼가 사라진다
         → 첫 탑승 : 한 바퀴 돌며 올라간다 → 꼭대기에서 광장 쪽 — 받침대가 비어 있다 → 떨어진다 → 브레이크가 약해(9000 N) 바닥 완충기에 쾅
         → 조작반 힘 화면 (화살표 한 칸 = 3000 N, 의자에 작용하는 중력 6000 N)
             ① 출발할 때 : 승강장에 멈춰 있다(알짜힘 0) → 리프트가 끄는 힘을 중력 6000 N 보다 크게 입력해야 위쪽 알짜힘이 생겨 움직이기 시작한다
             ② 올라갈 때 (일정한 빠르기) : 리프트 6000 N ↑ · 중력 6000 N ↓ → 알짜힘 0
             ③ 떨어질 때 : 중력뿐 → 알짜힘 아래쪽 6000 N (점점 빨라진다)
             ④ 브레이크 구간 : 알짜힘이 위쪽 9000 N 이 되게 브레이크 힘을 정한다 → 15000 N (운동 방향과 반대쪽 알짜힘 → 느려진다)
-        → 다시 탑승 : (점프 스케어) 꼭대기에서 옆자리를 돌아본다 — 비어 있다 … 다시 앞을 본 순간, 옆자리에 달토끼가 같이 타고 있다 → 떨어진다 → 부드럽게 멈춤 · 옆자리는 비어 있다
-        → 전원 OFF → 책상 위 김근수의 찢어진 일지 ④ (달토끼 규칙) → 토끼 웃음소리 (킥킥) — 여기서부터 추격 (hunt.js HUNT.start) → 관람차로
+        → 다시 탑승 : (점프 스케어) 꼭대기에서 오른쪽으로 고개를 조금 돌린다 — 옆자리에 다리가 보인다 … 앞을 봤다가 "어?" 하고 확 돌아보면 달토끼가 거기 앉아 나를 보고 있다 → 떨어진다 → 부드럽게 멈춤 · 옆자리는 비어 있다
+        → 내려오면 "동상에서 달토끼가 사라졌어. 근수 씨의 쪽지를 떠올리며 조심히 움직이자" — 여기서부터 추격 (hunt.js HUNT.start) → 전원 OFF → 관람차로
    조작반 : 전원 장치(IT_gpower 빨간 버튼 · IT_glamp 표시등)와 힘 조절 장치(IT_gforce 다이얼 · IT_gscreen 화면)가 따로 있다
    ★ 글 · 숫자는 아래 ROOM5 에서 고친다. 탑 자리 · 높이는 Blender gyro_drop.py 와 맞춘다
    ============================================================ */
@@ -22,10 +22,10 @@ const ROOM5={
   brake0:9000, need:9000,             // 처음 브레이크 힘 (약하다 → 알짜힘 위쪽 3000 N 뿐) · 브레이크 구간에서 필요한 알짜힘 (위쪽)
   manual:{title:'자이로드롭 야간 점검 방법'},
   note:{title:'찢어진 일지 ④',
-    body:'<i>…보름 전날. 급하게 쓴 글씨.</i><br>장난이 재미없어지면 <b>배가 고파진다.</b><br>배가 고프면 <b>웃는다. 킥킥, 킥킥.</b><br>웃음소리가 나는 동안에만 움직인다.<br><b>손전등을 비추면 멈춘다.</b><br>조작실과 놀이기구 안으로는 들어오지 못한다.<br>놀이기구가 돌아가면 <b>구경하러 간다.</b> 장난치던 버릇이다.<br>— 근수'},
+    body:'<i>…보름 전날. 급하게 쓴 글씨.</i><br>장난이 재미없어지면 <b>배가 고파진다.</b><br>배가 고프면 <b>웃는다. 킥킥.</b> 웃음소리가 들리면 이미 가까이 온 것.<br><b>손전등으로 3초.</b> 비추고 있으면 사라진다.<br>3초보다 늦으면 — <b>팔이 온다. 긴 팔이.</b><br>조작실과 놀이기구 안으로는 못 들어온다.<br><b>동상에서 사라지면, 그때부터다.</b><br>— 근수'},
 };
 ROOM5.brake=ROOM5.W+ROOM5.need;       // 정답 : 15000 N
-ROOM5.rab={a:-.5,r:2.28,y:.70,leg:-1.3};  // 옆자리 달토끼 : 의자 고리에서의 각도 · 반지름 · 높이(앉는 판 위, 안전바 뒤) · 다리 접는 각(라디안)
+ROOM5.rab={a:-.5,r:2.28,y:.70,leg:-1.3,glance:.78};  // 옆자리 달토끼 : 의자 고리에서의 각도 · 반지름 · 높이(앉는 판 위, 안전바 뒤) · 다리 접는 각(라디안) · 처음 슬쩍 돌아보는 각(다리만 보이게)
 ROOM5.manual.body=DOC(['조작반 <b>전원 ON</b> → 탑승 의자에 <b>직접 앉아</b> 꼭대기까지 올라갔다 내려온다.','<b>자석 브레이크 구간</b>(노란 띠 아래)에서 의자가 <b>부드럽게 멈추는지</b> 본다.','바닥에 세게 부딪히면 조작반 <b>힘 화면</b>에서 브레이크 힘을 다시 맞춘다.','!점검이 끝나면 <b>전원을 끈다.</b>'],
   `※ 의자에 작용하는 중력은 <b>${ROOM5.W} N</b>. 브레이크 구간에서 <b>알짜힘이 위쪽 ${ROOM5.need} N</b> 이어야 알맞게 멈춘다.`);
 SIGNS.booth_gyro=['자이로드롭 조작실','GYRO DROP CONTROL · 관계자 외 출입금지','#1b1b1b','#e3b54a'];
@@ -92,14 +92,15 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
         if(t>.7&&once(d,'z1')) zoom(zf(8),1200); if(t>2.3&&once(d,'h1')) beat(); if(t>2.6&&once(d,'say')) toast('…받침대 위에, 달토끼가 없다.',2600); if(t>3.3&&once(d,'h2')) beat();
         if(t>5&&once(d,'z2')) zoom(d.fov,600);
         if(t>6){ peekLight(false); d.mode='drop'; d.v=0; d.tick=0; AUDIO.tone(220,.1,'square',.1); AUDIO.noise(.3,.3,0,700); zoom(d.fov+16,600); } }
-      else {                  // 두 번째 탑승 : 오른쪽 옆자리를 돌아본다 — 비어 있다 → 다시 앞 → (정적) → 옆자리에 달토끼가 타고 있다
-        d.k=t<1.1?0:t<2.2?ease((t-1.1)/1.1):t<3?1:t<3.7?1-ease((t-3)/.7):0; d.yaw=Math.PI-1.05*d.k; d.pitch=lerp(-.1,-.24,d.k);
+      else {                  // 두 번째 탑승 : 오른쪽으로 고개를 조금 돌린다 — 옆자리에 다리가 보인다 → 앞을 본다 → "어?" → 확 돌아보면 달토끼가 거기 앉아 나를 보고 있다
+        if(once(d,'show')) showRabbit();
+        d.k=t<1.1?0:t<2?ease((t-1.1)/.9):t<3?1:t<3.7?1-ease((t-3)/.7):0; d.yaw=Math.PI-R.rab.glance*d.k; d.pitch=lerp(-.1,-.52,d.k);
         if(t>.8&&once(d,'creak')){ AUDIO.tone(170,.6,'sawtooth',.035,0,-70); AUDIO.noise(.3,.08,0,2400); }            // 끼익 — 옆에서 무슨 소리가
-        if(t>2.3&&once(d,'h1')) beat(); if(t>3.9&&once(d,'h2')) beat();
-        if(t>4.5){ if(once(d,'snap')){ showRabbit(); blink(50); AUDIO.sfx('scare',1.3); AUDIO.tone(1900,1.1,'sawtooth',.18,0,-1400); AUDIO.noise(.9,.5,0,3000); AUDIO.tone(70,1.2,'sine',.5,0,-30);
+        if(t>2.3&&once(d,'h1')) beat(); if(t>4.1&&once(d,'eh')){ toast('…어?',900); beat(); }
+        if(t>4.7){ if(once(d,'snap')){ d.y0=d.yaw; d.p0=d.pitch; blink(50); AUDIO.sfx('scare',1.3); AUDIO.tone(1900,1.1,'sawtooth',.18,0,-1400); AUDIO.noise(.9,.5,0,3000); AUDIO.tone(70,1.2,'sine',.5,0,-30);
             camera.fov=zf(50); camera.updateProjectionMatrix(); d.shake=1; }
-          if(rab&&rab.userData.face){ sit(0,0); const fc=rab.userData.face, [ty,tp]=aim(fc.x,fc.y,fc.z); d.yaw=ty; d.pitch=tp; } d.shake=Math.max(.35,d.shake-dt); roll(Math.sin(t*38)*.05); }
-        if(t>5.5){ d.mode='drop'; d.v=0; d.tick=0; AUDIO.tone(220,.1,'square',.1); AUDIO.noise(.3,.3,0,700); zoom(d.fov+16,500); } } }
+          if(rab&&rab.userData.face){ sit(0,0); const fc=rab.userData.face, [ty,tp]=aim(fc.x,fc.y,fc.z), s=Math.min(1,(t-4.7)/.16); d.yaw=turn(d.y0,ty,s); d.pitch=lerp(d.p0,tp,s); } d.shake=Math.max(.35,d.shake-dt); roll(Math.sin(t*38)*.05); }
+        if(t>6.1){ d.mode='drop'; d.v=0; d.tick=0; AUDIO.tone(220,.1,'square',.1); AUDIO.noise(.3,.3,0,700); zoom(d.fov+16,500); } } }
     else if(d.mode==='drop'){ d.v+=G*dt; gy-=d.v*dt; d.pitch=lerp(d.pitch,-.38,Math.min(1,dt*3));
       if(d.second){ d.yaw=turn(d.yaw,Math.PI,Math.min(1,dt*5)); d.shake=Math.max(0,d.shake-dt*1.4); }                // 떨어지며 앞을 본다 — 옆자리엔 아직 그것이 있다
       d.tick-=dt; if(d.tick<=0){ d.tick=.12; AUDIO.noise(.16,Math.min(.3,d.v/60),0,500+d.v*60); }      // 바람 소리
@@ -122,8 +123,9 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     drawScreen(); objective('조작반의 힘 조절 장치로 브레이크 힘을 맞추자'); const c=itemPos('gforce'); if(c) setGoal(c.x,c.z,'힘 조절 장치'); }
   async function ride2(){ await mono([`다시 의자에 앉았다. 브레이크 힘은 ${R.brake} N.`,'…이번엔 부드럽게 멈춰야 한다.']); await ride(true);
     S.flags.gyro_ok=true;
-    await mono(['…멈췄다. 이번엔 부드럽게.','브레이크가 위로 미는 힘이 중력보다 커서 알짜힘이 위쪽 — 떨어지던 의자가 점점 느려져 멈춘 거다.','…옆자리. 방금 옆자리에 — 달토끼가 같이 타고 있었다.','없다. 옆자리는 비어 있다.','…빨리 전원을 끄고 여기서 벗어나자.']);
-    objective('조작실에서 자이로드롭 전원을 끄자'); const s=spot(); setGoal(s.x,s.z,'자이로드롭 조작실'); }
+    await mono(['…멈췄다. 이번엔 부드럽게.','브레이크가 위로 미는 힘이 중력보다 커서 알짜힘이 위쪽 — 떨어지던 의자가 점점 느려져 멈춘 거다.','…옆자리. 방금 옆자리에 — 달토끼가 같이 타고 있었다.','없다. 옆자리는 비어 있다.','동상에서 달토끼가 사라졌어. …이제부터다.','근수 씨의 쪽지를 떠올리면서, 조심히 움직이자. 달빛이 비치는 곳으로.']);
+    HUNT.start();      // 여기서부터 추격 (hunt.js)
+    objective('조작실에서 자이로드롭 전원을 끄자 — 웃음소리가 들리면 손전등으로 3초 이상'); const s=spot(); setGoal(s.x,s.z,'자이로드롭 조작실'); }
   async function tapSeat(){ if(rd) return; AUDIO.click();
     if(!st.power) return mono(['자이로드롭 탑승 의자. 무릎 안전바가 올라가 있다.','…조작실에서 전원부터 켜야 움직인다.']);
     if(!S.flags.gyro_rode) return ride1();
@@ -136,7 +138,7 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   const pad={step:0,dir:null,done:false};
   const STEPS=[
     {title:'① 출발할 때', set:'lift', up0:0, at:.9, mv:'■ 승강장에 멈춤', upName:'리프트가 끄는 힘', label:'리프트가 끄는 힘',
-     q:`의자가 승강장에 <b>멈춰 있다</b> — 알짜힘 0. 출발하려면 리프트가 끄는 힘이 얼마여야 할까?<br>중력 <b>${R.W} N</b> 보다 <b>커야</b> 위쪽 알짜힘이 생겨 <b>움직이기 시작한다</b>. 리프트가 끄는 힘을 입력하자.`,
+     q:`의자가 승강장에 <b>멈춰 있다</b> — 알짜힘 0. 의자에 작용하는 중력은 <b>${R.W} N</b>.<br>출발하려면(의자가 <b>위로 움직이기 시작</b>하려면) 리프트가 끄는 힘이 얼마여야 할까? 리프트가 끄는 힘을 입력하자.`,
      ok:n=>`리프트 ${n} N − 중력 ${R.W} N = <b>위쪽 ${n-R.W} N</b>. 알짜힘이 위쪽이니, 멈춰 있던 의자가 <b>위로 움직이기 시작한다</b>.`,
      chk:n=>n>R.W?'':n===R.W?`리프트 힘 = 중력이면 알짜힘 0 — 멈춘 채 그대로다. 중력보다 <b>커야</b> 움직이기 시작한다.`:`리프트 힘이 중력 ${R.W} N 보다 작으면 알짜힘이 <b>아래쪽</b> — 의자가 올라가지 못한다.`},
     {title:'② 올라갈 때', q:'출발한 뒤, 의자가 <b>일정한 빠르기</b>로 올라간다. 화살표를 보고 의자에 작용하는 <b>알짜힘</b>을 구하자.', up:R.W, upName:'리프트가 끄는 힘', at:.5, mv:'▲ 올라가는 중', ans:['none',0],
@@ -202,10 +204,13 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   /* ---------- 조작실 : 점검 방법 · 조작반 · 찢어진 일지 ---------- */
   async function readManual(){ AUDIO.click(); await showMsg(R.manual.title,R.manual.body);
     if(S.flags.manual_gyro) return; S.flags.manual_gyro=true; INV.note('manual_gyro',R.manual.title,R.manual.body); setGoal(null);
-    await mono(['또 직접 타 보라고…. 이번엔 꼭대기에서 그대로 떨어지는 걸.','떨어지는 의자를 자석 브레이크가 멈춰 세우는 거구나.']); objective('조작반의 전원 버튼을 누르자'); const c=itemPos('gpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
+    await mono(['또 직접 타 보라고…. 이번엔 꼭대기에서 그대로 떨어지는 걸.','떨어지는 의자를 자석 브레이크가 멈춰 세우는 거구나.','…책상 위에 찢어진 종이가 한 장 있다. 먼저 읽어 보자.']); objective('책상 위의 찢어진 쪽지를 읽자'); const c=itemPos('gnote_gyro'); if(c) setGoal(c.x,c.z,'찢어진 쪽지'); }
   async function readNote(){ AUDIO.noise(.12,.25,0,3200); await showMsg(R.note.title,TORN(R.note.body));
-    if(S.flags.gnote) return; S.flags.gnote=true; INV.note('gnote',R.note.title,TORN(R.note.body));
-    await mono(['김근수 씨의 글씨다.','장난에 싫증이 나면 배가 고파지고, 배가 고프면 — 웃는다.','웃음소리가 나는 동안에만 움직인다. 손전등을 비추면 멈춘다.']); }
+    if(S.flags.gnote) return; S.flags.gnote=true; INV.note('gnote',R.note.title,TORN(R.note.body)); setGoal(null);
+    await mono(['김근수 씨의 글씨다. …이게 마지막 조각인가.','…지금까지 주운 쪽지들을 모아 보자.']);
+    await showMsg(RULES.title,RULES.body); INV.note(RULES.id,RULES.title,RULES.body);      // 쪽지를 모아 정리한 달토끼 규칙 (hunt.js)
+    await mono(['어둠 속에서만 나타나고, 달빛이 비치는 곳으로는 못 온다.','웃음소리가 들리면 가까이 온 것. 손전등으로 3초 — 늦으면 팔이 온다.','그리고 — 동상에서 사라지면, 그때부터 나를 쫓아온다는 거구나.','…점검을 이어가자. 조작반의 전원 버튼.']);
+    objective('조작반의 전원 버튼을 누르자'); const c=itemPos('gpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
   // 전원 표시등 · 힘 조절 장치의 화면 (조작반 위에 세운 3D 화면 — 지금 브레이크 힘)
   let scr=null;
   function lamp(on){ const o=PARK.items.glamp; o&&o.traverse(m=>{ if(m.material){ m.material.color.setHex(on?0x3ddc84:0x2c312c); m.material.emissive.setHex(0x3ddc84); m.material.emissiveIntensity=on?1.4:0; } }); }
@@ -219,27 +224,22 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   // 전원 장치 : 빨간 버튼
   async function power(){ AUDIO.click();
     if(!S.flags.manual_gyro) return mono('…점검 방법부터 찾자.');
+    if(!S.flags.gnote) return mono('…책상 위에 찢어진 종이가 있다. 먼저 읽어 보자.');
     if(S.flags.gyro_done) return mono('전원 버튼. 점검을 마치고 꺼 두었다.');
     if(!st.power){ st.power=true; S.flags.gyro_power=true; P.free=false; AUDIO.tone(120,.4,'sawtooth',.06,0,60); await sleep(400); lamp(true); drawScreen(); AUDIO.tone(1100,.08,'square',.07);
       await sleep(900); AUDIO.noise(.5,.7,0,180); AUDIO.tone(55,1.0,'sine',.55,0,-25); blink(220); blackout(); await sleep(1100); P.free=true;      // 퍽 — 정전
-      await mono(['…뭐야. 불이 전부 나갔다.','조작실 안까지 깜깜하다. 비상등도 없다.','…브레이크 힘 화면만. 초록 글씨만 켜져 있다.','정전인데 — 왜 이 기구는 아직 돌아가는 거지.','손전등을 켜자. …점검은 계속해야 한다.']);
-      S.flags.torch=true; if(!S.torch) toggleLight(); toast('정전 · 손전등 F');
+      await mono(['…뭐야. 불이 전부 꺼졌다.','조작실 안까지 깜깜하다. 화면의 초록 글씨만 남았다.','손전등을 켜자. …점검은 계속해야 한다.']);
+      S.flags.torch=true; if(!S.torch) toggleLight(); toast('불이 꺼졌다 · 손전등 F');
       objective('탑승 의자에 앉아 시험 운행을 하자'); setGoal(TX,TZ+3.2,'탑승 의자'); return; }
     if(S.flags.gyro_ok&&!S.flags.gyro_done){ st.power=false; S.flags.gyro_done=true; lamp(false); drawScreen(); AUDIO.tone(300,.15,'square',.08); setGoal(null);
-      await mono(['자이로드롭 점검도 끝. 전원도 껐다.']);
-      if(!S.flags.gnote){ await mono(['…책상 위에 찢어진 종이가 한 장 있다.']); await readNote(); }
-      return chase(); }
+      await mono(['자이로드롭 점검도 끝. 전원도 껐다.','…다음 점검은 관람차. 달빛이 비치는 길로, 조심히.']);
+      objective('관람차 조작실로 가자 — 웃음소리가 들리면 손전등으로 3초 이상'); const f=PARK.spots.booth_ferris; if(f) setGoal(f.x,f.z,'관람차 조작실'); return; }
     mono(S.flags.gyro_done?'전원 버튼. 꺼 두었다.':'전원 버튼. 점검이 끝나면 꺼야 한다.'); }
   // 힘 조절 장치 : 다이얼 · 화면
   function forceDev(){ if(!st.power){ AUDIO.click(); return mono('힘 조절 장치. 다이얼 위 화면이 꺼져 있다 — 전원부터 켜야 한다.'); }
     if(!S.flags.gyro_rode){ AUDIO.click(); return mono([`자석 브레이크의 힘을 정하는 장치. 지금은 ${R.brake0} N 에 맞춰져 있다.`,'…점검 방법대로, 먼저 직접 타 보자.']); }
     if(!S.flags.gyro_set) return openPad();
     AUDIO.click(); mono(`브레이크 힘은 ${R.brake} N 으로 맞춰 두었다.`); }
-  // 여기서부터 추격 : 웃음소리가 나는 동안 달토끼가 다가온다 (hunt.js)
-  async function chase(){ await sleep(500); [0,2200,4400].forEach(ms=>setTimeout(()=>HUNT.thump(14),ms)); await sleep(5200);       // 킥킥… 킥킥…
-    await mono(['…킥킥.','웃음소리. 일지에 쓰여 있던 — 그 소리다.','웃음소리가 나는 동안에만 움직인다. 손전등을 비추면 멈춘다. 조작실과 놀이기구 안으로는 못 들어온다.','그리고 — 놀이기구가 돌아가면 구경하러 간다.','…다음 점검은 관람차. 가야 한다.']);
-    HUNT.start(); HUNT.appear(-24,-40,10);
-    objective('관람차 조작실로 가자 — 웃음소리가 나면 손전등으로 달토끼를 비추자'); const f=PARK.spots.booth_ferris; if(f) setGoal(f.x,f.z,'관람차 조작실'); }
 
   /* ---------- 광장 동상 확인 (후룸라이드에서 본 뒤) : 멀쩡하게 서 있다 ---------- */
   async function checkStatue(){ S.flags.rabbit_checked=true; P.free=false; setGoal(null); const f0=camera.fov;
@@ -263,7 +263,7 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     add('gscreen','힘 조절 장치 화면',forceDev,2.6,inBooth);
     if(I.gnote_gyro&&HUNT.scrap){ const p=itemPos('gnote_gyro'); I.gnote_gyro.visible=false;      // 책상 위 일지도 가장자리가 찢긴 종이로 (hunt.js 의 일지 조각과 같은 모양)
       INTER.push({mesh:HUNT.scrap(p.x,p.y+.012,p.z,.45),name:'찢어진 쪽지',range:2.4,fn:readNote,enabled:inBooth}); }
-    add('mic_gyro','안내 방송 마이크',()=>{ AUDIO.click(); mono(S.blackout?'…전기가 나가서 방송이 켜지지 않는다.':'안내 방송 마이크.'); },2.4,inBooth);
+    add('mic_gyro','안내 방송 마이크',()=>{ AUDIO.click(); mono(S.blackout?'…방송이 켜지지 않는다.':'안내 방송 마이크.'); },2.4,inBooth);
     add('gyro_seat','탑승 의자',tapSeat,3.2,()=>!rd);
     if(I.gscreen){ scr=screenOn(I.gscreen,{x:-27.6,z:-47.8}); I.gscreen.visible=true; drawScreen(); }
     makeRabbit();

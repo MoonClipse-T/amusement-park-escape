@@ -142,16 +142,19 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     if(PARK.items.bshoes) PARK.items.bshoes.visible=true; }
   function tickBlink(dt){ if(!crashed) return; bl.t-=dt; if(bl.t>0) return; bl.on=!bl.on; bl.t=bl.on?.06+Math.random()*.12:.12+Math.random()*.7; glow(PARK.items.bcarlamp_2,bl.on,0xff2a1a); }
   function toCoaster(){ objective('후룸라이드 조작실로 가자'); const b=PARK.spots.booth_coaster; if(b) setGoal(b.x,b.z,'후룸라이드 조작실'); }
-  async function scare(){ S.flags.bumper_scare=true; P.free=false; setGoal(null); P.vx=P.vz=0;
+  async function thump(){ S.flags.bumper_thump=true; P.free=false; setGoal(null); P.vx=P.vz=0;
     AUDIO.sfx('thump',1.5,.8); AUDIO.noise(.5,1,0,220); AUDIO.tone(44,.9,'sine',.7,0,-18); crashCar();      // 쿵!
-    await sleep(650); await mono('…!?'); await camTo({yaw:yawTo(CRASH.x,CRASH.z),pitch:-.05},.5); AUDIO.music('dead');
-    const fov=camera.fov, d=Math.hypot(CRASH.x-P.x,CRASH.z-P.z); zoom(fov*Math.max(.3,Math.min(.6,7/d)),800);
-    await mono(['2번 범퍼카가… 벽에 박혀 있다.','전원은 꺼져 있는데, 램프가 깜빡거린다.','…보닛 위에 뭔가 올려져 있다.']);
-    await camTo({yaw:yawTo(CRASH.x,CRASH.z),pitch:Math.atan2(.9-(P.y+P.eye),d)},.5); zoom(Math.max(7,fov*.12),900); await sleep(1100);
+    await sleep(700); P.free=true; await mono(['…쿵? 방금 무슨 소리지.','범퍼카 쪽인가.']); objective('소리가 난 범퍼카장을 살펴보자'); setGoal(CRASH.x,CRASH.z,'범퍼카장'); }
+  async function scare(){ S.flags.bumper_scare=true; P.free=false; setGoal(null); P.vx=P.vz=0; AUDIO.music('dead');
+    await camTo({yaw:yawTo(CRASH.x,CRASH.z),pitch:-.05},.5);
+    const fov=camera.fov, d=Math.hypot(CRASH.x-P.x,CRASH.z-P.z); zoom(fov*Math.max(.35,Math.min(.7,5/d)),800);
+    await mono(['2번 범퍼카가… 난간에 박혀 있다.','전원은 꺼져 있는데, 램프가 깜빡거린다.','…보닛 위에 뭔가 올려져 있다.']);
+    await camTo({yaw:yawTo(CRASH.x,CRASH.z),pitch:Math.atan2(.9-(P.y+P.eye),d)},.5); zoom(Math.max(8,fov*.16),900); await sleep(1100);
     await mono(['신발이다. 가지런히 벗어 놓은… 작업화 한 켤레.','…김근수 씨 건가.','누가, 왜 저기에.']);
     await zoom(fov,500); P.free=true; await mono(['…여기 오래 있으면 안 될 것 같다. 후룸라이드로 가자.']); toCoaster(); }
   function tickScare(dt){ if(!S.flags.bumper_done||S.flags.bumper_scare||S.busy||!P.free) return;
-    if(IN(P.x,P.z)){ outT=0; return; } outT+=dt; if(outT>1.1) scare(); }          // 조작실을 나선 지 1초쯤 뒤 — 등 뒤에서
+    if(!S.flags.bumper_thump){ if(IN(P.x,P.z)){ outT=0; return; } outT+=dt; if(outT>1.1) thump(); return; }          // 조작실을 나선 지 1초쯤 뒤 — 등 뒤에서 쿵
+    const dx=CRASH.x-P.x, dz=CRASH.z-P.z, d=Math.hypot(dx,dz); if(!IN(P.x,P.z)&&d<9&&(-Math.sin(P.yaw)*dx-Math.cos(P.yaw)*dz)/d>.8) scare(); }      // 가까이 가서 그 차를 보면
 
   /* ---------- 디버그 바로 가기 (Shift+3) ---------- */
   function prep(n){ room2Done(); S.flags.ghost_carousel=true; S.flags.bumper_booth_in=true;
@@ -159,7 +162,7 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     if(n>=9){ for(const k in R.start){ const v=R.start[k]; if(v>R.base) oil[k]=Math.ceil((v-R.base)/R.oilStep); else wt[k]=Math.ceil((R.base-v)/R.weightStep); syncBells(k); }
       for(let k=1;k<=N;k++) meas[k]=R.base; Object.assign(S.flags,{saw_stiff:true,saw_slip:true,bumper_equal:true}); }
     sync3d(); }
-  window.room3Done=()=>{ prep(9); st.power=false; st.lit=0; sync3d(); Object.assign(S.flags,{bumper_done:true,bumper_scare:true}); crashCar(); };
+  window.room3Done=()=>{ prep(9); st.power=false; st.lit=0; sync3d(); Object.assign(S.flags,{bumper_done:true,bumper_thump:true,bumper_scare:true}); crashCar(); };
   const inBooth=()=>{ const m=itemPos('manual_bumper'); warp(-39.6,31.2,m?m.x:-38.3,m?m.z:31.3); };
   CHECKPOINTS.push({key:'3',name:'범퍼카 조작실',go(){ prep(7); inBooth(); objective('범퍼카 조작실에서 점검 방법을 찾자'); }});
 
