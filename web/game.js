@@ -384,10 +384,42 @@ async function buildPark(){
     PARK.mat[m.name]=m;
     ['map','normalMap','roughnessMap'].forEach(k=>{ if(m[k]) m[k].anisotropy=8; });
     m.envMapIntensity=0.55; PARK.mats.push(m); });
+  mergeStatic(root);      // 움직이지 않는 배경을 칸 · 재질별로 합쳐 그리기 횟수를 줄인다 (태블릿)
   // 낙서 한 줄 (정문 안쪽 담)
   const sc=new THREE.Mesh(new THREE.PlaneGeometry(4.4,1.65),new THREE.MeshBasicMaterial({map:TEX.scrawl('돌아가'),transparent:true,depthWrite:false}));
   sc.position.set(-14,1.7,55.7); sc.rotation.y=Math.PI; sc.visible=false; PARK.scrawl=sc; WORLD.add(sc);   // 폐장 후에만 보인다
 }
+/* 배경 합치기 : 같이 움직이는 덩어리(공원 바닥 · 놀이기구 축 ANIM_ · 곤돌라 GONDOLA_) 안에서, 같은 재질끼리 메시 하나로 — 모양 · 재질 · 움직임은 그대로, 그리기 횟수만 준다
+   공원 바닥은 화면 밖을 계속 걸러낼 수 있게 CELL m 칸으로 나눠 합친다. 놀이기구 · 곤돌라는 그 축의 자식으로 합쳐서 같이 돈다
+   합치지 않는 것 : 조사 대상(IT_) · 간판(SIGN_ · 엔진이 만든 이름 없는 메시) · 투명한 재질 · 모양이 바뀌는(morph) 메시 · 숨겨진 것
+   ?nomerge = 끄기 · ?cell=N = 칸 크기 · ?mergetest = 원래 메시를 남겨 두고 __setMerge(true/false) 로 바꿔 보기 (전후 비교) */
+const NQ={Int8Array:127,Uint8Array:255,Int16Array:32767,Uint16Array:65535};
+function qv(a,i,c){ let v=c===0?a.getX(i):c===1?a.getY(i):c===2?a.getZ(i):a.getW(i); if(a.normalized){ const k=NQ[(a.isInterleavedBufferAttribute?a.data.array:a.array).constructor.name]; if(k) v=Math.max(v/k,-1); } return v; }
+function mergeStatic(root){ if(/[?&]nomerge/.test(location.search)) return; const T0=performance.now();
+  const CELL=+(location.search.match(/cell=(\d+)/)||[0,48])[1], groups=new Map(), v=new THREE.Vector3(), nv=new THREE.Vector3(), nm=new THREE.Matrix3();
+  root.updateMatrixWorld(true);
+  const frameOf=o=>{ for(let p=o.parent;p&&p!==root;p=p.parent){ if(!p.visible||/^(IT_|SIGN_)/.test(p.name)) return null; if(/^(ANIM_|GONDOLA_)/.test(p.name)) return p; } return root; };      // 같이 움직이는 덩어리 (없으면 합치지 않음)
+  root.traverse(o=>{ if(!o.isMesh||o.isSkinnedMesh||Array.isArray(o.material)||!o.visible||!o.name||/^IT_/.test(o.name)) return; const g=o.geometry, m=o.material;
+    if(!g.attributes.position||m.transparent||m.opacity<1||g.attributes.tangent||Object.keys(g.morphAttributes||{}).length) return;
+    const F=frameOf(o); if(!F) return; v.setFromMatrixPosition(o.matrixWorld);
+    const key=F.uuid+'|'+m.uuid+'|'+Object.keys(g.attributes).sort().join(',')+(F===root?'|'+Math.floor(v.x/CELL)+','+Math.floor(v.z/CELL):'');
+    (groups.get(key)||groups.set(key,{F,list:[]}).get(key)).list.push(o); });
+  const test=/[?&]mergetest/.test(location.search), olds=[], news=[];
+  groups.forEach(({F,list})=>{ if(list.length<2) return; const host=F===root?WORLD:F, inv=new THREE.Matrix4().copy(host.matrixWorld).invert(), g0=list[0].geometry, names=Object.keys(g0.attributes); let vc=0, ic=0;
+    list.forEach(o=>{ const g=o.geometry; vc+=g.attributes.position.count; ic+=g.index?g.index.count:g.attributes.position.count; });
+    const out={}; names.forEach(n=>out[n]=new Float32Array(vc*g0.attributes[n].itemSize)); const idx=vc>65535?new Uint32Array(ic):new Uint16Array(ic); let vo=0, io=0;
+    list.forEach(o=>{ const g=o.geometry, mw=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld), flip=mw.determinant()<0, n=g.attributes.position.count; nm.getNormalMatrix(mw);
+      names.forEach(nn=>{ const a=g.attributes[nn], sz=a.itemSize, d=out[nn];
+        if(nn==='position') for(let i=0;i<n;i++){ v.set(qv(a,i,0),qv(a,i,1),qv(a,i,2)).applyMatrix4(mw); d[(vo+i)*3]=v.x; d[(vo+i)*3+1]=v.y; d[(vo+i)*3+2]=v.z; }
+        else if(nn==='normal') for(let i=0;i<n;i++){ nv.set(qv(a,i,0),qv(a,i,1),qv(a,i,2)).applyMatrix3(nm).normalize(); d[(vo+i)*3]=nv.x; d[(vo+i)*3+1]=nv.y; d[(vo+i)*3+2]=nv.z; }
+        else for(let i=0;i<n;i++) for(let c=0;c<sz;c++) d[(vo+i)*sz+c]=qv(a,i,c); });
+      const tri=(a,b,c)=>{ idx[io++]=vo+a; idx[io++]=vo+(flip?c:b); idx[io++]=vo+(flip?b:c); };      // 뒤집힌 물체는 감는 방향도 뒤집는다
+      if(g.index){ const ia=g.index; for(let t=0;t+2<ia.count;t+=3) tri(ia.getX(t),ia.getX(t+1),ia.getX(t+2)); } else for(let t=0;t+2<n;t+=3) tri(t,t+1,t+2);
+      vo+=n; olds.push([o,o.parent]); o.parent.remove(o); });
+    const geo=new THREE.BufferGeometry(); names.forEach(nn=>geo.setAttribute(nn,new THREE.BufferAttribute(out[nn],g0.attributes[nn].itemSize))); geo.setIndex(new THREE.BufferAttribute(idx,1)); geo.computeBoundingSphere();
+    const mesh=new THREE.Mesh(geo,list[0].material); mesh.name='MERGED_'+(list[0].material.name||''); mesh.castShadow=list[0].castShadow; mesh.receiveShadow=list[0].receiveShadow; host.add(mesh); news.push(mesh); });
+  PARK.merge={meshes:olds.length,into:news.length,ms:Math.round(performance.now()-T0)};
+  if(test){ window.__setMerge=on=>{ news.forEach(m=>m.visible=on); olds.forEach(([o,p])=>{ if(on) p.remove(o); else p.add(o); }); }; } }
 // 압축(quantize)된 GLB 는 좌표가 정수(normalized)로 들어 있는데, r128 레이캐스트는 그 정수를 그대로 읽어서 조사(클릭)가 빗나간다
 // → 조사 대상(IT_)만 좌표를 실수로 풀어 둔다
 function dequant(o){ o.traverse(m=>{ const a=m.geometry&&m.geometry.attributes.position; if(!a||!a.normalized) return;

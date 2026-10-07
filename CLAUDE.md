@@ -26,6 +26,7 @@
 - 학생들은 주로 **태블릿(디벗) 터치**로 한다 : 새 조작은 터치 버튼으로도 되게 만들고, 누르는 자리는 넉넉하게 (작은 물체는 보이지 않는 PICK 상자를 덧댄다).
 - 맵 부품은 `blender/parts/*.py` 에 나눠 둔다. 새 소품은 도형을 직접 쌓기 전에 카탈로그 · 기존 모델을 먼저 찾고, 직접 만들 땐 모서리 깎기 · 매끈한 음영을 쓴다.
 - 손님은 Quaternius CC0 캐릭터 (`blender/source/people/q_*.glb`, 같은 뼈대) → `blender/build_people.py` 로 Walk · Idle · Wave 만 남긴다. 옷 색은 crowd.js `TINT` 가 재질 이름으로 바꾼다. 사람 GLB 는 압축(quantize)하지 않는다.
+- **배경 합치기 (태블릿 성능)** : 엔진이 불러올 때 움직이지 않는 배경을 같은 재질끼리 하나로 합친다 (game.js `mergeStatic` — 공원 바닥은 48 m 칸별, 놀이기구 축 `ANIM_` · `GONDOLA_` 안은 그 축의 자식으로). 합치지 않는 것 : `IT_` · `SIGN_` · 투명 재질 · morph 메시 · 숨겨진 것. **코드에서 맵 물체를 움직이거나 숨기거나 재질을 따로 바꾸려면 반드시 `IT_`(또는 `ANIM_`) 이름을 붙인다** — 아니면 합쳐져서 찾을 수 없다. 확인용 : `?nomerge` (끄기) · `?mergetest` (`__setMerge(true/false)` 로 전후 비교)
 - 맵 GLB 는 quantize 되어 있어서 r128 레이캐스트가 빗나간다. 엔진이 조사 대상(`IT_`)만 좌표를 풀어 둔다 (game.js `dequant`). 조사할 물체는 꼭 `IT_` 로 이름 짓는다.
 - 방을 만들면 디버그 바로 가기도 붙인다 : 방 스크립트에서 `CHECKPOINTS.push({key:'숫자', name, go(){ 앞 단계 끝낸 상태 만들기 → warp(…) }})` (**방마다 하나, 방 번호 = Shift+숫자** : 1 숙소 · 2 회전목마 · 3 범퍼카 · 4 후룸라이드 · 5 자이로드롭 · 6 관람차 · 7 바이킹 … 방 입구(그 앞 방을 다 끝낸 상태)로 간다. 세세한 단계는 만들지 않는다. README 표 갱신 · Shift+L 목록)
 - 방은 `web/rooms/roomN_*.js` 로 하나씩 추가하고 `web/index.html` 의 script 목록(main.js 앞)에 넣는다.
