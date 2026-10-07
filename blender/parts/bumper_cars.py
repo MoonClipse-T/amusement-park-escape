@@ -3,7 +3,7 @@
   CC0 범퍼카 모델을 Poly Pizza · Poly Haven 에서 찾지 못해(Sketchfab 은 API 키가 필요) Blender 로 직접 모델링했다.
   모서리는 Bevel · 둥근 부분은 Torus · Subdivision 으로 매끈하게.
   dorm_dress.py 의 도우미(_box · _cyl · _empty · _mat · _kids · _orient)를 쓴다.
-  엔진이 읽는 이름 : IT_bcar_<n>(범퍼카, 조사 대상) · IT_bcarlamp_<n>(기둥 꼭대기 전기 램프) · SIGN_bcar_<n>(앞 번호판) · COLC_bcar_<n>
+  엔진이 읽는 이름 : IT_bcar_<n>(범퍼카, 조사 대상) · IT_bcarlamp_<n>(기둥 꼭대기 전기 램프) · SIGN_bcar_<n>(앞 번호판) · COLC_bcar_<n> · IT_bshoes(2번 보닛 위 신발)
             IT_bplush(공포 연출 : 2번 범퍼카 좌석의 토끼 인형, 처음엔 숨김) · IT_bweight(추 : 엔진이 복제해 범퍼카에 올린다)
   Sketchfab (CC BY) : rabbit_plush_button_eye.glb — "Rabbit plush / Conejo Peluche" by afzmtm · kettlebell_old_iron.glb — "Old Iron Kettlebell" by tomarranskinner
   범퍼카장 : 난간 안쪽 x[-45,-27] z[33,47], 입구(광장 쪽) x[-37.7,-34.3]
@@ -125,6 +125,10 @@ def build_bumper_cars():
     plush = _prop("sketchfab/rabbit_plush_button_eye.glb", 0, 0, 0, height=0.55, decimate=0.35, name="IT_bplush", child="bcarx_")
     plush.parent = car2
     plush.location, plush.rotation_euler = (0, 0.3, 0.69), (0, 0, 0)
+    # 공포 연출용 신발 : 벽에 박힌 2번 범퍼카의 보닛 위에 가지런히 (엔진이 scare 에서 보여 준다) — Sketchfab "Worn-out shoes" by adresen (CC BY)
+    shoes = _prop("sketchfab/worn_out_shoes.glb", 0, 0, 0, height=0.18, name="IT_bshoes", child="bcarx_")
+    shoes.parent = car2
+    shoes.location, shoes.rotation_euler = (0, -0.5, 0.83), (0, 0, 0)
     # 추 (엔진이 복제해서 범퍼카 좌석에 올린다) : 조작실 바닥 구석에 하나
     _prop("sketchfab/kettlebell_old_iron.glb", -38.55, 30.45, 0, y=0.04, height=0.28, name="IT_bweight", child="bcarx_")
     print("BUMPER_CARS_OK removed_faces", removed)
