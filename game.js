@@ -229,7 +229,7 @@ $('#resume').onclick=()=>togglePause(); $('#restart').onclick=()=>location.reloa
 /* 시간 카드 : 화면 위아래 검은 띠 + 큰 시각 */
 const KICK={'19:00':'저녁 7시','22:00':'밤 10시','00:00':'밤 12시 · 자정','02:00':'새벽 2시','04:00':'새벽 4시'};
 function card(time,title,sub='',cls='',ms=3600){ return new Promise(res=>{ const c=$('#card'); c.className=cls; c.querySelector('.time').textContent=time;
-  c.querySelector('.kick').textContent='지금 공원 시각 · '+(KICK[time]||time);
+  c.querySelector('.kick').textContent=time?'지금 공원 시각 · '+(KICK[time]||time):'';
   c.querySelector('.title').textContent=title; c.querySelector('.sub').textContent=sub; void c.offsetWidth; c.classList.add('on');
   setTimeout(()=>{ c.classList.remove('on'); setTimeout(res,800); },ms); }); }
 /* 안내 방송 : 상단 배너, 차임 후 한 글자씩 */
@@ -439,12 +439,29 @@ function buildSkyDome(){
         float m=dot(d,moonDir), up=smoothstep(-.02,.03,moonDir.y); float disc=smoothstep(.99935,.9995,m);
         float mar=h3(floor(d*900.))*.12+.88-.18*smoothstep(.4,.9,sin(d.x*700.)*sin(d.y*650.+1.3));
         vec3 mc=vec3(1.,.98,.9)*mar*1.15;
-        // 새벽 4시 : 달이 붉어지고 눈을 뜬다 — 눈동자가 천천히 굴러다니고, 가끔 감았다 뜬다
-        if(eye>0.){ vec3 mu=normalize(cross(moonDir,vec3(0.,1.,0.))), mv=cross(mu,moonDir); vec2 q=vec2(dot(d,mu),dot(d,mv))/.034;
-          q-=vec2(sin(t*.31),cos(t*.23)*.6)*.13; float r=length(q), open=clamp(abs(sin(t*.17))*9.,0.,1.);
-          vec3 red=vec3(1.,.36,.26)*mar, iris=mix(vec3(.62,.06,.03),vec3(1.,.74,.18),smoothstep(.16,.5,r))*(.82+.18*sin(atan(q.y,q.x)*26.));
-          float lid=smoothstep(open*.64,open*.52,abs(q.y)), ir=smoothstep(.56,.5,r)*lid, pu=smoothstep(.2,.15,length(q*vec2(2.4,1.)))*lid;
-          vec3 e=mix(red,iris*(1.-.5*smoothstep(.44,.54,r)),ir); e=mix(e,vec3(.02,0.,0.),pu); mc=mix(mc,e,eye); }
+        // 새벽 4시 : 붉은 달이 눈을 뜬다 — 젖은 흰자와 핏줄 · 결이 있는 홍채 · 동공 · 눈꺼풀 · 반사광. 눈동자는 휙휙(단속 운동) 움직이고, 가끔 깜빡인다
+        if(eye>0.){ vec3 mu=normalize(cross(moonDir,vec3(0.,1.,0.))), mv=cross(mu,moonDir); vec2 q=vec2(dot(d,mu),dot(d,mv))/.0316;
+          float bp=fract(t/5.3), open=clamp(abs(bp-.965)/.035,0.,1.); open=open*open*(3.-2.*open);
+          float hw=pow(max(0.,1.-pow(abs(q.x)/.9,2.)),.72), ue=(.5*hw+.02)*open, le=-(.4*hw-.01)*open;
+          float inside=smoothstep(0.,.02,ue-q.y)*smoothstep(0.,.02,q.y-le);
+          float sk=floor(t/2.9), sf=smoothstep(0.,.05,fract(t/2.9));
+          vec2 g0=(vec2(h3(vec3(sk-1.,1.,2.)),h3(vec3(sk-1.,5.,7.)))-.5)*vec2(.36,.14), g1=(vec2(h3(vec3(sk,1.,2.)),h3(vec3(sk,5.,7.)))-.5)*vec2(.36,.14);
+          vec2 iq=q-mix(g0,g1,sf); float ir=length(iq), an=atan(iq.y,iq.x), PR=.12+.015*sin(t*.5);
+          float ao=smoothstep(0.,.2,min(ue-q.y,q.y-le));
+          float vn=abs(sin(q.x*21.+sin(q.y*29.+q.x*6.)*2.4)*sin(q.y*17.-q.x*5.+sin(q.x*11.)*1.8));
+          vec3 scl=mix(vec3(.94,.89,.83),vec3(.88,.52,.48),smoothstep(.3,.9,abs(q.x)));
+          scl=mix(scl,vec3(.62,.06,.05),smoothstep(.07,0.,vn)*smoothstep(.2,.75,length(q*vec2(1.,1.7)))*.85);
+          scl*=(.45+.55*ao)*(.85+.15*(1.-dot(q,q)));
+          float fib=(.6+.4*sin(an*46.+sin(an*7.)*3.+ir*18.))*(.75+.25*sin(an*19.-ir*40.));
+          vec3 iris=mix(vec3(.98,.66,.2),vec3(.5,.05,.03),smoothstep(.1,.33,ir))*fib;
+          iris+=vec3(.3,.14,.02)*smoothstep(.035,0.,abs(ir-.18)); iris*=1.-.8*smoothstep(.25,.34,ir);
+          vec3 e=mix(scl,iris*(.55+.45*ao),smoothstep(.34,.325,ir));
+          e=mix(e,vec3(.01,0.,0.),smoothstep(PR,PR-.012,ir));
+          e+=vec3(1.)*(smoothstep(.055,.0,length(iq-vec2(-.1,.11)))*.95+smoothstep(.14,.0,length(iq-vec2(.09,-.1)))*.12)*ao;
+          e+=vec3(.9,.7,.7)*smoothstep(.018,0.,abs(q.y-le))*hw*.35;
+          float lid=smoothstep(.16,0.,min(abs(q.y-ue),abs(q.y-le)));
+          vec3 skin=vec3(1.,.36,.26)*mar*(1.-.45*lid*(1.-inside));
+          mc=mix(mc,mix(skin,e,inside),eye); }
         c=mix(c,mc,disc*up); c+=mix(vec3(.35,.4,.55),vec3(.75,.1,.06),eye)*(pow(max(m,0.),120.)*.5+pow(max(m,0.),12.)*.08)*up;
         gl_FragColor=vec4(c,1.); }`});
   const dome=new THREE.Mesh(new THREE.SphereGeometry(230,32,16),mat); dome.renderOrder=-1; dome.frustumCulled=false; scene.add(dome);

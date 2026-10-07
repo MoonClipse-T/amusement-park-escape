@@ -133,6 +133,11 @@ EVENTS.push(
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   // 새벽 4시 : 달이 붉어지며 눈을 뜬다 (game.js 하늘 셰이더 eye)
   {at:24*60+240, fn:async()=>{ while(S.busy||!P.free||document.querySelector('.ov.on')) await sleep(300);      // 문제를 푸는 중이면 끝날 때까지 (달은 이미 붉다)
-    P.free=false; tickSky(0,true); const md=SKY.u.moonDir.value; await camTo({yaw:Math.atan2(-md.x,-md.z),pitch:Math.asin(md.y)},1.4);      // 시야가 저절로 달을 향한다
-    await card('04:00','새벽 4시','달이 눈을 떴다','dead',2600); await mono(['…달이 붉다.','달 한가운데에 — 눈?','…달이, 나를 보고 있다.','붉은 달빛은 내 편이 아니다. 이제 손전등뿐이다.']); P.free=true; }},
+    const prev=$('#objtext').textContent;
+    if(HUNT.indoor()){ AUDIO.tone(58,1.6,'sine',.3); await mono(['…창밖이 붉어졌다.','달빛이 이상하다. 밖으로 나가서 달을 보자.']); objective('밖으로 나가 달을 보자');      // 조작실 · 숙소 안 : 달이 안 보인다
+      while(HUNT.indoor()||S.busy||!P.free) await sleep(300); }
+    P.free=false; tickSky(0,true); const f0=camera.fov, mp=SKY.dome.getWorldPosition(new THREE.Vector3()).addScaledVector(SKY.u.moonDir.value,230).sub(new THREE.Vector3(P.x,P.y+P.eye,P.z));      // 하늘 돔 위 달의 실제 자리 (돔은 공원 가운데에 있다)
+    await camTo({yaw:Math.atan2(-mp.x,-mp.z),pitch:Math.atan2(mp.y,Math.hypot(mp.x,mp.z))},1.4); await zoom(13,1600); await sleep(1800);      // 시야가 저절로 달을 향하고, 달이 화면 가득 — 눈이 또렷이 보이게
+    await card('04:00','새벽 4시','달이 눈을 떴다','dead',2600); await mono(['…달이 붉다.','달 한가운데에 — 눈.','…달이, 나를 보고 있다.','붉은 달빛은 내 편이 아니다. 이제 손전등뿐이다.']);
+    await zoom(f0,900); P.free=true; objective(prev); }},
 );
