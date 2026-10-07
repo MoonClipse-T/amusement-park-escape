@@ -41,15 +41,15 @@ SIGNS.fpower=['전원','POWER','#111111','#f2c230']; SIGNS.fforce=['알짜힘 ·
     // 도는 방향 (반시계) · 빠르기
     g.strokeStyle='#cfc8b8'; g.lineWidth=3; g.beginPath(); g.arc(CX,CY,52,-.3,-2.6,true); g.stroke(); const ax=CX+52*Math.cos(-2.6), ay=CY+52*Math.sin(-2.6);
     g.fillStyle='#cfc8b8'; g.beginPath(); g.moveTo(ax-2,ay+13); g.lineTo(ax-11,ay-4); g.lineTo(ax+9,ay-3); g.fill();
-    g.font='700 17px '+F; g.textAlign='center'; g.fillStyle=pad.speed?'#ff8a7a':'#cfc8b8'; g.fillText(pad.speed?`빠르기 ${pad.speed>0?'+':''}${pad.speed}`:'정해진 빠르기',CX,CY+82);
+    g.font='700 22px '+F; g.textAlign='center'; g.fillStyle=pad.speed?'#ff8a7a':'#cfc8b8'; g.fillText(pad.speed?`빠르기 ${pad.speed>0?'+':''}${pad.speed}`:'정해진 빠르기',CX,CY+82);
     const L=74*(1+pad.speed*.18);
     G.forEach((q,i)=>{ const [x,y]=pos(q); arrow(x,y,q.mv,L,'#f2c230',5); arrow(x,y,pad.dir[i],56,'#6fb7ff',9);
-      g.fillStyle='#c8322a'; g.strokeStyle=pad.pick===i?'#fff':'#1b1b1b'; g.lineWidth=3; g.beginPath(); g.arc(x,y,20,0,7); g.fill(); g.stroke();
-      g.fillStyle='#fff'; g.font='700 19px '+F; g.textAlign='center'; g.fillText(q.n,x,y+7); });
+      g.fillStyle='#c8322a'; g.strokeStyle=pad.pick===i?'#fff':'#1b1b1b'; g.lineWidth=3; g.beginPath(); g.arc(x,y,26,0,7); g.fill(); g.stroke();
+      g.fillStyle='#fff'; g.font='700 22px '+F; g.textAlign='center'; g.fillText(q.n,x,y+8); });
     // 범례
-    g.textAlign='left'; g.font='700 19px '+F; arrow(470,96,0,60,'#f2c230',5); g.fillStyle='#f2c230'; g.fillText('운동 방향',545,103);
+    g.textAlign='left'; g.font='700 22px '+F; arrow(470,96,0,60,'#f2c230',5); g.fillStyle='#f2c230'; g.fillText('운동 방향',545,103);
     arrow(470,146,0,60,'#6fb7ff',9); g.fillStyle='#6fb7ff'; g.fillText('알짜힘',545,153);
-    g.fillStyle='#cfc8b8'; g.font='500 16px '+F; ['곤돌라(가~라)를 누르면','알짜힘 화살표가 돌아간다.','아래 ▲ ▼ 는 빠르기 조절.'].forEach((l,k)=>g.fillText(l,470,200+k*24)); }
+    g.fillStyle='#cfc8b8'; g.font='500 20px '+F; ['곤돌라(가~라)를 누르면','알짜힘 화살표가 돌아간다.','아래 ▲ ▼ 는 빠르기 조절.'].forEach((l,k)=>g.fillText(l,470,200+k*24)); }
   function showPad(){ pad.done=false; pad.pick=null; go.textContent='확인'; msg(''); sval.textContent=pad.speed?(pad.speed>0?'+':'')+pad.speed:'0 (원래)';
     el.querySelector('.fq').innerHTML='관람차가 덜컹거린다 — 알짜힘 방향이 틀어져 있다.<br>곤돌라가 <b>정해진 빠르기로 원을 그리도록</b>, 네 곤돌라의 <b>알짜힘 방향</b>과 <b>빠르기 조절</b>을 맞추자.'; draw(); }
   function openPad(){ showPad(); ov('#ferrispad',true); AUDIO.click(); }
@@ -61,7 +61,7 @@ SIGNS.fpower=['전원','POWER','#111111','#f2c230']; SIGNS.fforce=['알짜힘 ·
     AUDIO.err(); msg(bad.includes(1)?'운동 방향과 <b>나란한</b> 알짜힘은 빠르기를 바꾼다 (자이로드롭처럼). 관람차는 빠르기가 일정해야 한다 — 알짜힘은 운동 방향과 <b>수직</b>.'
       :'수직이긴 한데 — 바깥쪽으로 힘을 받으면 곤돌라가 원 밖으로 벗어난다. 원을 그리게 <b>붙잡아 주는</b> 쪽은 어디일까?'); }
   cv.addEventListener('pointerdown',e=>{ if(pad.done) return; const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*cv.width/r.width, y=(e.clientY-r.top)*cv.height/r.height;
-    const i=G.findIndex(q=>{ const [gx,gy]=pos(q); return Math.hypot(gx-x,gy-y)<62; }); if(i<0) return; pad.dir[i]=(pad.dir[i]+1)%4; pad.pick=i; AUDIO.tick(); msg(''); draw(); });
+    const i=G.findIndex(q=>{ const [gx,gy]=pos(q); return Math.hypot(gx-x,gy-y)<72; }); if(i<0) return; pad.dir[i]=(pad.dir[i]+1)%4; pad.pick=i; AUDIO.tick(); msg(''); draw(); });
   spd.querySelector('.wup').onclick=()=>{ if(pad.done) return; pad.speed=Math.min(3,pad.speed+1); AUDIO.tick(); msg(''); showPad(); };
   spd.querySelector('.wdn').onclick=()=>{ if(pad.done) return; pad.speed=Math.max(-3,pad.speed-1); AUDIO.tick(); msg(''); showPad(); };
   go.onclick=check;

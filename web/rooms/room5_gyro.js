@@ -167,19 +167,19 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     g.fillStyle='#22406e'; g.fillRect(74,54,30,298); g.fillStyle='#b8713a'; g.fillRect(70,232,38,120); g.fillStyle='#f2c230'; g.fillRect(70,226,38,8);
     g.fillStyle='#c8322a'; g.fillRect(62,42,54,14); g.fillStyle='#55585e'; g.fillRect(30,352,118,8);
     const sy=58+s.at*276; g.fillStyle='#c8322a'; g.fillRect(54,sy-13,70,26); g.fillStyle='#1c1e23'; g.fillRect(40,sy-9,14,18); g.fillRect(124,sy-9,14,18);
-    g.font='700 18px '+F; g.textAlign='left'; g.fillStyle='#b99a3a'; g.fillText('브레이크 구간',116,330); g.fillStyle='#e9e2d2'; g.font='700 20px '+F; g.fillText(s.mv,146,sy+7);
-    g.font='700 24px '+F; g.fillStyle='#f2c230'; g.fillText(s.title,14,26);
+    g.font='700 24px '+F; g.textAlign='left'; g.fillStyle='#b99a3a'; g.fillText('브레이크 구간',116,330); g.fillStyle='#e9e2d2'; g.font='700 26px '+F; g.fillText(s.mv,146,sy+7);
+    g.font='700 28px '+F; g.fillStyle='#f2c230'; g.fillText(s.title,14,26);
     // 오른쪽 : 의자에 작용하는 힘 (작용점 = 의자 가운데)
     const up=s.set?(/^[0-9]{1,5}$/.test(num.value.trim())?+num.value:s.up0):s.up, cu=Math.min(5.5,up/R.cell);
     g.fillStyle='#3a3d42'; g.fillRect(cx-58,cy-18,116,36); g.strokeStyle='#8a8d93'; g.lineWidth=2; g.strokeRect(cx-58,cy-18,116,36);
-    g.font='700 18px '+F; g.textAlign='center'; g.fillStyle='#cfc8b8'; g.fillText('의자',cx-32,cy+7);
-    if(cu>0){ arrow(cx,cy,cy-cu*C,'#6fb7ff'); g.textAlign='left'; g.fillStyle='#6fb7ff'; g.font='700 22px '+F; g.fillText(s.upName,cx+22,cy-cu*C/2+2); if(s.set){ g.font='700 20px '+F; g.fillText(up+' N',cx+22,cy-cu*C/2+28); } }
-    arrow(cx,cy,cy+R.W/R.cell*C,'#ff7a66'); g.textAlign='left'; g.fillStyle='#ff7a66'; g.font='700 22px '+F; g.fillText('중력',cx+22,cy+R.W/R.cell*C/2+12);
+    g.font='700 24px '+F; g.textAlign='center'; g.fillStyle='#cfc8b8'; g.fillText('의자',cx-32,cy+7);
+    if(cu>0){ arrow(cx,cy,cy-cu*C,'#6fb7ff'); g.textAlign='left'; g.fillStyle='#6fb7ff'; g.font='700 26px '+F; g.fillText(s.upName,cx+22,cy-cu*C/2+2); if(s.set){ g.font='700 26px '+F; g.fillText(up+' N',cx+22,cy-cu*C/2+28); } }
+    arrow(cx,cy,cy+R.W/R.cell*C,'#ff7a66'); g.textAlign='left'; g.fillStyle='#ff7a66'; g.font='700 26px '+F; g.fillText('중력',cx+22,cy+R.W/R.cell*C/2+12);
     g.fillStyle='#f2ede2'; g.beginPath(); g.arc(cx,cy,5,0,7); g.fill();
     // 눈금 안내
     g.strokeStyle='#cfc8b8'; g.lineWidth=2; g.beginPath(); g.moveTo(548,H-24); g.lineTo(548,H-24-C); g.moveTo(540,H-24); g.lineTo(556,H-24); g.moveTo(540,H-24-C); g.lineTo(556,H-24-C); g.stroke();
-    g.fillStyle='#cfc8b8'; g.font='700 18px '+F; g.textAlign='left'; g.fillText(`한 칸 = ${R.cell} N`,562,H-38);
-    g.textAlign='right'; g.fillStyle='#8a8d93'; g.font='700 17px '+F; g.fillText(`${pad.step+1} / ${STEPS.length}`,W-12,24); }
+    g.fillStyle='#cfc8b8'; g.font='700 24px '+F; g.textAlign='left'; g.fillText(`한 칸 = ${R.cell} N`,562,H-38);
+    g.textAlign='right'; g.fillStyle='#8a8d93'; g.font='700 22px '+F; g.fillText(`${pad.step+1} / ${STEPS.length}`,W-12,24); }
   function syncDir(){ el.querySelectorAll('.gdir .fdir').forEach(b=>b.classList.toggle('on',b.dataset.d===pad.dir)); num.disabled=!STEPS[pad.step].set&&pad.dir==='none'; if(num.disabled) num.value='0'; }
   function showStep(){ const s=STEPS[pad.step]; pad.dir=null; pad.done=false; num.value=''; num.disabled=false; el.querySelector('.fq').innerHTML=s.q;
     el.querySelector('.gdir').style.display=s.set?'none':''; el.querySelector('.gnum .fl').textContent=s.set?s.label:'알짜힘의 크기'; go.textContent=s.set?'설정':'확인';
