@@ -3,7 +3,7 @@
    흐름 : 후룸라이드 전원 OFF → "달토끼가 왜…" 광장 동상을 확인하러 간다 → 멀쩡하게 서 있다 (원래 얼굴) → "이상하다…" → 자이로드롭으로
         → 조작실 「점검 방법」 : ① 전원을 켜고 탑승 의자에 직접 앉아 꼭대기까지 ② 자석 브레이크 구간에서 부드럽게 멈추는지
                                ③ 세게 부딪히면 조작반 힘 화면에서 브레이크 힘을 다시 맞춘다 ④ 전원 종료
-        → 책상 위 김근수의 찢어진 일지 ④ (마지막 조각) → "쪽지들을 모아 보자" → 달토끼 규칙 카드 (hunt.js RULES) — "동상에서 사라지면 그때부터 쫓아온다"
+        → 책상 위 김근수의 찢어진 일지 ④ (마지막 조각) → "쪽지들을 모아 보자" → 그동안 모은 쪽지가 한 화면에 하나씩 (hunt.js scrapWall) — "동상에서 사라지면 그때부터 쫓아온다"
         → 조작반 전원 ON → (공포) 불이 전부 꺼진다. 조작실 안도 깜깜하고 브레이크 힘 화면의 초록 글씨만 남는다. 이제부터 손전등 · 받침대의 달토끼가 사라진다
         → 첫 탑승 : 한 바퀴 돌며 올라간다 → 꼭대기에서 광장 쪽 — 받침대가 비어 있다 → 떨어진다 → 브레이크가 약해(9000 N) 바닥 완충기에 쾅
         → 조작반 힘 화면 (화살표 한 칸 = 3000 N, 의자에 작용하는 중력 6000 N)
@@ -22,7 +22,7 @@ const ROOM5={
   brake0:9000, need:9000,             // 처음 브레이크 힘 (약하다 → 알짜힘 위쪽 3000 N 뿐) · 브레이크 구간에서 필요한 알짜힘 (위쪽)
   manual:{title:'자이로드롭 야간 점검 방법'},
   note:{title:'찢어진 일지 ④',
-    body:'<i>…보름 전날. 급하게 쓴 글씨.</i><br>장난이 재미없어지면 <b>배가 고파진다.</b><br>배가 고프면 <b>웃는다. 킥킥.</b> 웃음소리가 들리면 이미 가까이 온 것.<br><b>손전등으로 3초.</b> 비추고 있으면 사라진다.<br>3초보다 늦으면 — <b>팔이 온다. 긴 팔이.</b><br>조작실과 놀이기구 안으로는 못 들어온다.<br><b>동상에서 사라지면, 그때부터다.</b><br>— 근수'},
+    body:'<i>…보름 전날. 급하게 쓴 글씨.</i><br>장난이 재미없어지면 <b>배가 고파진다.</b><br>배가 고프면 <b>웃는다. 킥킥.</b> 웃음소리가 들리면 이미 가까이 온 것.<br><b>손전등으로 3초.</b> 비추고 있으면 사라진다.<br>3초보다 늦으면 — <b>입이 열린다.</b> 통째로 삼킨다.<br>조작실 안으로는 못 들어오지만 <b>창밖에서 덮친다.</b> 안에서도 손전등을 놓지 마라.<br><b>동상에서 사라지면, 그때부터다.</b><br>— 근수'},
 };
 ROOM5.brake=ROOM5.W+ROOM5.need;       // 정답 : 15000 N
 ROOM5.rab={a:-.5,r:2.28,y:.70,leg:-1.3,glance:.78};  // 옆자리 달토끼 : 의자 고리에서의 각도 · 반지름 · 높이(앉는 판 위, 안전바 뒤) · 다리 접는 각(라디안) · 처음 슬쩍 돌아보는 각(다리만 보이게)
@@ -187,7 +187,7 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   function openPad(){ pad.step=Math.min(STEPS.length-1,S.flags.gyro_step||0); showStep(); ov('#gyropad',true); AUDIO.click(); }
   function right(n){ const s=STEPS[pad.step]; AUDIO.ok(); msg(typeof s.ok==='function'?s.ok(n):s.ok,true); pad.done=true; S.flags.gyro_step=pad.step+1; go.textContent=pad.step<STEPS.length-1?'다음 ▶':'닫기'; if(s.set==='brake') st.brake=R.brake; }
   function check(){ const s=STEPS[pad.step], v=num.value.trim(), n=+v;
-    if(pad.done){ AUDIO.click(); if(pad.step<STEPS.length-1){ pad.step++; showStep(); if(pad.step===2){ AUDIO.sfx('laugh',.45,.9); setTimeout(()=>toast('…킥킥. 방금, 지붕 위에서?'),300); } return; }
+    if(pad.done){ AUDIO.click(); if(pad.step<STEPS.length-1){ pad.step++; showStep(); return; }
       ov('#gyropad',false); return solved(); }
     if(s.set){ if(!/^\d{1,5}$/.test(v)){ AUDIO.err(); return msg(s.label+'을 숫자로 입력하자 (단위 N).'); }
       const bad=s.chk(n); if(!bad) return right(n); AUDIO.err(); return msg(bad); }
@@ -208,8 +208,8 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
   async function readNote(){ AUDIO.noise(.12,.25,0,3200); await showMsg(R.note.title,TORN(R.note.body));
     if(S.flags.gnote) return; S.flags.gnote=true; INV.note('gnote',R.note.title,TORN(R.note.body)); setGoal(null);
     await mono(['김근수 씨의 글씨다. …이게 마지막 조각인가.','…지금까지 주운 쪽지들을 모아 보자.']);
-    await showMsg(RULES.title,RULES.body); INV.note(RULES.id,RULES.title,RULES.body);      // 쪽지를 모아 정리한 달토끼 규칙 (hunt.js)
-    await mono(['어둠 속에서만 나타나고, 달빛이 비치는 곳으로는 못 온다.','웃음소리가 들리면 가까이 온 것. 손전등으로 3초 — 늦으면 팔이 온다.','그리고 — 동상에서 사라지면, 그때부터 나를 쫓아온다는 거구나.','…점검을 이어가자. 조작반의 전원 버튼.']);
+    await scrapWall(R.note);      // 그동안 모은 쪽지를 한 화면에 하나씩 (hunt.js)
+    await mono(['어둠 속에서만 나타나고, 달빛이 비치는 곳으로는 못 온다.','웃음소리가 들리면 가까이 온 것. 손전등으로 3초 — 늦으면 입이 열린다.','조작실 안이어도 창밖에서 덮친다. 손전등을 놓지 말자.','그리고 — 동상에서 사라지면, 그때부터 나를 쫓아온다는 거구나.','…점검을 이어가자. 조작반의 전원 버튼.']);
     objective('조작반의 전원 버튼을 누르자'); const c=itemPos('gpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
   // 전원 표시등 · 힘 조절 장치의 화면 (조작반 위에 세운 3D 화면 — 지금 브레이크 힘)
   let scr=null;

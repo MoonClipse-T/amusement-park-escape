@@ -372,3 +372,29 @@ body.remote-on #mono{bottom:calc(var(--rh,380px) + 8px);}
 .steps b{color:#1d3557;} .steps li.warn{color:#b3261e;font-weight:700;} .steps li.warn b{color:#b3261e;} .steps li.warn::before{background:#c8322a;}
 .doc-note{margin-top:10px;padding:8px 10px;border-radius:4px;background:#efeadc;font-size:13px;line-height:1.55;color:#4a4d54;}
 #remote .rstep{display:inline-block;margin-bottom:3px;padding:1px 8px;border-radius:10px;background:#2c6b48;color:#e8fff0;font-size:11px;font-weight:800;letter-spacing:1px;}
+
+/* 근수 씨의 쪽지를 모아 보기 (hunt.js scrapWall) : 그동안 모은 쪽지가 한 화면에 하나씩 펼쳐진다 */
+#scrapwall{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:14px 16px;overflow:auto;
+ background:radial-gradient(ellipse at 50% 40%,rgba(40,28,20,.92),rgba(6,4,3,.97));animation:swIn .4s ease;}
+#scrapwall.out{opacity:0;transition:opacity .4s;}
+#scrapwall .sw-cap{margin:0;font:400 24px/1.2 var(--hand);color:#e9dcc0;letter-spacing:1px;}
+#scrapwall .sw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px;width:min(980px,100%);}
+.sw-note{position:relative;padding:16px 18px 14px 34px;color:#2a2018;font:400 17px/23px var(--hand);transform:rotate(var(--r));animation:swDrop .55s cubic-bezier(.2,.8,.25,1) both;
+ background:radial-gradient(ellipse at 82% 88%,rgba(120,70,20,.22),transparent 45%),repeating-linear-gradient(#efe6c9 0 22px,#b9c4d6 22px 23px);box-shadow:0 8px 24px rgba(0,0,0,.6);
+ clip-path:polygon(1% 3%,7% 0,15% 2%,24% 0,33% 3%,41% 1%,52% 3%,61% 0,70% 2%,80% 0,89% 3%,97% 1%,100% 6%,98% 16%,100% 27%,97% 38%,100% 49%,98% 61%,100% 72%,97% 83%,99% 93%,95% 100%,86% 97%,77% 100%,67% 96%,57% 100%,48% 97%,38% 100%,29% 96%,19% 100%,10% 97%,2% 100%,0 91%,3% 80%,0 69%,2% 57%,0 46%,3% 35%,0 24%,2% 13%);}
+.sw-note::before{content:"";position:absolute;left:24px;top:0;bottom:0;width:1.5px;background:rgba(200,60,50,.45);}
+.sw-note h3{margin:0 0 4px;font:400 20px/1.2 var(--hand);color:#7a1d16;}
+.sw-note b{color:#8e231c;}
+#scrapwall .sw-ok{visibility:hidden;min-height:50px;padding:0 34px;border:1.5px solid #e9dcc0;border-radius:3px;background:transparent;color:#e9dcc0;font-size:17px;}
+#scrapwall .sw-ok.on{visibility:visible;animation:swIn .5s ease;}
+@keyframes swDrop{from{opacity:0;transform:translateY(-14px) scale(1.12) rotate(calc(var(--r) * -2));}to{opacity:1;transform:rotate(var(--r));}}
+@keyframes swIn{from{opacity:0;}to{opacity:1;}}
+@media (max-width:640px){ #scrapwall .sw-grid{grid-template-columns:1fr;} }
+/* 관람차 빠르기 막대 : 밀어서 조절 (손가락으로 잡기 좋게 큰 손잡이) */
+.wspd .wl{font-size:14px;color:#a9adb4;}
+.wspd .wval{min-width:34px;font:700 22px/1 var(--led);color:var(--amber);}
+.wrange{-webkit-appearance:none;appearance:none;width:min(240px,42vw);height:48px;background:transparent;touch-action:none;}
+.wrange::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(90deg,#2f3a52,#55585e 50%,#5a3a2a);border:1px solid #6a6d73;}
+.wrange::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-14px;border-radius:50%;background:var(--amber);border:3px solid #1b1b1b;box-shadow:0 2px 8px rgba(0,0,0,.6);}
+.wrange::-moz-range-track{height:10px;border-radius:5px;background:linear-gradient(90deg,#2f3a52,#55585e 50%,#5a3a2a);border:1px solid #6a6d73;}
+.wrange::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--amber);border:3px solid #1b1b1b;}
