@@ -1,25 +1,25 @@
 /* ============================================================
    방 7 : 바이킹 — 마지막 점검 · 엔딩 「해돋이 바이킹」   [9과05-03 알짜힘과 운동 상태 변화]
    흐름 : 관람차 점검 뒤(04:00 붉은 달) → 바이킹 조작실
-        → 「점검 방법」 : ① 전원 ON ② 책상 위 무선 조종기를 들고 배에 탄다 ③ 조종기 [밀기]로 배를 점검 높이까지 — 배가 가장 빠를 때 밀어야 높이 올라간다 ④ 내려와 전원 OFF
-        → 책상 위 김근수의 찢어진 일지 ⑥ (마지막) : 달토끼는 해를 보면 돌이 된다 · 해는 높은 곳에 먼저 닿는다 · 배에 타면 따라 탄다 · 뱃머리를 햇빛에 세 번
+        → 벽의 「점검 방법」은 매직으로 지워져 있고, 그 위에 김근수의 찢어진 일지 ⑥ (마지막)이 핀으로 꽂혀 있다 : 달토끼는 해를 보면 돌이 된다 · 해는 높은 곳에 먼저 닿는다
+          · 전원을 켜고 조종기를 들고 배에 타면 따라 탄다 · 배가 가장 빠를 때 [밀기] · 그 녀석이 있는 끝을 햇빛에 네 번
           → 공원 시계 05:30 (동쪽 하늘이 옅어진다)
         → 무선 조종기를 챙긴다 → 전원 ON → 승강대에서 배에 탄다 (서쪽 끝 좌석, 동쪽 뱃머리를 바라본다)
         → 달토끼가 웃으며 동쪽 뱃머리로 따라 탄다 → 배가 동쪽 끝(달토끼 쪽)으로 올라갈 때마다 좌석을 한 줄씩 넘어 온다 (턴)
            · 조종기 [밀기] : 배가 가장 낮은 곳(가장 빠를 때)을 지날 때 누르면 더 높이 · 엇박자면 덜컹 느려진다
            · 달토끼 쪽 끝이 점검 높이(ROOM7.target)를 넘어 꼭대기에 닿으면 — 지평선 위 첫 햇빛을 받는다 → 몸이 조금씩 돌로 굳는다
-           · 햇빛 3번 → 완전히 돌 → 배가 내려가며 굴러떨어져 부서진다 → 배가 멈춘다 → 06:00 해돋이 · 엔딩
-           · 그 전에 내 앞 줄까지 오면 — 덮쳐서 삼킨다 → 조작실에서 다시 (다시 탈 수 있다)
+           · 햇빛 4번 → 완전히 돌 → 배가 내려가며 굴러떨어져 부서진다 → 배가 멈춘다 → 06:00 해돋이 · 엔딩
+           · 그 전에 내 앞 줄까지 오면 — 덮쳐서 삼킨다 → 배에 타기 직전(승강대)에서 다시
    ★ 숫자는 아래 ROOM7, 좌석 줄은 Blender viking_ride.py BENCH_X 와 맞춘다
    ============================================================ */
 'use strict';
-const ROOM7={ target:50, hits:3,                 // 햇빛이 닿는 높이 (도) · 돌이 되려면 받아야 하는 햇빛 횟수
+const ROOM7={ target:50, hits:4,                 // 햇빛이 닿는 높이 (도) · 돌이 되려면 받아야 하는 햇빛 횟수
   rows:[4.5,3,1.5,0,-1.5,-3], seat:-4.5, bow:6.0, // 달토끼가 넘어오는 좌석 줄 (배 가운데에서 x, 동 → 서) · 내 자리 · 달토끼가 올라타는 뱃머리
   W2:3.6, push:.42, zone:.22, damp:.05,          // 흔들리는 빠르기² (한 번 왕복 약 3.3초) · 한 번 밀 때 더해지는 빠르기 · 가장 낮은 곳 구간(rad) · 마찰
   manual:{title:'바이킹 야간 점검 방법',
     body:DOC(['조작반 <b>전원 ON</b>.','책상 위 <b>무선 조종기</b>를 들고 배에 탄다.','조종기 <b>[밀기]</b>로 배를 흔들어 <b>점검 높이</b>까지 올린다. 배가 <b>가장 빠를 때</b> 밀어야 높이 올라간다.','!점검이 끝나면 배에서 내려 <b>전원을 끈다.</b>'])},
   note:{id:'scrap6', title:'찢어진 일지 ⑥',
-    body:'<i>…마지막 조각. 새벽.</i><br>그 녀석은 원래 <b>돌</b>이다. <b>햇빛</b>을 보면 다시 돌이 된다 — 그래서 낮엔 광장의 동상.<br>해는 땅보다 <b>높은 곳에 먼저</b> 닿는다. 이 공원에서 가장 높이 올라가는 곳은 <b>바이킹</b>의 뱃머리.<br>점검하는 척 배에 타면 — 그 녀석이 <b>따라 탄다.</b><br>배를 끝까지 띄워, 그 녀석이 있는 끝이 <b>햇빛에 세 번</b> 닿게 하라.<br>그 녀석은 배가 오르내릴 때마다 <b>좌석을 한 줄씩</b> 넘어 온다. 그 전에.<br>나는 혼자서는 배를 높이 띄우지 못했다. 조종기는 책상 위에.<br>— 근수'} };
+    body:'<i>…마지막 조각. 점검 방법은 내가 지웠다. 이대로 하면 안 된다.</i><br>그 녀석은 원래 <b>돌</b>이다. <b>햇빛</b>을 보면 다시 돌이 된다 — 그래서 낮엔 광장의 동상.<br>해는 땅보다 <b>높은 곳에 먼저</b> 닿는다. 이 공원에서 가장 높이 올라가는 곳은 <b>바이킹</b>.<br>전원을 켜고, 책상 위 <b>무선 조종기</b>를 들고 점검하는 척 배에 타면 — 그 녀석이 <b>따라 탄다.</b><br>배가 <b>가장 빠를 때 [밀기]</b>. 끝까지 띄워, 그 녀석이 있는 끝이 <b>햇빛에 네 번</b> 닿게 하라.<br>그 녀석은 배가 오르내릴 때마다 <b>좌석을 한 줄씩</b> 넘어 온다. 그 전에.<br>나는 혼자서는 배를 높이 띄우지 못했다.<br>— 근수'} };
 SIGNS.booth_viking=['바이킹 조작실','VIKING CONTROL · 관계자 외 출입금지','#1b1b1b','#e3b54a'];
 SIGNS.manual_viking=['점검 방법','바이킹 · 야간 점검','#fbf6e8','#3a2416'];
 SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장치','SWING · PUSH','#111111','#7dffb0'];
@@ -109,8 +109,8 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
       if(k>=1){ b.ph='dead'; eaten(); } } }
   async function eaten(){ const f=$('#fade'); f.style.transition='none'; f.classList.remove('clear'); AUDIO.sfx('chomp',1.5); AUDIO.noise(.5,.8,0,250); await sleep(1300);
     endRide(); S.flags.caught=(S.flags.caught||0)+1; await card('','잡아먹혔다','','dead',2400);
-    const sp=HUNT.SAFE.find(s=>s.n==='바이킹 조작실'); warp(sp.in[0],sp.in[1],-6,-39); HUNT.start(); HUNT.lastSafe=sp;
-    objective('다시 배에 타자 — 배가 가장 빠를 때 밀어서, 더 빨리 높이'); f.style.transition=''; f.classList.add('clear'); await sleep(700); P.free=true; }
+    warp(-3.5,-38.6,-3.5,-43);      // 배에 타기 직전 (승강대) — 달토끼는 배에서 기다린다 (추격은 다시 켜지 않는다)
+    objective('다시 배에 타자 — 배가 가장 빠를 때 밀어서, 더 빨리 높이'); setGoal(-3.5,-40.4,'바이킹'); f.style.transition=''; f.classList.add('clear'); await sleep(700); P.free=true; }
   function endRide(){ rd.on=false; if(rd.g){ A().remove(rd.g); scene.remove(rd.g); } rd.g=null; rd.o=null; rd.bite=null; rd.hop=null; rd.fall=null; rd.topple=false;
     sw.th=.03; sw.om=0; sw.damp=R.damp; rm.classList.remove('on'); document.body.classList.remove('riding'); S.flags.viking_ride=false; camera.fov=72; camera.updateProjectionMatrix(); }
 
@@ -159,27 +159,38 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     camera.position.copy(eye); camera.rotation.set(P.pitch+Math.sin(S.t*53)*.012*rd.shake,P.yaw+Math.sin(S.t*47)*.01*rd.shake,Math.sin(S.t*61)*.02*rd.shake);
     drawRemote(); }
 
-  /* ---------- 조작실 : 점검 방법 · 일지 ⑥ · 무선 조종기 · 전원 ---------- */
+  /* ---------- 조작실 : 지워진 점검 방법 위에 꽂힌 일지 ⑥ · 무선 조종기 · 전원 ---------- */
+  // 벽 포스터 : 점검 방법 줄마다 검은 매직으로 죽죽 긋고, 그 위에 찢어진 공책 쪽지를 빨간 핀으로 꽂는다
+  function eraseManual(){ const m=PARK.signs.manual_viking; if(!m) return; const tex=m.material.map, c=tex.image, g=c.getContext('2d'), w=c.width, h=c.height;
+    g.lineCap='round'; g.lineJoin='round'; g.strokeStyle='rgba(18,16,20,.92)';
+    [0,1,2,3].forEach(i=>{ const y=h*(.46+i*.115); g.lineWidth=h*.034; g.beginPath(); g.moveTo(w*.15,y-h*.01); for(let x=w*.15;x<w*.86;x+=w*.07) g.lineTo(x+w*.035,y+(((x/w*100)|0)%2?h*.022:-h*.02)); g.stroke(); });
+    g.lineWidth=h*.02; g.beginPath(); g.moveTo(w*.06,h*.3); g.lineTo(w*.9,h*.36); g.stroke();
+    g.save(); g.translate(w*.55,h*.6); g.rotate(-.09); const pw=w*.6, ph=h*.5;      // 찢어진 쪽지
+    g.fillStyle='#ece3c4'; g.beginPath(); const P=[[0,.02],[.12,0],[.25,.03],[.4,0],[.55,.02],[.7,0],[.85,.03],[1,.01],[.98,.25],[1,.5],[.97,.75],[1,1],[.85,.97],[.7,1],[.55,.96],[.4,1],[.25,.97],[.1,1],[0,.98],[.02,.7],[0,.45],[.03,.2]];
+    P.forEach(([x,y],k)=>{ const X=-pw/2+x*pw, Y=-ph/2+y*ph; k?g.lineTo(X,Y):g.moveTo(X,Y); }); g.closePath(); g.shadowColor='rgba(0,0,0,.35)'; g.shadowBlur=18; g.fill(); g.shadowBlur=0;
+    g.strokeStyle='rgba(110,130,165,.6)'; g.lineWidth=2.5; for(let y=-ph/2+ph*.16;y<ph/2-10;y+=ph*.1){ g.beginPath(); g.moveTo(-pw/2+8,y); g.lineTo(pw/2-8,y); g.stroke(); }
+    g.strokeStyle='rgba(30,40,70,.9)'; g.lineWidth=4; for(let y=-ph/2+ph*.14,k=0;y<ph/2-20;y+=ph*.1,k++){ g.beginPath(); let x=-pw/2+pw*.08; g.moveTo(x,y); while(x<pw/2-pw*(.1+.25*((k*7)%3)/3)){ x+=pw*.035; g.lineTo(x,y+(k+x)%7-3); } g.stroke(); }
+    g.fillStyle='#c8322a'; g.beginPath(); g.arc(0,-ph/2+ph*.06,h*.018,0,7); g.fill(); g.restore(); tex.needsUpdate=true; }
+
   let scr=null;
   function lamp(on){ const o=PARK.items.vlamp; o&&o.traverse(m=>{ if(m.material){ m.material.color.setHex(on?0x3ddc84:0x2c312c); m.material.emissive.setHex(0x3ddc84); m.material.emissiveIntensity=on?1.4:0; } }); }
   function drawScreen(){ if(!scr) return; const q=scr.g, w=scr.w, h=scr.h, F='"Noto Sans KR","Malgun Gothic",sans-serif'; q.fillStyle=st.power?'#07130d':'#050607'; q.fillRect(0,0,w,h); q.textAlign='center';
     if(!st.power){ q.fillStyle='#2f3d36'; q.font='700 36px '+F; q.fillText('전원 꺼짐',w/2,h/2+12); scr.tex.needsUpdate=true; return; }
     q.strokeStyle='#3dff8a'; q.lineWidth=6; q.strokeRect(4,4,w-8,h-8); q.fillStyle='#7dffb0'; q.font='700 30px '+F; q.fillText('바이킹 · 무선 조종 대기',w/2,70);
     q.font='700 24px '+F; q.fillStyle='#9dffc4'; q.fillText('조종기 [밀기] — 배에 타서',w/2,140); q.fillText('점검 높이 50°',w/2,180); scr.tex.needsUpdate=true; }
-  async function readManual(){ AUDIO.click(); await showMsg(R.manual.title,R.manual.body);
-    if(S.flags.manual_viking) return; S.flags.manual_viking=true; INV.note('manual_viking',R.manual.title,R.manual.body); setGoal(null);
-    await mono(['이번엔 직접 타서, 조종기로 흔들어 올리라고.','…책상 위에 찢어진 종이가 있다. 조종기 옆에.']); objective('책상 위의 찢어진 쪽지를 읽자'); const c=itemPos('vremote'); if(c) setGoal(c.x,c.z,'찢어진 쪽지'); }
-  async function readNote(){ AUDIO.noise(.12,.25,0,3200); await showMsg(R.note.title,TORN(R.note.body)); INV.note(R.note.id,R.note.title,TORN(R.note.body));
-    if(S.flags.vnote) return; S.flags.vnote=true; setGoal(null);      // 공원 시계 05:30 (game.js CLOCK)
-    await mono(['…그래서 낮엔 동상이었던 거구나.','해는 높은 곳에 먼저 닿는다. 배를 끝까지 띄워서 — 그 녀석이 있는 끝을 햇빛에 세 번.','점검하는 척 타면 따라 탄다. 한 줄씩 넘어 오기 전에.']);
+  async function readNote(){ AUDIO.noise(.12,.25,0,3200); const first=!S.flags.vnote;
+    if(first) await mono(['점검 방법이… 매직으로 죽죽 지워져 있다.','그 위에 찢어진 쪽지가 핀으로 꽂혀 있다.']);
+    await showMsg(R.note.title,TORN(R.note.body)); INV.note(R.note.id,R.note.title,TORN(R.note.body));
+    if(!first) return; S.flags.vnote=true; S.flags.manual_viking=true; setGoal(null);      // 공원 시계 05:30 (game.js CLOCK)
+    await mono(['…그래서 낮엔 동상이었던 거구나.','해는 높은 곳에 먼저 닿는다. 배를 끝까지 띄워서 — 그 녀석이 있는 끝을 햇빛에 네 번.','점검하는 척 타면 따라 탄다. 한 줄씩 넘어 오기 전에.']);
     await card('05:30','새벽 5시 반','동쪽 하늘이 옅어진다','',2600);
     objective('책상 위의 무선 조종기를 챙기자'); const c=itemPos('vremote'); if(c) setGoal(c.x,c.z,'무선 조종기'); }
   async function takeRemote(){ if(!S.flags.vnote) return mono('무선 조종기. …먼저 쪽지부터 읽자.'); AUDIO.click(); PARK.items.vremote.visible=false; S.flags.vremote=true; setGoal(null);
     INV.item('vremote','무선 조종기','바이킹 배를 밀어 주는 조종기. 초록 버튼 [밀기].');
     await mono(['무선 조종기. 초록 버튼이 [밀기].','배가 가장 빠를 때 눌러야 높이 올라간다고 했지.']); objective('조작반 전원을 켜자'); const c=itemPos('vpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
   async function power(){ AUDIO.click();
-    if(!S.flags.manual_viking) return mono('…점검 방법부터 찾자.');
-    if(!S.flags.vremote) return mono(S.flags.vnote?'무선 조종기부터 챙기자.':'…책상 위의 찢어진 쪽지부터 읽자.');
+    if(!S.flags.vnote) return mono('…벽의 점검 방법부터 보자.');
+    if(!S.flags.vremote) return mono('무선 조종기부터 챙기자.');
     if(st.power) return mono('전원은 켜져 있다. 배에 타자.');
     st.power=true; S.flags.viking_power=true; lamp(true); drawScreen(); AUDIO.tone(120,.4,'sawtooth',.06,0,60); AUDIO.tone(1100,.08,'square',.07,.4); await sleep(1000);
     await mono(['전원이 들어왔다. 배는 거의 멈춰 있다.','…이제 배에 탄다. 승강대로.']); objective('승강대에서 바이킹에 타자'); setGoal(-3.5,-40.4,'승강대'); }
@@ -191,11 +202,11 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
   ROOMS.push({id:'room7', build(){
     const I=PARK.items, add=(k,name,fn,range=2.4,enabled)=>{ if(I[k]) INTER.push({mesh:I[k],name,range,fn,enabled}); };
     if(I.vlamp) I.vlamp.traverse(o=>{ if(o.material) o.material=o.material.clone(); });
-    add('manual_viking','바이킹 야간 점검 방법',readManual,2.4,inBooth);
+    add('manual_viking','점검 방법 (찢어진 쪽지가 꽂혀 있다)',readNote,2.6,inBooth);
+    eraseManual();
     const big=(k,name,fn,w,h,d,on)=>{ const p=itemPos(k); if(!p) return; const box=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),PICK); box.position.copy(p); WORLD.add(box); INTER.push({mesh:box,name,range:2.8,fn,enabled:on||inBooth}); };
     big('vpower','전원 버튼',power,.5,.34,.5);
     big('vremote','무선 조종기',takeRemote,.45,.3,.5,()=>inBooth()&&!S.flags.vremote);
-    const rp=itemPos('vremote'); if(rp&&HUNT.scrap) INTER.push({mesh:HUNT.scrap(rp.x+.05,rp.y-.012,rp.z+.32,.3),name:'찢어진 쪽지',range:2.6,fn:readNote,enabled:inBooth});      // 조종기 옆 일지 ⑥
     add('vforce','밀기 장치',()=>{ AUDIO.click(); mono('밀기 장치. 오늘은 무선 조종기로 — 배에 타서 민다.'); },2.4,inBooth);
     add('mic_viking','안내 방송 마이크',()=>{ AUDIO.click(); mono('…방송이 켜지지 않는다.'); },2.4,inBooth);
     if(I.vscreen){ scr=screenOn(I.vscreen,{x:-10.8,z:-39.2}); drawScreen(); }
@@ -207,6 +218,6 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     if(a) a.rotation.z=st.power?.04*Math.sin(S.t*1.9):.02*Math.sin(S.t*.7);
     if(f.ferris_done&&!f.viking_arrive&&!S.busy&&P.free){ const s=spot();
       if(Math.hypot(P.x-s.x,P.z-s.z)<8){ f.viking_arrive=true; setGoal(null);
-        mono(['바이킹. 용머리 배가 바람에 조금씩 흔들린다. 끼익…','마지막 점검이다. 조작실로.']).then(()=>{ objective('바이킹 조작실에서 점검 방법을 찾자'); const m=itemPos('manual_viking'); if(m) setGoal(m.x,m.z,'점검 방법'); }); } }
+        mono(['바이킹. 용머리 배가 바람에 조금씩 흔들린다. 끼익…','마지막 점검이다. 조작실로.']).then(()=>{ objective('바이킹 조작실에서 점검 방법을 보자'); const m=itemPos('manual_viking'); if(m) setGoal(m.x,m.z,'점검 방법'); }); } }
   }});
 })();

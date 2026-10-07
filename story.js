@@ -132,7 +132,7 @@ EVENTS.push(
     if(PARK.scrawl) PARK.scrawl.visible=true; await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   // 새벽 4시 : 달이 붉어지며 눈을 뜬다 (game.js 하늘 셰이더 eye)
-  {at:24*60+240, fn:async()=>{ while(S.busy||!P.free||document.querySelector('.ov.on')) await sleep(300);      // 문제를 푸는 중이면 끝날 때까지 (달은 이미 붉다)
+  {at:24*60+240, fn:async()=>{ while(S.busy||!P.free||S.flags.viking_ride||document.querySelector('.ov.on')) await sleep(300); if(S.flags.viking_end||S.over) return;      // 바이킹을 타는 중이면 내린 뒤에      // 문제를 푸는 중이면 끝날 때까지 (달은 이미 붉다)
     const prev=$('#objtext').textContent;
     if(HUNT.indoor()){ AUDIO.tone(58,1.6,'sine',.3); await mono(['…창밖이 붉어졌다.','달빛이 이상하다. 밖으로 나가서 달을 보자.']); objective('밖으로 나가 달을 보자');      // 조작실 · 숙소 안 : 달이 안 보인다
       while(HUNT.indoor()||S.busy||!P.free) await sleep(300); }
