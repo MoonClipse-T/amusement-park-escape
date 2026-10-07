@@ -465,7 +465,7 @@ function tickSky(dt,force){ if(!SKY.u) return; SKY.u.t.value+=dt; skyT+=dt; if(!
   // 보름달 : 해가 질 무렵 동쪽에서 떠서, 자정 무렵 남쪽 하늘 가장 높이, 해 뜰 무렵 서쪽으로 진다 (남중 고도 약 50°로 둠)
   const ma=(m-19*60)/(11*60)*Math.PI, alt=50*Math.PI/180; const md=SKY.u.moonDir.value.set(Math.cos(ma),Math.sin(ma)*Math.sin(alt),Math.sin(ma)*Math.cos(alt)).normalize();
   // 정전(S.blackout) 뒤로는 하늘빛도 낮춘다 — 손전등 없이는 잘 안 보이게. 새벽 4시부터 달이 붉어지며 눈을 뜬다 (달의 눈)
-  const bk=S.blackout?.1:1, eye=clamp((m-28*60)/20,0,1); SKY.u.eye.value=eye; SKY.moon.color.setHex(0xb8c8f0).lerp(_c2.set(0xff4a34),eye);
+  const bk=S.blackout?.1:1, eye=m>=28*60?1:0; S.redMoon=eye>0; SKY.u.eye.value=eye;      // 04:00 이 되는 순간 바로 눈을 뜬다 (붉은 달 — 달빛 웅덩이가 소용없어진다, hunt.js) SKY.moon.color.setHex(0xb8c8f0).lerp(_c2.set(0xff4a34),eye);
   SKY.moon.position.copy(md).multiplyScalar(100); SKY.moon.intensity=(Math.max(0,md.y)*0.55+0.08)*(S.blackout?.22:1);
   col('fog',_c1); scene.fog.color.copy(_c1).convertSRGBToLinear(); scene.fog.density=num('fd'); renderer.toneMappingExposure=DBG.bright?2.6:num('ex')*(S.blackout?.8:1);
   SKY.hemi.intensity=num('hemi')*bk; const env=num('env')*bk; PARK.mats.forEach(m=>m.envMapIntensity=env); SKY.sun.intensity=num('sun')*0.9; }

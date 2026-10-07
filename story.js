@@ -132,5 +132,7 @@ EVENTS.push(
     if(PARK.scrawl) PARK.scrawl.visible=true; await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   // 새벽 4시 : 달이 붉어지며 눈을 뜬다 (game.js 하늘 셰이더 eye)
-  {at:24*60+240, fn:async()=>{ await card('04:00','새벽 4시','달빛이 붉어졌다','dead',3000); mono(['…달이 붉다.','달 한가운데에 — 눈?','…달이, 나를 보고 있다.']); }},
+  {at:24*60+240, fn:async()=>{ while(S.busy||!P.free||document.querySelector('.ov.on')) await sleep(300);      // 문제를 푸는 중이면 끝날 때까지 (달은 이미 붉다)
+    P.free=false; tickSky(0,true); const md=SKY.u.moonDir.value; await camTo({yaw:Math.atan2(-md.x,-md.z),pitch:Math.asin(md.y)},1.4);      // 시야가 저절로 달을 향한다
+    await card('04:00','새벽 4시','달이 눈을 떴다','dead',2600); await mono(['…달이 붉다.','달 한가운데에 — 눈?','…달이, 나를 보고 있다.','붉은 달빛은 내 편이 아니다. 이제 손전등뿐이다.']); P.free=true; }},
 );

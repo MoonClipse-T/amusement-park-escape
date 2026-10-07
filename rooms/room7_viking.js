@@ -5,7 +5,7 @@
         → 전원 ON : 배가 거의 움직이지 않는다
         → 밀기 장치 화면 : 그네를 밀듯, 배가 가운데를 지나는 순간 [밀기] (Space) → 점점 크게 흔들린다. 점검 높이에 세 번 연속 닿으면 성공
            (조작실 창밖의 진짜 배도 같이 흔들린다)
-        → 배가 크게 흔들리는 동안 달토끼가 울타리 앞에서 구경한다 (유인 — hunt.js HUNT.lureAt) → 전원 OFF → 지시서의 점검 끝
+        → 전원 OFF → 지시서의 점검 끝
    조작반 : 전원 장치(IT_vpower · IT_vlamp) · 밀기 장치(IT_vforce 다이얼 · IT_vscreen 화면) — gyro_drop.py 의 _console
    ★ 글 · 숫자는 아래 ROOM7 에서 고친다
    ============================================================ */
@@ -66,8 +66,7 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
   go.onclick=push; go.addEventListener('pointerdown',e=>e.stopPropagation());
   addEventListener('keydown',e=>{ if(e.code==='Space'&&el.classList.contains('on')){ e.preventDefault(); push(); } });
   async function solved(){ st.run=true; S.flags.viking_set=true; drawScreen(); setGoal(null);
-    const lured=typeof HUNT!=='undefined'&&HUNT.lureAt(1.5,-34.2,600,'바이킹');
-    await mono(['바이킹이 크게 흔들린다. 끼익 — 끼익 —',lured?'…울타리 앞에 그것이 서 있다. 흔들리는 배를 올려다본다. 구경하고 있다.':'박자만 맞으면 작은 힘으로도 이렇게 크게 흔들린다.','점검 끝. 점검 방법대로 전원을 끄자.']);
+    await mono(['바이킹이 크게 흔들린다. 끼익 — 끼익 —','박자만 맞으면 작은 힘으로도 이렇게 크게 흔들린다.','점검 끝. 점검 방법대로 전원을 끄자.']);
     objective('바이킹 전원을 끄자'); const c=itemPos('vpower'); if(c) setGoal(c.x,c.z,'전원 버튼'); }
 
   /* ---------- 조작실 : 점검 방법 · 전원 장치 · 밀기 장치 ---------- */
@@ -89,7 +88,7 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     if(!st.power){ st.power=true; S.flags.viking_power=true; lamp(true); drawScreen(); AUDIO.tone(120,.4,'sawtooth',.06,0,60); AUDIO.tone(1100,.08,'square',.07,.4); await sleep(1400);
       await mono(['전원이 들어왔다. 그런데 배가 거의 움직이지 않는다.','점검 방법 2번 — 밀기 장치로 흔들어 올리자.']);
       objective('밀기 장치로 배를 점검 높이까지 흔들자'); const c=itemPos('vforce'); if(c) setGoal(c.x,c.z,'밀기 장치'); return; }
-    if(st.run){ st.power=false; st.run=false; S.flags.viking_done=true; lamp(false); drawScreen(); AUDIO.tone(300,.15,'square',.08); setGoal(null); if(typeof HUNT!=='undefined') HUNT.lureOff('바이킹');
+    if(st.run){ st.power=false; st.run=false; S.flags.viking_done=true; lamp(false); drawScreen(); AUDIO.tone(300,.15,'square',.08); setGoal(null);
       await mono(['바이킹 점검도 끝. 이걸로 지시서의 점검은 모두 마쳤다.','…배가 멈추자, 그것이 다시 이쪽을 본다.','아침 6시. 달이 질 때까지만 버티면 된다.']);
       objective('모든 점검 완료 — 아침 6시까지 버티자 (엔딩 준비 중)'); return; }
     mono('전원 버튼. 점검이 끝나면 꺼야 한다.'); }
