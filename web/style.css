@@ -398,3 +398,20 @@ body.remote-on #mono{bottom:calc(var(--rh,380px) + 8px);}
 .wrange::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-14px;border-radius:50%;background:var(--amber);border:3px solid #1b1b1b;box-shadow:0 2px 8px rgba(0,0,0,.6);}
 .wrange::-moz-range-track{height:10px;border-radius:5px;background:linear-gradient(90deg,#2f3a52,#55585e 50%,#5a3a2a);border:1px solid #6a6d73;}
 .wrange::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--amber);border:3px solid #1b1b1b;}
+
+/* 바이킹 무선 조종기 (손에 든 조종기 — 화면 아래 가운데) */
+#vremote{display:none;position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;pointer-events:none;}
+#vremote.on{display:block;}
+#vremote .vr-body{position:relative;display:flex;align-items:center;gap:14px;padding:12px 16px 12px 12px;border-radius:18px 18px 14px 14px;pointer-events:auto;
+ background:linear-gradient(#f4c62a,#d9a514);border:3px solid #2a2018;box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.4);}
+#vremote .vr-ant{position:absolute;right:26px;top:-34px;width:7px;height:36px;border-radius:4px;background:#1b1b1b;}
+#vremote canvas{display:block;width:min(300px,52vw);height:auto;border-radius:8px;border:3px solid #1b1b1b;}
+#vremote .vr-push{width:96px;height:96px;border-radius:50%;border:5px solid #1b1b1b;background:radial-gradient(circle at 40% 35%,#6dff9a,#1f9a46 70%);color:#06280f;font:700 22px/1 var(--sign);
+ letter-spacing:2px;box-shadow:0 6px 0 #0e4a22;touch-action:none;user-select:none;-webkit-user-select:none;}
+#vremote .vr-push.hit,#vremote .vr-push:active{transform:translateY(4px);box-shadow:0 2px 0 #0e4a22;}
+#vremote .vr-stop{position:absolute;left:-14px;top:-14px;width:30px;height:30px;border-radius:50%;background:#c8322a;border:3px solid #1b1b1b;}
+body.riding .rbtn,body.riding #stick,body.riding #runBtn{display:none!important;}
+/* 실패 엔딩의 전단 */
+#over .flyer{display:block;width:min(260px,70vw);margin:16px auto 0;padding:14px 12px;background:#f3ecd8;color:#2a2018;transform:rotate(-2deg);box-shadow:0 6px 18px rgba(0,0,0,.6);font-size:14px;line-height:1.5;}
+#over .flyer b{display:block;font:400 24px/1.2 var(--sign);color:#8e231c;margin-bottom:4px;}
+#over .flyer small{display:block;margin-top:6px;color:#6a5a48;}

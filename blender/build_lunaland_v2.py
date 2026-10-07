@@ -409,7 +409,8 @@ build_bumper_booth()   # 같은 파일 : 범퍼카 조작실
 build_bumper_cars()    # blender/parts/bumper_cars.py : 범퍼카 6대
 build_flume()          # blender/parts/flume_ride.py : 후룸라이드 물길 · 스플래시 풀 · 잠긴 조작실 (방 4)
 build_gyro()           # blender/parts/gyro_drop.py : 자이로드롭 탑 · 탑승 의자 · 자석 브레이크 · 조작실 (방 5)
-build_viking()         # blender/parts/viking_ride.py : 유령의 집을 지우고 바이킹 (모델만)
+build_viking()
+build_viking_ride_extras()   # viking_ride.py : 배 안 좌석 7줄 · 무선 조종기         # blender/parts/viking_ride.py : 유령의 집을 지우고 바이킹 (모델만)
 build_ferris_booth()   # blender/parts/ferris_booth.py : 관람차 조작실 (방 6)
 
 # ---------------------------------------------------------------- 4. 달토끼 아이스크림 판매대 (근무지)

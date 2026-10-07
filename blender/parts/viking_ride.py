@@ -10,6 +10,7 @@
 import bpy, bmesh, math, mathutils
 
 VX, VZ, VPIV = 0.0, -43.0, 13.0
+BENCH_X = (-4.5, -3.0, -1.5, 0.0, 1.5, 3.0, 4.5)        # 배 안 좌석 줄 (배 가운데에서 x) — 엔진 room7 ROOM7.rows 와 맞춘다
 
 
 def _beam(name, p1, p2, w, m):
@@ -85,3 +86,41 @@ def build_viking():
     for me in [m for m in bpy.data.meshes if m.users == 0]:
         bpy.data.meshes.remove(me)
     print("VIKING_OK")
+
+
+def build_viking_ride_extras():
+    """배 안 나무 좌석 7줄 (ANIM_viking 에 붙어 같이 흔들린다 — 달토끼가 한 줄씩 넘어 온다) · 조작실 책상 위 무선 조종기 IT_vremote"""
+    _clear(("vikingx_bench", "IT_vremote", "vremotex_"))
+    M = bpy.data.materials
+    wood, iron, red, dark = M["darkwood"], M["iron"], M["paint_red"], M["locker_dark"]
+    yellow = M.get("vremote_yellow") or _mat("vremote_yellow", "#f0c020", 0.45)
+    green = M.get("vremote_green") or _mat("vremote_green", "#2fbf5a", 0.4)
+    anim = bpy.data.objects["ANIM_viking"]
+    def bevel(o, w=.025):
+        m = o.modifiers.new("bev", "BEVEL"); m.width = w; m.segments = 2; m.limit_method = "ANGLE"
+        return o
+    for k, x in enumerate(BENCH_X):
+        parts = [bevel(_box(f"vikingx_bench{k}_seat", VX + x - .2, VX + x + .2, 2.5, 2.62, VZ - 1.15, VZ + 1.15, wood)),
+                 bevel(_box(f"vikingx_bench{k}_back", VX + x + .17, VX + x + .24, 2.62, 3.05, VZ - 1.1, VZ + 1.1, wood), .015),
+                 bevel(_box(f"vikingx_bench{k}_leg", VX + x - .1, VX + x + .1, 2.15, 2.5, VZ - .9, VZ + .9, wood), .015),
+                 bevel(_box(f"vikingx_bench{k}_bar", VX + x - .26, VX + x - .22, 2.95, 3.0, VZ - 1.0, VZ + 1.0, iron), .01)]
+        for o in parts:
+            o.parent = anim
+            o.matrix_parent_inverse = anim.matrix_basis.inverted()
+    # 무선 조종기 : 노란 몸통 · 큰 초록 밀기 버튼 · 빨간 비상 정지 · 검은 손잡이 · 안테나 (조작실 책상 위)
+    x, z, y = -9.95, -38.3, .8
+    body = bevel(_box("vremotex_body", x - .045, x + .045, y, y + .045, z - .1, z + .1, yellow), .012)
+    grip = bevel(_box("vremotex_grip", x - .04, x + .04, y + .002, y + .05, z + .06, z + .12, dark), .01)
+    push = _cyl("vremotex_push", x, y + .052, z - .03, .026, .014, green, verts=20)
+    ring = _cyl("vremotex_ring", x, y + .047, z - .03, .032, .006, dark, verts=20)
+    stop = _cyl("vremotex_stop", x, y + .056, z + .035, .016, .02, red, verts=16)
+    ant = _cyl("vremotex_ant", x + .03, y + .03, z - .12, .005, .07, dark, axis="z", verts=8)
+    objs = [body, grip, push, ring, stop, ant]
+    for o in objs:
+        bpy.context.view_layer.objects.active = o
+        for m in list(o.modifiers):
+            bpy.ops.object.modifier_apply(modifier=m.name)
+    with bpy.context.temp_override(active_object=body, selected_editable_objects=objs, selected_objects=objs):
+        bpy.ops.object.join()
+    body.name = "IT_vremote"
+    print("VIKING_EXTRAS_OK")

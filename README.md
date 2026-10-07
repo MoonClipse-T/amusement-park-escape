@@ -22,7 +22,7 @@
 | `web/rooms/room4_coaster.js` | 방 4 : 후룸라이드 — 키패드(코스 그림) · 직접 타기 · 크레인 리모컨과 3D 계기판으로 부력 재기 · 모래주머니로 무게 맞추기 (`ROOM4`) |
 | `web/rooms/room5_gyro.js` | 방 5 : 자이로드롭 — 광장 동상 확인 · 정전(손전등) · 직접 타기 · 조작반 힘 화면(알짜힘 : 올라갈 때 · 떨어질 때 · 자석 브레이크 · 멈춘 뒤) · 김근수의 일지 |
 | `web/rooms/room6_ferris.js` | 방 6 : 관람차 — 조작반 방향 조절 화면(곤돌라 4개의 알짜힘 방향 = 중심 쪽 · 운동 방향만 변하는 운동) |
-| `web/rooms/room7_viking.js` | 방 7 : 바이킹 — 박자 맞춰 밀기(가운데를 지날 때 밀어 점검 높이까지 · 과학 문제가 아닌 놀이) · 돌아가는 동안 달토끼 유인 |
+| `web/rooms/room7_viking.js` | 방 7 : 바이킹 = 엔딩 「해돋이 바이킹」 — 무선 조종기를 들고 배에 타서, 배가 가장 빠를 때 밀어 높이 띄운다 · 따라 탄 달토끼가 좌석을 한 줄씩 넘어 오기 전에 꼭대기에서 햇빛 3번 → 돌 · 06:00 엔딩 |
 | `web/hunt.js` | 달토끼 추격(어둠 속에서만 · 달빛 기둥 `HUNT.MOON` 안은 안전 · 조작실 안에도 창밖에서 덮친다 · 반경 안에 오면 웃음소리 · 손전등 3초로 쫓아내기 · 늦으면 입을 크게 벌려 삼킨다) · 바닥의 찢어진 일지 조각 · 모은 쪽지 한 화면에 보기 `scrapWall` |
 | `web/main.js` | 시작 |
 | `web/vendor/` | three.js r128, GLTFLoader |
@@ -114,7 +114,7 @@ ROOMS.push({ id:'haunted',
 - 숙소 · 조작실 소품 : Poly Haven (CC0) — 소파 · 탁자 · 전기 주전자 · 무전기 · 철제 선반 · 상자 · 빗자루 · 소화기 · 화분 · 손전등 · 공구함 · 플라스틱 의자
 - 가방 : Quaternius "Backpack" (CC0) · 열쇠 : iPoly3D "Key" (CC0) · 근무복 : Polygonal Mind "Jacket" (CC0) — poly.pizza
 - 안내 방송 목소리 : Microsoft Edge 신경망 음성 (edge-tts 로 생성, web/assets/voice/) — 마감 방송 ko-KR-SunHi · 마이크 테스트(주인공) ko-KR-InJoon
-- 효과음 (web/assets/sfx/) : ElevenLabs Sound Effects 로 생성 — laugh(추격 중 달토끼 웃음소리 — 한 가지 목소리) · maw(턱이 벌어지는 소리) · chomp(깨무는 소리) · thump(범퍼카가 난간에 박히는 쿵) · scare(점프 스케어) · giggle(멀리서 웃는 소리)
+- 효과음 (web/assets/sfx/) : ElevenLabs Sound Effects 로 생성 — laugh(추격 중 달토끼 웃음소리 — 한 가지 목소리) · maw(턱이 벌어지는 소리) · chomp(깨무는 소리) · glass(창 깨짐) · creak(바이킹 삐걱) · stone(돌로 굳음) · shatter(돌이 부서짐) · dawn(새벽 새소리) · thump(범퍼카가 난간에 박히는 쿵) · scare(점프 스케어) · giggle(멀리서 웃는 소리)
 - Sketchfab (CC BY) : "Viking Longship" by FoxxAssets (바이킹 배 — 돛 · 돛대 제거) · "Rabbit plush / Conejo Peluche" by afzmtm · "Old Iron Kettlebell" by tomarranskinner · "FNAF SB | Foxy Logride Assets" by KPMisParrot (통나무 보트 · 물길만) · "CC0 - Keypad Door Lock" by plaggy · "Gantry Portica" by speedtwo · "Horseshoe Magnet" by ArchieCGD · "Cute Bunny" by minimoku (달토끼 캐릭터 — 뼈대 · 동작 · 공포 얼굴은 직접 제작) · "Worn-out shoes" by adresen (범퍼카 보닛 위 이전 근무자의 신발) (blender/source/sketchfab/)
 - 소품 : Higgsfield 3D 카탈로그 (FoodCart · MarketStall · CafeTable · BeachUmbrella · PlazaBench · RecyclingBin · FlowerCart)
 - 달토끼 인형 · 판매대 · 나무 : Blender 스크립트로 직접 생성 (`blender/parts/`)
