@@ -38,7 +38,8 @@ const AUDIO={ctx:null,
      if(broken){ const d=c.createWaveShaper(), cv=new Float32Array(256); for(let i=0;i<256;i++){ const x=i/128-1; cv[i]=Math.tanh(x*4); } d.curve=cv; f.disconnect(); f.connect(d); d.connect(g); }
      s.start(c.currentTime+delay); return buf.duration/(broken?.9:1); }).catch(()=>0); },
  // 녹음된 효과음 (web/assets/sfx/<key>.mp3 — ElevenLabs 로 만든 절구 소리 · 비명 · 웃음). 한 번 읽어 두고 다시 쓴다
- sfxBuf:{}, sfx(key,vol=1,rate=1){ const c=this.ctx; if(!c) return; const play=buf=>{ if(!buf) return; const s=c.createBufferSource(); s.buffer=buf; s.playbackRate.value=rate; const g=c.createGain(); g.gain.value=vol; s.connect(g); g.connect(c.destination); s.start(); };
+ sfxBuf:{}, sfx(key,vol=1,rate=1){ const c=this.ctx; if(!c||(S.gentle&&key==='laugh')) return;      // 비공포 모드 : 웃음소리 없음
+   const play=buf=>{ if(!buf) return; const s=c.createBufferSource(); s.buffer=buf; s.playbackRate.value=rate; const g=c.createGain(); g.gain.value=vol; s.connect(g); g.connect(c.destination); s.start(); };
    if(this.sfxBuf[key]) return play(this.sfxBuf[key]);
    const get=INLINE?Promise.resolve(ASSETS['sfx_'+key]?b64buf(ASSETS['sfx_'+key]):null):fetch('assets/sfx/'+key+'.mp3').then(r=>r.ok?r.arrayBuffer():null);
    get.then(b=>b&&c.decodeAudioData(b)).then(buf=>{ this.sfxBuf[key]=buf; play(buf); }).catch(()=>{}); },
@@ -625,6 +626,7 @@ async function boot(){ try{
     $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(CP?0:600); $('#loading').style.display='none';
     if(CP){ S.phase='intro'; AUDIO.init(); ov('#start',false); S.busy=false; intro(); }     // 디버그 바로 가기 : 시작 화면 · 입장권 뜯기 없이 바로
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ S.gentle=b.dataset.m==='1'; document.querySelectorAll('#mode button').forEach(x=>x.classList.toggle('on',x===b)); AUDIO.init(); AUDIO.click(); });      // 공포 · 비공포 모드
 $('#startBtn').onclick=async()=>{ if(S.phase!=='title') return; S.phase='intro'; AUDIO.init(); if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume();
   $('#startBtn').classList.add('torn'); AUDIO.noise(.25,.3,0,2400); await sleep(700);
   $('#fade').classList.remove('clear'); await sleep(900); AUDIO.wind(); ov('#start',false); S.busy=false; intro(); };
