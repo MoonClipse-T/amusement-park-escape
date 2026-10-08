@@ -178,6 +178,10 @@ for(let k=1;k<=ROOM3.cars;k++){ SIGNS['bcar_'+k]=[String(k),'','#f2ede2','#1b1b1
     for(let k=1;k<=N;k++) add('bcar_'+k,`${k}번 범퍼카`,()=>openFric(k),2.8);
     sync3d();
   },
+  save(){ return {power:st.power,oil,wt,meas}; },
+  load(d){ const f=S.flags; if(!f.bumper_booth_in||f.coaster_arrive) return;
+    for(let k=1;k<=N;k++){ oil[k]=d.oil?.[k]||0; wt[k]=d.wt?.[k]||0; meas[k]=d.meas?.[k]??null; syncBells(k); }
+    st.power=!!d.power&&!f.bumper_done; st.lit=st.power?N:0; if(f.bumper_thump) crashCar(); sync3d(); },
   tick(dt){ if(S.stage==='night'&&S.flags.carousel_off&&!S.flags.bumper_booth_in&&IN(P.x,P.z)){ S.flags.bumper_booth_in=true; setGoal(null);
       mono(['범퍼카 조작실. 여기에도 점검 방법이 붙어 있겠지.']); objective('범퍼카 조작실에서 점검 방법을 찾자'); }
     tickScare(dt); tickBlink(dt); }});

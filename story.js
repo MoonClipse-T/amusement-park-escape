@@ -128,8 +128,8 @@ function skipIntro(){ if(S.stage!=='shift') return; S.introSkip=true; if(ORDER){
 /* ---------------- 밤의 사건 ---------------- */
 EVENTS.push(
   // 자정 : 시각만 알린다 (회전목마가 혼자 도는 일은 범퍼카에 도착했을 때 · rooms/room2_carousel.js)
-  {at:24*60, fn:async()=>{ document.body.classList.add('midnight'); S.rabbitAwake=true;
-    if(PARK.scrawl) PARK.scrawl.visible=true; await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
+  {at:24*60, quiet(){ document.body.classList.add('midnight'); S.rabbitAwake=true; if(PARK.scrawl) PARK.scrawl.visible=true; },      // quiet : 이어하기 때 (이미 지난 사건은 카드 없이 상태만)
+    fn:async function(){ this.quiet(); await card('00:00','자정','보름달이 가장 높이 떴다.','dead'); }},
   {at:24*60+120, fn:()=>card('02:00','새벽 2시','달이 기울기 시작했다','dead',3000)},
   // 새벽 4시 : 달이 붉어지며 눈을 뜬다 (game.js 하늘 셰이더 eye)
   {at:24*60+240, fn:async()=>{ while(S.busy||!P.free||S.flags.viking_ride||document.querySelector('.ov.on')) await sleep(300); if(S.flags.viking_end||S.over) return;      // 바이킹을 타는 중이면 내린 뒤에      // 문제를 푸는 중이면 끝날 때까지 (달은 이미 붉다)

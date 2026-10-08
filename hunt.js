@@ -261,6 +261,7 @@ ROOMS.push({id:'hunt', build(){
     HUNT.scrap=(x,y,z,rot)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(.36,.27),new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:.5,roughness:.9,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.3,side:THREE.DoubleSide}));
       m.rotation.set(-Math.PI/2,0,rot); m.position.set(x,y,z); WORLD.add(m); return m; };
     SCRAPS.forEach(sc=>{ const m=HUNT.scrap(sc.at[0],floorAt(sc.at[0],sc.at[1])+.06,sc.at[1],sc.rot);
-      INTER.push({mesh:m,name:'찢어진 쪽지',range:2.8,fn:async()=>{ AUDIO.noise(.12,.25,0,3200); m.visible=false; await showMsg(sc.title,TORN(sc.body)); INV.note(sc.id,sc.title,TORN(sc.body)); await mono(sc.say); }}); });
+      sc.mesh=m; INTER.push({mesh:m,name:'찢어진 쪽지',range:2.8,fn:async()=>{ AUDIO.noise(.12,.25,0,3200); m.visible=false; await showMsg(sc.title,TORN(sc.body)); INV.note(sc.id,sc.title,TORN(sc.body)); await mono(sc.say); }}); });
   },
   tick(dt){ HUNT.tick(dt); }});
+ROOMS.push({id:'scraps',load(){ SCRAPS.forEach(sc=>{ if(sc.mesh&&INV.notes.some(n=>n.id===sc.id)) sc.mesh.visible=false; }); }});      // 이어하기 : 주운 일지 조각은 바닥에 없다

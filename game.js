@@ -107,6 +107,14 @@ const LITE=IS_TOUCH||/[?&]lite/.test(location.search);
 if(LITE&&typeof createImageBitmap!=='undefined'){ const cib=createImageBitmap.bind(window);
   window.createImageBitmap=(src,...a)=>src instanceof Blob&&a.length<=1?cib(src,Object.assign({},a[0],{resizeWidth:512,resizeHeight:512,resizeQuality:'medium'})):cib(src,...a); }
 renderer.setPixelRatio(Math.min(devicePixelRatio,LITE?1:2)); renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+// 태블릿 GPU(디벗 갤럭시 탭 · Mali) 안전장치 : 손전등(눈 바로 옆의 스포트라이트)이 매끈한 면에 비치면 반사광 계산이 넘쳐(무한대 · NaN)
+//   그 빛이 닿는 자리 전체가 하얗게 덮이는 일이 있다 (PC 는 같은 값을 검게 버려서 보이지 않는다)
+//   → 반사광 분포 D 를 넘치지 않는 꼴(|N×H|² — 모바일 PBR 에서 쓰는 식, 값은 같다)로 · 한 빛의 반사광 상한 · 마지막 색이 NaN/무한대면 검게. PC 화면은 그대로
+(function safeShaders(){ const C=THREE.ShaderChunk, a='float D = D_GGX( alpha, dotNH );', r='return F * ( G * D );';
+  if(!C.bsdfs.includes(a)||!C.bsdfs.includes(r)) return console.warn('safeShaders : three.js 셰이더가 바뀌었다');
+  C.bsdfs=C.bsdfs.split(a).join('vec3 nxh_ = cross( normal, halfDir ); float k_ = alpha / max( dot( nxh_, nxh_ ) + pow2( dotNH * alpha ), 1e-8 ); float D = min( RECIPROCAL_PI * k_ * k_, 6e4 );')
+    .split(r).join('return min( F * ( G * D ), vec3( 6e4 ) );');
+  C.tonemapping_fragment='{ float s_ = gl_FragColor.r + gl_FragColor.g + gl_FragColor.b; if( !( s_ >= 0.0 && s_ < 1e6 ) ) gl_FragColor.rgb = vec3( 0.0 ); }'+String.fromCharCode(10)+C.tonemapping_fragment; })();
 const FOG_COL=0x11151b;
 const scene=new THREE.Scene(); scene.background=new THREE.Color(FOG_COL); scene.fog=new THREE.FogExp2(FOG_COL,0.024);
 const camera=new THREE.PerspectiveCamera(72,1,0.05,260);
@@ -596,26 +604,33 @@ function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
 // 바로 가기로 새로 불러오면 소리가 잠겨 있다 → 첫 클릭 · 키에서 깨운다
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{ if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume(); },true));
 const CP=(location.search.match(/[?&]cp=(\w)/)||[])[1];
-// 이어하기 : 밤 점검 중 지나온 방(cpLevel) · 남은 시간 · 모드를 이 기기에 저장 → 새로고침해도 시작 화면 [이어하기] 로 그 방 입구에서 다시 (끝나면 지운다 · 이어한 뒤엔 주소를 비워 다시 새로고침하면 가장 최근 저장으로)
+// 이어하기 : 밤 점검 중 하던 그대로를 이 기기에 저장 → 새로고침 · 탭이 죽어도 시작 화면 [이어하기] 로 그 자리에서 다시 (끝나면 지운다 · 이어한 뒤엔 주소를 비워 다시 새로고침하면 가장 최근 저장으로)
+//   저장 : 지나온 방(lv) · 남은 시간 · 모드 · 서 있던 자리 · 모든 진행 표시(S.flags) · 소지품 · 공원 시각 · 지난 사건 · 할 일 · 목적지 · 손전등 · 방마다의 상태(ROOMS 의 save())
+//   독백 · 문제 화면 · 놀이기구 탑승처럼 진행이 바뀌는 중에는 저장하지 않는다 → 늘 '멈춰 서 있던' 상태로 돌아간다 (탑승 중 나가면 타기 직전으로)
 const SAVE_KEY='lunaland_save', RESUME=/[?&]resume/.test(location.search);
 const SAVE=(()=>{ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return s&&s.lv>=1?s:null; }catch(e){ return null; } })();
 if(RESUME&&SAVE) S.gentle=!!SAVE.g;
 let lastPos=null;      // 마지막으로 자유롭게 서 있던 자리 (놀이기구 · 글 읽는 중 · 공중은 빼고)
 function saveGame(){ if(S.stage!=='night'||!S.timerOn||S.over||(CP&&!S.cpReady)) return; const lv=cpLevel(); if(lv<1) return;
-  if(P.free&&!S.busy&&P.grounded&&!document.body.classList.contains('riding')) lastPos={lv,x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(3)};
-  try{ localStorage.setItem(SAVE_KEY,JSON.stringify({lv,t:Math.round(timeLeft),g:!!S.gentle,p:lastPos&&lastPos.lv===lv?lastPos:null})); }catch(e){} }
-// (x0,z0) 에서 (x1,z1) 까지 걸어갈 수 있는가 — 0.5 m 칸으로 막힌 곳(벽 · 닫힌 문 · 높은 단)을 피해 찾아본다 (두 점 둘레 20 m 안에서만 — 태블릿에서도 빨리)
-function reachable(x0,z0,x1,z1){ const C=.5, M=20, PB=PARK.bounds, B={x1:Math.max(PB.x1,Math.min(x0,x1)-M),x2:Math.min(PB.x2,Math.max(x0,x1)+M),z1:Math.max(PB.z1,Math.min(z0,z1)-M),z2:Math.min(PB.z2,Math.max(z0,z1)+M)}, nx=Math.ceil((B.x2-B.x1)/C), nz=Math.ceil((B.z2-B.z1)/C), seen=new Uint8Array(nx*nz), id=(x,z)=>Math.floor((x-B.x1)/C)*nz+Math.floor((z-B.z1)/C);
-  const goal=id(x1,z1), q=[id(x0,z0)]; if(!(goal>=0&&goal<nx*nz&&q[0]>=0&&q[0]<nx*nz)) return false; seen[q[0]]=1;
-  for(let h=0;h<q.length;h++){ const c=q[h]; if(c===goal) return true; const i=c/nz|0, j=c%nz;
-    for(const [a,b] of [[i+1,j],[i-1,j],[i,j+1],[i,j-1]]){ if(a<0||b<0||a>=nx||b>=nz) continue; const k=a*nz+b; if(seen[k]) continue; seen[k]=1; if(k!==goal&&blocked(B.x1+(a+.5)*C,B.z1+(b+.5)*C)) continue; q.push(k); } }
-  return false; }
+  if(!P.free||S.busy||!P.grounded||camAnim||document.body.classList.contains('riding')||document.querySelector('.ov.on')) return;
+  lastPos={lv,x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(3)}; const r={}; ROOMS.forEach(o=>{ if(o.save) r[o.id]=o.save(); });
+  try{ localStorage.setItem(SAVE_KEY,JSON.stringify({lv,t:Math.round(timeLeft),g:!!S.gentle,p:lastPos,f:S.flags,inv:{n:INV.notes,i:INV.items},c:S.clock,ev:EVENTS.map(e=>e.done?1:0),
+    o:$('#objtext').textContent,gl:GOAL.on?[GOAL.x,GOAL.z,GOAL.name]:null,tr:S.torch?1:0,r})); }catch(e){} }
+// 이어하기 불러오기 : 바로 가기(c.go)로 그 방 입구까지 만든 뒤 → 저장된 진행 표시 · 소지품 · 시각으로 바꾸고 → 방마다 load() 가 그 상태(전원 · 불 꺼짐 · 문제 진행 …)를 다시 맞춘다
+function loadGame(s){ if(!s.f) return;      // v37 이전 저장 : 방 입구에서
+  const ping=INV.ping; INV.ping=()=>{};
+  for(const k in S.flags) if(!(k in s.f)) delete S.flags[k]; Object.assign(S.flags,s.f); S.flags.viking_ride=false;
+  INV.notes=s.inv.n; INV.items=s.inv.i; if(s.c!=null) S.clock=s.c;
+  (s.ev||[]).forEach((d,i)=>{ const e=EVENTS[i]; if(d&&e&&!e.done){ e.done=true; if(e.quiet) e.quiet(); } });
+  ROOMS.forEach(o=>{ if(o.load) o.load((s.r||{})[o.id]||{}); });
+  INV.ping=ping; if(s.tr&&!S.torch&&S.flags.torch) toggleLight();
+  objective(s.o||''); if(s.gl) setGoal(...s.gl); else setGoal(null); tickSky(0,true); }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 setInterval(saveGame,3000); addEventListener('pagehide',saveGame);
 async function runCheckpoint(key){ const c=CHECKPOINTS.find(c=>c.key===key); if(!c) return;
   while($('#mono').classList.contains('on')) monoNext(); document.querySelectorAll('.ov.on').forEach(el=>{ if(el.id!=='start') ov('#'+el.id,false); });
   camAnim=null; await ensureNight(); while($('#mono').classList.contains('on')) monoNext();
-  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); if(RESUME&&SAVE){ timeLeft=SAVE.t; const p=SAVE.p; if(p&&p.lv===SAVE.lv&&!blocked(p.x,p.z)&&reachable(P.x,P.z,p.x,p.z)){ warp(p.x,p.z); P.yaw=p.yaw; } try{ history.replaceState(null,'',location.pathname); }catch(e){} } S.cpReady=true; toast((RESUME?'이어하기 · ':'디버그 · '+key+'. ')+c.name); }
+  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); if(RESUME&&SAVE){ timeLeft=SAVE.t; loadGame(SAVE); const p=SAVE.p; if(p&&p.lv===SAVE.lv&&!blocked(p.x,p.z)){ warp(p.x,p.z); P.yaw=p.yaw; } try{ history.replaceState(null,'',location.pathname); }catch(e){} } S.cpReady=true; toast((RESUME?'이어하기 · ':'디버그 · '+key+'. ')+c.name); }
 function checkpointList(){ showMsg('디버그 · 방 바로 가기',CHECKPOINTS.slice().sort((a,b)=>a.key.localeCompare(b.key)).map(c=>'<b>Shift+'+c.key+'</b> &nbsp;'+c.name).join('<br>')+'<br><br><span style="opacity:.6">Alt+숫자 : 구역(놀이기구) 위치로만 이동</span>'); }
 const DBG={on:false};
 function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];

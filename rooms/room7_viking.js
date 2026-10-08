@@ -13,9 +13,9 @@
    ★ 숫자는 아래 ROOM7, 좌석 줄은 Blender viking_ride.py BENCH_X 와 맞춘다
    ============================================================ */
 'use strict';
-const ROOM7={ target:50, hits:4,                 // 햇빛이 닿는 높이 (도) · 돌이 되려면 받아야 하는 햇빛 횟수
+const ROOM7={ target:54, hits:4,                 // 햇빛이 닿는 높이 (도) · 돌이 되려면 받아야 하는 햇빛 횟수
   rows:[4.5,3,1.5,0,-1.5,-3], seat:-4.5, bow:6.0, // 달토끼가 넘어오는 좌석 줄 (배 가운데에서 x, 동 → 서) · 내 자리 · 달토끼가 올라타는 뱃머리
-  W2:3.6, push:.42, zone:.22, damp:.05,          // 흔들리는 빠르기² (한 번 왕복 약 3.3초) · 한 번 밀 때 더해지는 빠르기 · 가장 낮은 곳 구간(rad) · 마찰
+  W2:3.6, push:.42, zone:.12, win:.09, damp:.05, // 흔들리는 빠르기² (한 번 왕복 약 3.3초) · 한 번 밀 때 더해지는 빠르기 · 가장 낮은 곳 구간 : 가운데에서 zone(rad) 또는 win 초 안 (빠를수록 각도로는 넓다) · 마찰
   manual:{title:'바이킹 야간 점검 방법',
     body:DOC(['조작반 <b>전원 ON</b>.','책상 위 <b>무선 조종기</b>를 들고 배에 탄다.','조종기 <b>[밀기]</b>로 배를 흔들어 <b>점검 높이</b>까지 올린다. 배가 <b>가장 빠를 때</b> 밀어야 높이 올라간다.','!점검이 끝나면 배에서 내려 <b>전원을 끈다.</b>'])},
   note:{id:'scrap6', title:'찢어진 일지 ⑥',
@@ -28,7 +28,8 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
   const R=ROOM7, st={power:false}, T=R.target*Math.PI/180, DECK=2.17-13, SEAT=2.62-13;      // 배 안 바닥 · 좌석 높이 (축 기준)
   const spot=()=>PARK.spots.booth_viking||{x:-11.2,z:-37.3};
   const inBooth=()=>P.x>-11.95&&P.x<-9.65&&P.z>-40.35&&P.z<-38.05;
-  const sw={th:.03,om:0,cool:0,damp:R.damp};                                         // 배의 기울기(+ = 동쪽 끝이 올라감) · 빠르기
+  const sw={th:.03,om:0,pushed:false,damp:R.damp};      // pushed : 이번에 가장 낮은 곳을 지나는 동안 이미 밀었다 (한 번 지날 때 한 번만 — 꼭대기에서 방향이 바뀌면 다시)
+  const inZone=()=>Math.abs(sw.th)<Math.max(R.zone,Math.abs(sw.om)*R.win);                                         // 배의 기울기(+ = 동쪽 끝이 올라감) · 빠르기
   const rd={on:false,t:0,rab:null,body:null,row:-2,hits:0,stone:0,hop:null,bite:null,fall:null,flash:0,shake:0,chunks:[],end:false,msgT:0};
   const V=new THREE.Vector3(); R.rd=rd; R.sw=sw;      // (디버그 : ROOM7.rd · ROOM7.sw)
   const ease=x=>x*x*(3-2*x);
@@ -42,20 +43,21 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     rg.strokeStyle='#f2c230'; rg.lineWidth=3; rg.setLineDash([5,4]); const ta=Math.PI/2-T; rg.beginPath(); rg.moveTo(cx+Math.cos(ta)*(L-14),cy+Math.sin(ta)*(L-14)); rg.lineTo(cx+Math.cos(ta)*(L+10),cy+Math.sin(ta)*(L+10)); rg.stroke(); rg.setLineDash([]);
     rg.fillStyle='#f2c230'; rg.font='700 15px '+F; rg.textAlign='left'; rg.fillText('햇빛',cx+Math.cos(ta)*(L+12)+2,cy+Math.sin(ta)*(L+12)+4);
     const a=Math.PI/2-sw.th; rg.strokeStyle='#9dffc4'; rg.lineWidth=5; rg.beginPath(); rg.moveTo(cx,cy); rg.lineTo(cx+Math.cos(a)*L,cy+Math.sin(a)*L); rg.stroke();
-    rg.fillStyle=Math.abs(sw.th)<R.zone?'#3dff8a':'#2f5a42'; rg.beginPath(); rg.arc(cx+Math.cos(a)*L,cy+Math.sin(a)*L,9,0,7); rg.fill();
+    rg.fillStyle=inZone()&&!sw.pushed?'#3dff8a':'#2f5a42'; rg.beginPath(); rg.arc(cx+Math.cos(a)*L,cy+Math.sin(a)*L,9,0,7); rg.fill();
     rg.textAlign='left'; rg.font='700 15px '+F; rg.fillStyle='#9dffc4'; rg.fillText('햇빛',W*.62,26);
     for(let k=0;k<R.hits;k++){ rg.fillStyle=k<rd.hits?'#ffcf5a':'#1d2a22'; rg.beginPath(); rg.arc(W*.62+58+k*24,21,9,0,7); rg.fill(); }
     rg.fillStyle='#9dffc4'; rg.fillText('남은 줄',W*.62,62); const left=Math.max(0,R.rows.length-1-Math.max(-1,rd.row));
     for(let k=0;k<R.rows.length;k++){ rg.fillStyle=k<left?'#3dff8a':'#3a1414'; rg.fillRect(W*.62+58+k*16,51,12,14); }
     if(rd.msgT>0){ rg.fillStyle=rd.msgOk?'#3dff8a':'#ff8a7a'; rg.font='700 16px '+F; rg.fillText(rd.msg,W*.62,H-14); } }
   function say(m,ok){ rd.msg=m; rd.msgOk=ok; rd.msgT=1.6; }
-  function push(){ if(!rd.on||rd.end||rd.bite||sw.cool>0) return; sw.cool=.35; pushBtn.classList.add('hit'); setTimeout(()=>pushBtn.classList.remove('hit'),120);
+  // 연타해도 소용없다 : 가장 낮은 곳을 지날 때 딱 한 번만 통하고, 그 밖(또는 두 번째)은 덜컹 — 오히려 느려진다
+  function push(){ if(!rd.on||rd.end||rd.bite) return; pushBtn.classList.add('hit'); setTimeout(()=>pushBtn.classList.remove('hit'),120);
     const mx=Math.sqrt(2*R.W2*(1-Math.cos(1.05)));
-    if(Math.abs(sw.om)<.12&&Math.abs(sw.th)<.15){ sw.om=.55; AUDIO.tone(200,.25,'sawtooth',.07,0,-80); return say('배가 움직이기 시작했다',true); }
-    if(Math.abs(sw.th)<R.zone){ sw.om=clamp(sw.om+Math.sign(sw.om)*R.push,-mx,mx); AUDIO.tone(520,.09,'square',.08); AUDIO.noise(.14,.25,0,800); say('좋아 — 더 높이!',true); }
+    if(Math.abs(sw.om)<.12&&Math.abs(sw.th)<.15){ sw.om=.55; sw.pushed=true; AUDIO.tone(200,.25,'sawtooth',.07,0,-80); return say('배가 움직이기 시작했다',true); }
+    if(!sw.pushed&&inZone()){ sw.pushed=true; sw.om=clamp(sw.om+Math.sign(sw.om)*R.push,-mx,mx); AUDIO.tone(520,.09,'square',.08); AUDIO.noise(.14,.25,0,800); say('좋아 — 더 높이!',true); }
     else { sw.om*=.7; AUDIO.err(); AUDIO.noise(.25,.35,0,300); say('덜컹! 엇박자'); } }
   pushBtn.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); AUDIO.init(); push(); });
-  addEventListener('keydown',e=>{ if(e.code==='Space'&&rd.on){ e.preventDefault(); push(); } });
+  addEventListener('keydown',e=>{ if(e.code==='Space'&&rd.on&&!e.repeat){ e.preventDefault(); push(); } });
 
   /* ---------- 배에 탄 달토끼 : 배(ANIM_viking)의 자식 — 좌석을 한 줄씩 넘어 온다 ---------- */
   function makeRabbit(){ const o=MOONRABBIT.make('Walk'); MOONRABBIT.face(o,1); o.userData.mats=[];
@@ -74,7 +76,7 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
 
   /* ---------- 타기 ---------- */
   async function startRide(){ if(rd.on) return; P.free=false; setGoal(null); const f=$('#fade'); f.classList.remove('clear'); await sleep(700);
-    HUNT.stop(); rd.on=true; rd.end=false; rd.t=0; rd.row=-2; rd.hits=0; rd.stone=0; rd.hop=null; rd.bite=null; rd.fall=null; sw.th=.03; sw.om=0; sw.damp=R.damp;
+    HUNT.stop(); rd.on=true; rd.end=false; rd.t=0; rd.row=-2; rd.hits=0; rd.stone=0; rd.hop=null; rd.bite=null; rd.fall=null; sw.th=.03; sw.om=0; sw.pushed=false; sw.damp=R.damp;
     S.flags.viking_ride=true; document.body.classList.add('riding'); rm.classList.add('on'); objective('조종기 [밀기] — 배가 가장 빠를 때 누른다');
     if(!S.torch&&S.flags.torch) toggleLight(); f.classList.add('clear'); await sleep(400);
     await mono(['배에 올라탔다. 맨 뒤 좌석. 무선 조종기를 꽉 쥔다.','…뱃머리 쪽, 동쪽 하늘이 옅어지고 있다.']); P.free=false; }
@@ -112,7 +114,7 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     warp(-3.5,-38.6,-3.5,-43);      // 배에 타기 직전 (승강대) — 달토끼는 배에서 기다린다 (추격은 다시 켜지 않는다)
     objective('다시 배에 타자 — 배가 가장 빠를 때 밀어서, 더 빨리 높이'); setGoal(-3.5,-40.4,'바이킹'); f.style.transition=''; f.classList.add('clear'); await sleep(700); P.free=true; }
   function endRide(){ rd.on=false; if(rd.g){ A().remove(rd.g); scene.remove(rd.g); } rd.g=null; rd.o=null; rd.bite=null; rd.hop=null; rd.fall=null; rd.topple=false;
-    sw.th=.03; sw.om=0; sw.damp=R.damp; rm.classList.remove('on'); document.body.classList.remove('riding'); S.flags.viking_ride=false; camera.fov=72; camera.updateProjectionMatrix(); }
+    sw.th=.03; sw.om=0; sw.pushed=false; sw.damp=R.damp; rm.classList.remove('on'); document.body.classList.remove('riding'); S.flags.viking_ride=false; camera.fov=72; camera.updateProjectionMatrix(); }
 
   /* ---------- 돌이 된 달토끼가 굴러떨어져 부서진다 → 배가 멈춘다 → 06:00 ---------- */
   function topple(){ const g=rd.g; scene.attach(g); const w=A().getWorldPosition(V).clone(), p=g.getWorldPosition(new THREE.Vector3());
@@ -137,10 +139,10 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
 
   /* ---------- 매 프레임 (배를 탄 동안) ---------- */
   const seat=new THREE.Vector3(R.seat,SEAT+.95,0);
-  function tickRide(dt){ rd.t+=dt; sw.cool=Math.max(0,sw.cool-dt); rd.msgT=Math.max(0,rd.msgT-dt); rd.flash=Math.max(0,rd.flash-dt*.9); rd.shake=Math.max(0,rd.shake-dt*1.5);
+  function tickRide(dt){ rd.t+=dt; rd.msgT=Math.max(0,rd.msgT-dt); rd.flash=Math.max(0,rd.flash-dt*.9); rd.shake=Math.max(0,rd.shake-dt*1.5);
     if(!rd.g&&!rd.end&&rd.t>3.2&&!S.busy) board();
     const busy=S.busy||S.paused;
-    if(!busy){ const sub=4, h=dt/sub; for(let i=0;i<sub;i++){ const o0=sw.om; sw.om+=(-R.W2*Math.sin(sw.th)-sw.damp*sw.om)*h; sw.th+=sw.om*h;
+    if(!busy){ const sub=4, h=dt/sub; for(let i=0;i<sub;i++){ const o0=sw.om; sw.om+=(-R.W2*Math.sin(sw.th)-sw.damp*sw.om)*h; sw.th+=sw.om*h; if(o0*sw.om<0) sw.pushed=false;
         if(o0*sw.om<0&&Math.abs(sw.th)>.08){ const pk=sw.th; if(Math.abs(pk)>.35) AUDIO.sfx('creak',clamp(Math.abs(pk),.3,1),.9+Math.random()*.2);
           if(pk>0&&!rd.end) rabbitPeak(pk); else if(pk<0&&rd.topple) topple(); } } }
     A().rotation.z=sw.th;
@@ -177,7 +179,7 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
   function drawScreen(){ if(!scr) return; const q=scr.g, w=scr.w, h=scr.h, F='"Noto Sans KR","Malgun Gothic",sans-serif'; q.fillStyle=st.power?'#07130d':'#050607'; q.fillRect(0,0,w,h); q.textAlign='center';
     if(!st.power){ q.fillStyle='#2f3d36'; q.font='700 36px '+F; q.fillText('전원 꺼짐',w/2,h/2+12); scr.tex.needsUpdate=true; return; }
     q.strokeStyle='#3dff8a'; q.lineWidth=6; q.strokeRect(4,4,w-8,h-8); q.fillStyle='#7dffb0'; q.font='700 30px '+F; q.fillText('바이킹 · 무선 조종 대기',w/2,70);
-    q.font='700 24px '+F; q.fillStyle='#9dffc4'; q.fillText('조종기 [밀기] — 배에 타서',w/2,140); q.fillText('점검 높이 50°',w/2,180); scr.tex.needsUpdate=true; }
+    q.font='700 24px '+F; q.fillStyle='#9dffc4'; q.fillText('조종기 [밀기] — 배에 타서',w/2,140); q.fillText('점검 높이 '+R.target+'°',w/2,180); scr.tex.needsUpdate=true; }
   async function readNote(){ AUDIO.noise(.12,.25,0,3200); const first=!S.flags.vnote;
     if(first) await mono(['점검 방법이… 매직으로 죽죽 지워져 있다.','그 위에 찢어진 쪽지가 핀으로 꽂혀 있다.']);
     await showMsg(R.note.title,TORN(R.note.body)); INV.note(R.note.id,R.note.title,TORN(R.note.body));
@@ -213,6 +215,10 @@ SIGNS.vpower=['전원','POWER','#111111','#f2c230']; SIGNS.vforce=['밀기 장�
     const pb=new THREE.Mesh(new THREE.BoxGeometry(3,2.2,1.6),PICK); pb.position.set(-3.5,2.2,-40.6); WORLD.add(pb);      // 승강대 쪽 배 옆구리 — 타는 자리
     INTER.push({mesh:pb,name:'바이킹에 타기',range:3.4,fn:()=>{ if(!st.power) return mono(S.flags.vremote?'전원부터 켜자.':'조작실에서 점검 준비부터.'); startRide(); },enabled:()=>S.stage==='night'&&!rd.on&&!S.flags.viking_end});
   },
+  // 이어하기 : 조종기 · 전원 그대로. 배를 타던 중이었으면 (탈 때는 저장하지 않는다) 승강대에서 다시
+  load(){ const f=S.flags; if(!f.ferris_done||f.viking_end) return;
+    if(f.vremote&&PARK.items.vremote) PARK.items.vremote.visible=false;
+    if(f.viking_power){ st.power=true; lamp(true); drawScreen(); } },
   tick(dt){ if(S.stage!=='night') return; const f=S.flags, a=A();
     if(rd.on) return tickRide(dt);
     if(a) a.rotation.z=st.power?.04*Math.sin(S.t*1.9):.02*Math.sin(S.t*.7);
