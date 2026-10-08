@@ -269,6 +269,11 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     makeRabbit();
     flash=document.createElement('div'); flash.style.cssText='position:fixed;inset:0;z-index:56;pointer-events:none;opacity:0;background:#000;'; document.body.appendChild(flash);
   },
+  // 이어하기 : 전원을 켰으면 불이 꺼진 채 · 브레이크 힘 · 두 번째 탑승을 마쳤으면 추격부터
+  load(){ const f=S.flags; if(!f.coaster_done||f.gyro_done) return;
+    st.brake=f.gyro_set?R.brake:R.brake0;
+    if(f.gyro_power){ st.power=true; lamp(true); blackout(); $('#lightBtn').classList.add('on'); }
+    drawScreen(); if(f.gyro_ok) HUNT.start(); },
   tick(dt){ if(S.stage!=='night') return; if(rd) return stepRide(dt);
     const f=S.flags, ds=Math.hypot(P.x-STATUE.x,P.z-STATUE.z);
     if(f.coaster_done&&!f.rabbit_checked&&!S.busy&&P.free&&ds<7.5) checkStatue();

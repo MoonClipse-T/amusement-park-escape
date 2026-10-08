@@ -110,6 +110,7 @@ SIGNS.fpower=['전원','POWER','#111111','#f2c230']; SIGNS.fforce=['알짜힘 ·
     add('mic_ferris','안내 방송 마이크',()=>{ AUDIO.click(); mono('…방송이 켜지지 않는다.'); },2.4,inBooth);
     if(I.fscreen){ scr=screenOn(I.fscreen,{x:-42.2,z:-19.8}); drawScreen(); }
   },
+  load(){ const f=S.flags; if(!f.gyro_done||f.ferris_done) return; st.power=!!f.ferris_power; st.fixed=!!f.ferris_set; lamp(st.power); drawScreen(); },
   tick(dt){ if(S.stage!=='night') return; const f=S.flags, A=PARK.anim.wheel;
     // 관람차 : 고치기 전엔 빨라졌다 느려졌다 덜컹거리고(알짜힘이 운동 방향과 나란), 고친 뒤엔 일정한 빠르기로 돈다
     if(st.power&&A){ const w=st.fixed?R.W:R.W*(1+.9*Math.sin(S.t*3.1))*(Math.sin(S.t*.9)>.72?0:1); A.rotation.z+=dt*w; PARK.gondolas.forEach(q=>q.rotation.z=-A.rotation.z);

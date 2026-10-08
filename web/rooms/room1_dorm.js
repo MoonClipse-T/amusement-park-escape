@@ -174,6 +174,13 @@ SIGNS.uniform_name=[ROOM1.names[ROOM1.prev],'','#1f2433','#f2c230'];
     add('drawer_dorm','책상 서랍',()=>{ AUDIO.click(); mono(ROOM1.drawer); },2.2);
     GATE_TAP.dorm=async()=>{ if(IN(P.x,P.z)) return openForce(); await mono('…잠겨 있다.'); };
   },
+  // 이어하기 : 숙소 안에서 멈췄으면 열어 둔 사물함 · 챙긴 물건 · 닫힌 문 그대로
+  load(){ const f=S.flags; if(S.stage!=='night'||f.booth_in) return;
+    if(f.door_open) return room1Done();
+    if(f.room1_in) door.target=0;
+    if(f.locker_prev){ swing(ROOM1.prev); show(['bag_dorm'],true); if(!f.key) show(['key_dorm'],true); }
+    if(f.locker_me){ swing(ROOM1.me,[it().lockernote_dorm]); show(['toolbox_dorm','torch_dorm','note2_dorm'].filter(k=>!f[k.replace('_dorm','')]),true); }
+    if(f.torch) $('#lightBtn').classList.add('on'); },
   tick(dt){
     // 숙소 안으로 충분히 들어오면 문이 쾅 닫힌다 (22:00 이후 한 번)
     if(S.stage==='night'&&!S.flags.room1_in&&IN(P.x,P.z)&&P.x<-48.4){

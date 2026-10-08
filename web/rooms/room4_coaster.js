@@ -313,6 +313,13 @@ GATES.coaster='후룸라이드 탑승구'; GATES.cbooth='후룸라이드 조작�
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.9,8),new THREE.MeshLambertMaterial({color:0x55585e})); pole.position.set(0,-1.1,-.12);   // 노란 조작 상자 뒤 · 속으로 내려가 앞을 가리지 않는다
     cr.gauge.add(scr,box,pole); drawGauge();
   },
+  save(){ return {n:bz.n}; },
+  load(d){ const f=S.flags; if(!f.coaster_arrive||f.coaster_done) return;
+    if(f.open_cbooth) door.t=1;
+    st.power=!!f.coaster_power; lamps(st.power?3:0);
+    bz.n=d.n??R.mags; syncBags();
+    if(f.buoy_done) bz.mode='float'; else if(f.crane_seen){ bz.mode='hang'; bz.lvl=bz.tgt=-1.5; }
+    if(f.flume_ok) S.rabbitCalm=true; },
   tick(dt){
     if(S.stage==='night'&&S.flags.bumper_scare&&!S.flags.coaster_arrive&&!S.busy){ const s=spot();
       if(Math.hypot(P.x-s.x,P.z-s.z)<7){ S.flags.coaster_arrive=true; setGoal(null);

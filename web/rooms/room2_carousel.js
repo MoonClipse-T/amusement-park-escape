@@ -178,6 +178,12 @@ for(let k=1;k<=8;k++){ SIGNS['csec_'+k]=[String(k),'','#f2ede2','#8e231c']; SIGN
     add('horse_5','기둥에서 빠진 회전목마 말',openLift,2.8,()=>!S.flags.horse_fixed);
     sync3d();
   },
+  save(){ return {power:st.power,lever:st.lever}; },
+  load(d){ const f=S.flags; if(!f.booth_in||f.bumper_booth_in) return;
+    if(f.horse_fixed){ const a=PARK.items.horse_5, h=PARK.items.horsehome_5; if(a) a.visible=false; if(h) h.visible=true; }
+    st.power=!!d.power&&!f.carousel_off; st.lit=st.power?8:0; st.lever=st.power&&!!d.lever;
+    if(st.lever){ S.carouselRun=true; AUDIO.music('open'); }
+    if(f.ghost_carousel) S.ridesGhost=true; sync3d(); },
   tick(dt){
     if(S.stage==='night'&&!S.flags.carousel_aligned) alignCarousel();
     if(S.stage==='night'&&S.flags.door_open&&!S.flags.booth_in&&IN(P.x,P.z)){ S.flags.booth_in=true;
