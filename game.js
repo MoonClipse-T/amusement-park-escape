@@ -67,7 +67,7 @@ const AUDIO={ctx:null,
 };
 
 /* ---------------- 캔버스 텍스처 ---------------- */
-function cvs(w,h,fn){ const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d'); fn(g,w,h,c); const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; return t; }
+function cvs(w,h,fn){ const k=LITE&&Math.max(w,h)>=512?.5:1, c=document.createElement('canvas'); c.width=w*k; c.height=h*k; const g=c.getContext('2d'); g.scale(k,k); fn(g,w,h,c); const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; return t; }      // 태블릿은 절반 크기로 그린다 (그리는 좌표는 그대로)
 function grime(g,w,h,a=.18){ for(let k=0;k<w*h/90;k++){ g.fillStyle=`rgba(20,14,8,${Math.random()*a})`; g.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*3,1+Math.random()*3); }
   for(let k=0;k<6;k++){ const x=Math.random()*w; g.fillStyle=`rgba(40,25,10,${a*.6})`; g.fillRect(x,Math.random()*h*.3,1+Math.random()*3,h*(.3+Math.random()*.7)); } }
 const TEX={};
@@ -101,7 +101,12 @@ function screenOn(item,toward,pw=512,ph=288){ const bb=new THREE.Box3().setFromO
 /* ---------------- 엔진 ---------------- */
 const canvas=$('#c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:!IS_TOUCH,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,IS_TOUCH?1.5:2)); renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+// 태블릿(터치 · 디벗 갤럭시 탭) : 그래픽 메모리를 줄인다 — 맵 그림 1024 px 211장을 그대로 풀면 1 GB 가까이 되어 4 GB 태블릿에서 탭이 죽고(다시 불러오기) 그림이 하얗게 빈다
+//   → GLB 속 그림을 512 × 512 로 줄여서 푼다(UV 는 0~1 이라 비율이 바뀌어도 그대로 입혀진다) · 해상도 배율 1 · PC 는 그대로 (확인용 : ?lite)
+const LITE=IS_TOUCH||/[?&]lite/.test(location.search);
+if(LITE&&typeof createImageBitmap!=='undefined'){ const cib=createImageBitmap.bind(window);
+  window.createImageBitmap=(src,...a)=>src instanceof Blob&&a.length<=1?cib(src,Object.assign({},a[0],{resizeWidth:512,resizeHeight:512,resizeQuality:'medium'})):cib(src,...a); }
+renderer.setPixelRatio(Math.min(devicePixelRatio,LITE?1:2)); renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
 const FOG_COL=0x11151b;
 const scene=new THREE.Scene(); scene.background=new THREE.Color(FOG_COL); scene.fog=new THREE.FogExp2(FOG_COL,0.024);
 const camera=new THREE.PerspectiveCamera(72,1,0.05,260);
@@ -226,11 +231,11 @@ function tickTimer(dt){ if(!S.timerOn||S.paused||S.over) return; const prev=time
   const pm=parkMin(); for(const e of EVENTS){ if(!e.done&&pm>=e.at){ e.done=true; e.fn(); } }
   if(timeLeft<=0){ timeLeft=0; gameOver(); } }
 // 실패 엔딩 (남은 시간 0) : 해가 떴지만 높은 곳에서 해를 보여 주지 못했다 — 달토끼는 다시 동상으로, 다음 보름까지
-function gameOver(){ if(S.over) return; S.over=true; S.clock=30*60; drawClock(); P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on');
+function gameOver(){ if(S.over) return; S.over=true; clearSave(); S.clock=30*60; drawClock(); P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on');
   AUDIO.noise(2.4,.25,0,260); setTimeout(()=>AUDIO.noise(.25,.4,0,180),2300);
   $('#overT').textContent='해가 떴다 — 하지만 늦었다'; $('#overP').innerHTML='달토끼는 높은 곳에서 해를 보지 못한 채, 다시 광장의 동상이 되었다. <b>다음 보름까지.</b><br>아침, 매표소 유리창에 새 전단이 붙었다. 그 아래엔 낡은 작업화 한 켤레.'
     +'<span class="flyer"><b>야간 아르바이트 구함</b>루나랜드 · 보름 야간 점검<small>숙소 제공 · 즉시 근무 · 경력 무관</small></span>'; ov('#over',true); }
-function gameClear(text,title){ if(S.over) return; S.over=true; P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on'); AUDIO.ok(); if(title) $('#clear h2').textContent=title;
+function gameClear(text,title){ if(S.over) return; S.over=true; clearSave(); P.free=false; AUDIO.stopMusic(); $('#hud').classList.remove('on'); AUDIO.ok(); if(title) $('#clear h2').textContent=title;
   $('#clearP').innerHTML=(text||'정문 너머로 해가 뜬다.')+`<br>공원 시각 ${hhmm(parkMin())} · 걸린 시간 ${fmt(TIMER_SEC-timeLeft)}`; ov('#clear',true); }
 $('#overRe').onclick=()=>location.reload(); $('#clearRe').onclick=()=>location.reload();
 function togglePause(){ if(S.phase!=='play'||S.over) return; S.paused=!S.paused; ov('#pause',S.paused); }
@@ -591,10 +596,17 @@ function jumpTo(key){ if(!CHECKPOINTS.some(c=>c.key===key)) return;
 // 바로 가기로 새로 불러오면 소리가 잠겨 있다 → 첫 클릭 · 키에서 깨운다
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{ if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume(); },true));
 const CP=(location.search.match(/[?&]cp=(\w)/)||[])[1];
+// 이어하기 : 밤 점검 중 지나온 방(cpLevel) · 남은 시간 · 모드를 이 기기에 저장 → 새로고침해도 시작 화면 [이어하기] 로 그 방 입구에서 다시 (끝나면 지운다 · 이어한 뒤엔 주소를 비워 다시 새로고침하면 가장 최근 저장으로)
+const SAVE_KEY='lunaland_save', RESUME=/[?&]resume/.test(location.search);
+const SAVE=(()=>{ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return s&&s.lv>=1?s:null; }catch(e){ return null; } })();
+if(RESUME&&SAVE) S.gentle=!!SAVE.g;
+function saveGame(){ if(S.stage!=='night'||!S.timerOn||S.over) return; const lv=cpLevel(); if(lv<1) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify({lv,t:Math.round(timeLeft),g:!!S.gentle})); }catch(e){} }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+setInterval(saveGame,3000); addEventListener('pagehide',saveGame);
 async function runCheckpoint(key){ const c=CHECKPOINTS.find(c=>c.key===key); if(!c) return;
   while($('#mono').classList.contains('on')) monoNext(); document.querySelectorAll('.ov.on').forEach(el=>{ if(el.id!=='start') ov('#'+el.id,false); });
   camAnim=null; await ensureNight(); while($('#mono').classList.contains('on')) monoNext();
-  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); toast('디버그 · '+key+'. '+c.name); }
+  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); if(RESUME&&SAVE){ timeLeft=SAVE.t; try{ history.replaceState(null,'',location.pathname); }catch(e){} } toast((RESUME?'이어하기 · ':'디버그 · '+key+'. ')+c.name); }
 function checkpointList(){ showMsg('디버그 · 방 바로 가기',CHECKPOINTS.slice().sort((a,b)=>a.key.localeCompare(b.key)).map(c=>'<b>Shift+'+c.key+'</b> &nbsp;'+c.name).join('<br>')+'<br><br><span style="opacity:.6">Alt+숫자 : 구역(놀이기구) 위치로만 이동</span>'); }
 const DBG={on:false};
 function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
@@ -624,6 +636,8 @@ async function boot(){ try{
     PARK.zones.sort((a,b)=>b.z-a.z);   // 남쪽(정문) → 북쪽 순서 = 디버그 단축키 순서
     loadStep(100,'출입증 발급 완료'); camera.position.set(PARK.spawn.x,1.6,PARK.spawn.z); renderer.compile(scene,camera); await sleep(CP?0:500);
     $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(CP?0:600); $('#loading').style.display='none';
+    if(SAVE&&!CP){ const c=CHECKPOINTS.find(c=>c.key===String(SAVE.lv)), b=$('#resumeBtn'); b.textContent='이어하기 · '+(c?c.name:SAVE.lv+'번째 점검')+' · 남은 시간 '+Math.ceil(SAVE.t/60)+'분'; b.hidden=false;
+      b.onclick=()=>{ if(S.phase==='title') location.search='?cp='+SAVE.lv+'&resume=1'; }; }
     if(CP){ S.phase='intro'; AUDIO.init(); ov('#start',false); S.busy=false; intro(); }     // 디버그 바로 가기 : 시작 화면 · 입장권 뜯기 없이 바로
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
 document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ if(S.phase!=='title') return; S.gentle=b.dataset.m==='1'; document.querySelectorAll('#mode button').forEach(x=>x.classList.toggle('on',x===b)); AUDIO.init(); AUDIO.click(); });      // 공포 · 비공포 모드
