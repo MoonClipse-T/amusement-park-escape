@@ -626,7 +626,7 @@ async function boot(){ try{
     $('#loading').style.transition='opacity .6s'; $('#loading').style.opacity=0; await sleep(CP?0:600); $('#loading').style.display='none';
     if(CP){ S.phase='intro'; AUDIO.init(); ov('#start',false); S.busy=false; intro(); }     // 디버그 바로 가기 : 시작 화면 · 입장권 뜯기 없이 바로
   }catch(e){ console.error(e); $('#lmsg').textContent='불러오기 실패 : '+e.message+(location.protocol==='file:'&&!INLINE?' (개발 버전은 로컬 서버로 열어야 합니다 — README 참고)':''); } }
-document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ S.gentle=b.dataset.m==='1'; document.querySelectorAll('#mode button').forEach(x=>x.classList.toggle('on',x===b)); AUDIO.init(); AUDIO.click(); });      // 공포 · 비공포 모드
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ if(S.phase!=='title') return; S.gentle=b.dataset.m==='1'; document.querySelectorAll('#mode button').forEach(x=>x.classList.toggle('on',x===b)); AUDIO.init(); AUDIO.click(); });      // 공포 · 비공포 모드
 $('#startBtn').onclick=async()=>{ if(S.phase!=='title') return; S.phase='intro'; AUDIO.init(); if(AUDIO.ctx&&AUDIO.ctx.state==='suspended') AUDIO.ctx.resume();
   $('#startBtn').classList.add('torn'); AUDIO.noise(.25,.3,0,2400); await sleep(700);
   $('#fade').classList.remove('clear'); await sleep(900); AUDIO.wind(); ov('#start',false); S.busy=false; intro(); };

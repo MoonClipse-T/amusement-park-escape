@@ -72,7 +72,7 @@ SIGNS.gpower=['전원','POWER','#111111','#f2c230']; SIGNS.gforce=['브레이크
     rab.rotation.y=Math.atan2(-rab.position.x,RS-rab.position.z)-.3;                 // 내 쪽으로 몸을 돌리고 있다 (얼굴이 거의 정면으로 보인다 — 살짝 비스듬히)
     ['leg_L','leg_R'].forEach(n=>{ const b=o.getObjectByName(n); if(b){ b.rotation.set(0,0,0); b.rotateX(R.rab.leg); } });      // 다리를 앞으로 접어 앉은 자세 (Idle 은 멈춰 있어 덮어쓰지 않는다)
     if(head){ head.rotateX(-.22); head.userData.q0=head.quaternion.clone(); } }
-  function showRabbit(){ if(!rab) return; rab.visible=true; PARK.anim.gyro.updateMatrixWorld(true);
+  function showRabbit(){ if(!rab) return; MOONRABBIT.face(rab,true); rab.visible=true; PARK.anim.gyro.updateMatrixWorld(true);
     const m=rab.getObjectByName('rabbit_hmouth')||head||rab; rab.userData.face=m.getWorldPosition(new THREE.Vector3()); rab.userData.face.y+=.1; }
   const roll=a=>{ if(head&&head.userData.q0) head.quaternion.copy(head.userData.q0).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),a)); };
   function blink(ms=140){ if(!flash) return; flash.style.opacity=1; setTimeout(()=>flash.style.opacity=0,ms); }
