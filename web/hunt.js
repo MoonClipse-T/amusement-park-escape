@@ -111,20 +111,20 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
       const p=m.geometry.attributes.position, ix=m.geometry.index?m.geometry.index.array:null, N=ix?ix.length:p.count;
       for(let t=0;t+2<N;t+=3){ for(let j=0;j<3;j++){ const i=ix?ix[t+j]:t+j; v[j].set(qv(p,i,0),qv(p,i,1),qv(p,i,2)).applyMatrix4(m.matrixWorld); } const [a,b,c]=v;
         const ux=b.x-a.x, uy=b.y-a.y, uz=b.z-a.z, wx=c.x-a.x, wy=c.y-a.y, wz=c.z-a.z, ny=uz*wx-ux*wz, nn=Math.hypot(uy*wz-uz*wy,ny,ux*wy-uy*wx);
-        if(!nn||Math.abs(ny)/nn>.7||Math.max(a.y,b.y,c.y)<.4||Math.min(a.y,b.y,c.y)>6) continue;      // 바닥 · 지붕 · 너무 낮거나 높은 것은 빼고
+        if(nn<.01||Math.abs(ny)/nn>.7||Math.max(a.y,b.y,c.y)<.4||Math.min(a.y,b.y,c.y)>6) continue;      // 바닥 · 지붕 · 너무 낮거나 높은 것 · 소품의 잔 조각(넓이 50 cm² 미만)은 빼고
         const k=T.length/9; T.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
         const i0=Math.max(0,Math.floor((Math.min(a.x,b.x,c.x)-B.x1)/C)), i1=Math.min(nx-1,Math.floor((Math.max(a.x,b.x,c.x)-B.x1)/C)), j0=Math.max(0,Math.floor((Math.min(a.z,b.z,c.z)-B.z1)/C)), j1=Math.min(nz-1,Math.floor((Math.max(a.z,b.z,c.z)-B.z1)/C));
         for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++) cells[i*nz+j].push(k); } });
-    this.occ={T:new Float32Array(T),cells,nx,nz}; },
+    this.occ={T:new Float32Array(T),cells,nx,nz,mark:new Uint32Array(T.length/9),stamp:0}; },
   // (ex,ey,ez) → (tx,ty,tz) 선분이 벽에 막히는가 (Möller–Trumbore)
-  hits(ex,ey,ez,tx,ty,tz){ const O=this.occ, C=this.GRID, B=PARK.bounds, T=O.T, dx=tx-ex, dy=ty-ey, dz=tz-ez, n=Math.ceil(Math.hypot(dx,dz)/(C*.25))+1, done=new Set();
+  hits(ex,ey,ez,tx,ty,tz){ const O=this.occ, C=this.GRID, B=PARK.bounds, T=O.T, dx=tx-ex, dy=ty-ey, dz=tz-ez, n=Math.ceil(Math.hypot(dx,dz)/(C*.25))+1, M=O.mark, st=++O.stamp, len=Math.hypot(dx,dy,dz)||1, t0=.1/len, t1=1-.3/len;      // 양 끝 : 눈앞 10 cm · 달토끼 몸 30 cm 는 보지 않는다 (m 단위)
     for(let s=0;s<=n;s++){ const i=Math.floor((ex+dx*s/n-B.x1)/C), j=Math.floor((ez+dz*s/n-B.z1)/C); if(i<0||j<0||i>=O.nx||j>=O.nz) continue;
-      for(const k of O.cells[i*O.nz+j]){ if(done.has(k)) continue; done.add(k); const q=k*9, ax=T[q], ay=T[q+1], az=T[q+2];
+      for(const k of O.cells[i*O.nz+j]){ if(M[k]===st) continue; M[k]=st; const q=k*9, ax=T[q], ay=T[q+1], az=T[q+2];
         const e1x=T[q+3]-ax, e1y=T[q+4]-ay, e1z=T[q+5]-az, e2x=T[q+6]-ax, e2y=T[q+7]-ay, e2z=T[q+8]-az;
         const px=dy*e2z-dz*e2y, py=dz*e2x-dx*e2z, pz=dx*e2y-dy*e2x, det=e1x*px+e1y*py+e1z*pz; if(Math.abs(det)<1e-9) continue;
         const f=1/det, sx=ex-ax, sy=ey-ay, sz=ez-az, u=(sx*px+sy*py+sz*pz)*f; if(u<0||u>1) continue;
         const qx=sy*e1z-sz*e1y, qy=sz*e1x-sx*e1z, qz=sx*e1y-sy*e1x, w=(dx*qx+dy*qy+dz*qz)*f; if(w<0||u+w>1) continue;
-        const t=(e2x*qx+e2y*qy+e2z*qz)*f; if(t>.02&&t<.97) return true; } } return false; },
+        const t=(e2x*qx+e2y*qy+e2z*qz)*f; if(t>t0&&t<t1) return true; } } return false; },
   seen(){ const now=performance.now(); if(now<this.seenAt) return this.seenV; this.seenAt=now+200; if(!this.occ) this.buildOcc();
     const r=this.rab.position, ex=P.x, ey=P.y+P.eye, ez=P.z, dx=r.x-ex, dz=r.z-ez, L=Math.hypot(dx,dz)||1, sx=-dz/L*.35, sz=dx/L*.35;
     return this.seenV=[1.3,.8,1.8].some(h=>[0,1,-1].some(k=>!this.hits(ex,ey,ez,r.x+sx*k,r.y+h,r.z+sz*k))); },
