@@ -204,6 +204,10 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .ticket .stub{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;border-radius:0 4px 4px 0;font:400 18px/1.3 var(--sign);letter-spacing:3px;color:#c8322a;
  -webkit-mask:radial-gradient(circle 9px at 0 50%,transparent 98%,#000);mask:radial-gradient(circle 9px at 0 50%,transparent 98%,#000);transition:transform .7s cubic-bezier(.3,0,.3,1),opacity .7s;}
 .ticket.torn .stub{transform:translate(40px,60px) rotate(28deg);opacity:0;}
+.mode{display:flex;gap:10px;margin:0 0 18px;}
+.mode button{min-height:48px;padding:8px 16px;border:2px solid rgba(244,234,210,.5);border-radius:4px;background:rgba(20,10,25,.55);color:#f4ead2;font:400 16px/1.2 var(--sign);letter-spacing:2px;}
+.mode button small{display:block;margin-top:3px;font:700 10px/1.2 "Noto Sans KR",sans-serif;letter-spacing:0;opacity:.75;}
+.mode button.on{background:#f4ead2;color:#2a1a14;border-color:#f4ead2;}
 .guide{margin-top:24px;font-size:12px;line-height:1.7;color:rgba(255,235,220,.75);background:rgba(20,10,25,.45);padding:8px 12px;border-radius:3px;max-width:520px;}
 @media (max-width:700px){
   #start .tcontent{padding:0 16px;align-items:center;text-align:center;}
@@ -361,6 +365,9 @@ body.remote-on #mono{bottom:calc(var(--rh,380px) + 8px);}
 /* 절구 소리 (쿵) : 소리를 꺼 둔 교실에서도 보이게 화면 가장자리가 붉게 울린다 */
 #thumpfx{position:fixed;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(120,8,8,.5) 100%);}
 #thumpfx.hit{opacity:1;transition:opacity .06s;}
+#huntwarn{position:fixed;top:calc(64px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:13;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;
+ padding:8px 18px;border:2px solid #ff4a3a;border-radius:4px;background:rgba(60,0,0,.72);color:#ffe2dc;font:400 20px/1 var(--sign);letter-spacing:3px;box-shadow:0 0 18px rgba(255,40,30,.55);}
+#huntwarn.on{opacity:1;animation:blink 1s steps(2) infinite;}
 .note.doc{transform:none;background:#fbfaf6;padding:0 0 16px;border-radius:6px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.6);}
 .note.doc .tape{display:none;}
 .note.doc h2{margin:0 0 4px;padding:16px 22px 12px;background:#1d3557;color:#fff;font:800 19px/1.35 "Noto Sans KR",sans-serif;letter-spacing:.5px;border-bottom:4px solid #e9b949;}

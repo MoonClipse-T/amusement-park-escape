@@ -50,7 +50,7 @@ function scrapWall(last){ return new Promise(res=>{
 
 const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, litT:0, darkT:0, laughT:0, stuck:0, fade:1, busy:false, lastSafe:null, biteA:null, beams:[],
   AWAY:[9,18], BOOTH_AWAY:[30,60],  // 사라진 뒤 다시 나타나기까지 (초) : 밖 · 조작실 안
-  SPEED:2.1, RADIUS:9, NEED:3, GRACE:3, CATCH:1.2,     // 걷는 빠르기 (플레이어 걷기 2.6 · 달리기 4.2) · 웃는 반경 · 비춰야 하는 초 · 안 비추고 버티는 초 · 잡히는 거리
+  SPEED:2.1, FAR_SPEED:3.6, RADIUS:9, NEED:3, GRACE:3, CATCH:1.2,     // 걷는 빠르기 (플레이어 걷기 2.6 · 달리기 4.2) · 웃음 반경 밖에서 다가오는 빠르기 · 웃는 반경 · 비춰야 하는 초 · 안 비추고 버티는 초 · 잡히는 거리
   CHARGE:6.5, BITE_D:1.9,           // 달려드는 빠르기 · 입을 벌리기 시작하는 거리
   PEEK:3,                           // 조작실 창에 붙은 뒤 손전등을 비추기 시작해야 하는 시간 (초) — 비추는 동안은 멈추고, NEED 초 계속 비추면 사라진다
   LIGHT_R:24, LIGHT_A:.34,          // 손전등이 닿는 거리 · 비추는 각도 (라디안, 화면 가운데에서)
@@ -83,7 +83,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
   // (x1,z1) 에서 (x2,z2) 쪽으로 곧장 걸어갈 수 있는가 (끝의 stop m 는 보지 않는다 — 목표가 조작실 안일 수 있다)
   clear(x1,z1,x2,z2,stop=2.5){ const len=Math.hypot(x2-x1,z2-z1), n=Math.ceil(len/1.2); for(let i=1;i<n;i++){ const t=i/n; if(len*(1-t)<stop) break; if(this.blk(x1+(x2-x1)*t,z1+(z2-z1)*t)) return false; } return true; },
   rnd(a){ return a[0]+Math.random()*(a[1]-a[0]); },
-  goAway(){ this.phase='away'; this.el=0; this.tOut=this.rnd(this.AWAY); this.tIn=this.rnd(this.BOOTH_AWAY); this.near=false; },
+  goAway(){ this.phase='away'; this.el=0; this.litT=0; this.tOut=this.rnd(this.AWAY); this.tIn=this.rnd(this.BOOTH_AWAY); this.near=false; },
   start(){ if(this.on) return;
     if(!this.rab){ const o=MOONRABBIT.make('Walk'); MOONRABBIT.face(o,1); o.traverse(m=>{ if(m.material){ m.material=m.material.clone(); m.material.transparent=true; } });      // 사라질 때 투명해지므로 재질을 따로
       o.visible=false; o.userData.mixer.timeScale=0; o.userData.mouth=[]; o.traverse(m=>{ if(m.morphTargetInfluences) o.userData.mouth.push(m); }); scene.add(o); this.rab=o; }
@@ -159,7 +159,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
 
   // 걸어서 (tx, tz) 쪽으로 — 막히면 옆으로 비켜 간다
   step(tx,tz,dt,stop){ const r=this.rab, dx=tx-r.position.x, dz=tz-r.position.z, d=Math.hypot(dx,dz); if(d<=stop) return true;
-    const st=Math.min(this.SPEED*dt,d-stop), ux=dx/d, uz=dz/d, x=r.position.x, z=r.position.z;
+    const st=Math.min((this.near?this.SPEED:this.FAR_SPEED)*dt,d-stop), ux=dx/d, uz=dz/d, x=r.position.x, z=r.position.z;
     if(!this.blk(x+ux*st,z+uz*st)){ r.position.x+=ux*st; r.position.z+=uz*st; }
     else if(Math.abs(ux)>.2&&!this.blk(x+Math.sign(ux)*st,z)) r.position.x+=Math.sign(ux)*st;
     else if(Math.abs(uz)>.2&&!this.blk(x,z+Math.sign(uz)*st)) r.position.z+=Math.sign(uz)*st;
@@ -167,7 +167,8 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
       for(const a of [.7,1.2,1.6]){ const c=Math.cos(a*sd), s2=Math.sin(a*sd), vx=ux*c-uz*s2, vz=ux*s2+uz*c; if(!this.blk(x+vx*st,z+vz*st)){ r.position.x+=vx*st; r.position.z+=vz*st; ok=true; break; } }
       if(!ok){ this.side=-sd; return false; } }
     r.position.y=floorAt(r.position.x,r.position.z); return true; },
-  tick(dt){ if(this.biteA) return this.tickBite(dt);
+  tick(dt){ if(this.warn) this.warn.classList.toggle('on',this.on&&this.near&&!this.biteA&&!this.busy&&this.phase==='approach');      // 화면 경고 : 웃는 반경 안에 있는 동안 (소리를 못 켜는 교실용)
+    if(this.biteA) return this.tickBite(dt);
     if(this.on) this.tickBeams(dt);
     if(!this.on||!this.rab||this.busy) return; const r=this.rab, mx=r.userData.mixer;
     const sz=this.safeAt(P.x,P.z); if(sz&&sz.in) this.lastSafe=sz; const bz=sz&&sz.b?sz:null;
@@ -178,9 +179,9 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
     if(bz){ if(!this.win||this.win.b!==bz){ this.win=this.pickWin(bz); this.peekT=0; } } else if(this.win){ this.win=null; this.anim('Walk'); }
     const W=this.win, dx=P.x-r.position.x, dz=P.z-r.position.z, d=Math.hypot(dx,dz); r.rotation.y=Math.atan2(dx,dz);
     const isLit=this.lit(dx,dz,d), moon=this.moonAt(P.x,P.z);              // 달빛 안에서만 안전하다
-    if(d<this.RADIUS&&!this.near){ this.near=true; this.litT=0; this.darkT=0; this.laughT=this.LAUGH_GAP; this.laugh(d); }
+    if(d<this.RADIUS&&!this.near){ this.near=true; this.darkT=0; this.laughT=this.LAUGH_GAP; this.laugh(d); }
     if(this.near){ this.laughT-=dt; if(this.laughT<=0){ this.laughT=this.LAUGH_GAP; this.laugh(d); } if(!W&&d>this.RADIUS*1.7) this.near=false; }
-    if(this.near&&isLit){ this.litT+=dt; this.darkT=0; if(this.litT>=this.NEED) return this.vanish(); } else this.litT=Math.max(0,this.litT-dt*.5);
+    if(isLit){ this.litT+=dt; this.darkT=0; if(this.litT>=this.NEED) return this.vanish(); } else this.litT=Math.max(0,this.litT-dt*.5);
     if(W){                                                                     // ---- 조작실 : 창에 바짝 붙어 들여다보다가, PEEK 초가 지나면 창을 깨고 덮친다
       if(W.at||Math.hypot(W.x-r.position.x,W.z-r.position.z)<.3){
         if(!W.at){ W.at=true; this.peekT=0; r.position.set(W.x,floorAt(W.x,W.z),W.z); this.anim('Idle'); if(!this.near){ this.near=true; this.laughT=this.LAUGH_GAP; this.laugh(d); } }
@@ -206,6 +207,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
 
 ROOMS.push({id:'hunt', build(){
     const fx=document.createElement('div'); fx.id='thumpfx'; document.body.appendChild(fx);
+    const wn=document.createElement('div'); wn.id='huntwarn'; wn.textContent='⚠ 달토끼 접근 중'; document.body.appendChild(wn); HUNT.warn=wn;
     // 달빛 (추격이 시작되면 보인다 · 붉은 달 뒤에는 붉게)
     const glow=cvs(128,128,(g,w,h)=>{ const gr=g.createRadialGradient(64,64,0,64,64,64); [[0,1],[.35,.7],[.65,.3],[.85,.08],[1,0]].forEach(([s,a])=>gr.addColorStop(s,`rgba(255,255,255,${a})`)); g.fillStyle=gr; g.fillRect(0,0,w,h); });
     const dot=cvs(32,32,(g)=>{ const gr=g.createRadialGradient(16,16,0,16,16,16); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,32,32); });

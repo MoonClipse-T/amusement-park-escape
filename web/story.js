@@ -24,7 +24,7 @@ const MOONRABBIT={src:null, live:[], statue:null,
   async load(){ if(!this.src) this.src=await loadGLB('moonrabbit'); return this.src; },
   // 얼굴 : k = 0 평소(귀여운 얼굴) … 1 공포 (false/true 도 된다). 큰 웃는 입 rabbit_hmouth 가 얼굴 가운데까지 벌어지며 코를 삼키고,
   // 눈 mrab_eye_L/R 은 위로 밀려 올라가고(올라간 자리 = 빈 물체 mrab_eyeT_L/R), 눈썹은 사라진다. 동상은 0, 움직이는 달토끼는 1 로 고정
-  face(o,scary){ const k=+scary;
+  face(o,scary){ const k=S.gentle?0:+scary;      // 비공포 모드 : 늘 평소 얼굴
     o.traverse(m=>{ const n=m.name; if(n==='rabbit_hmouth') m.visible=k>0; else if(n==='mrab_nose') m.visible=k<.3; else if(n==='mrab_eyebrow') m.visible=k<.2;
       else if(/^mrab_eye_[LR]$/.test(n)){ const t=m.parent.getObjectByName(n.replace('eye_','eyeT_')); if(!t) return;
         if(!m.userData.q0){ m.userData.p0=m.position.clone(); m.userData.q0=m.quaternion.clone(); }
