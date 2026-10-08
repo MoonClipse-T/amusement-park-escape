@@ -600,13 +600,22 @@ const CP=(location.search.match(/[?&]cp=(\w)/)||[])[1];
 const SAVE_KEY='lunaland_save', RESUME=/[?&]resume/.test(location.search);
 const SAVE=(()=>{ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return s&&s.lv>=1?s:null; }catch(e){ return null; } })();
 if(RESUME&&SAVE) S.gentle=!!SAVE.g;
-function saveGame(){ if(S.stage!=='night'||!S.timerOn||S.over) return; const lv=cpLevel(); if(lv<1) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify({lv,t:Math.round(timeLeft),g:!!S.gentle})); }catch(e){} }
+let lastPos=null;      // 마지막으로 자유롭게 서 있던 자리 (놀이기구 · 글 읽는 중 · 공중은 빼고)
+function saveGame(){ if(S.stage!=='night'||!S.timerOn||S.over||(CP&&!S.cpReady)) return; const lv=cpLevel(); if(lv<1) return;
+  if(P.free&&!S.busy&&P.grounded&&!document.body.classList.contains('riding')) lastPos={lv,x:+P.x.toFixed(2),z:+P.z.toFixed(2),yaw:+P.yaw.toFixed(3)};
+  try{ localStorage.setItem(SAVE_KEY,JSON.stringify({lv,t:Math.round(timeLeft),g:!!S.gentle,p:lastPos&&lastPos.lv===lv?lastPos:null})); }catch(e){} }
+// (x0,z0) 에서 (x1,z1) 까지 걸어갈 수 있는가 — 0.5 m 칸으로 막힌 곳(벽 · 닫힌 문 · 높은 단)을 피해 찾아본다 (두 점 둘레 20 m 안에서만 — 태블릿에서도 빨리)
+function reachable(x0,z0,x1,z1){ const C=.5, M=20, PB=PARK.bounds, B={x1:Math.max(PB.x1,Math.min(x0,x1)-M),x2:Math.min(PB.x2,Math.max(x0,x1)+M),z1:Math.max(PB.z1,Math.min(z0,z1)-M),z2:Math.min(PB.z2,Math.max(z0,z1)+M)}, nx=Math.ceil((B.x2-B.x1)/C), nz=Math.ceil((B.z2-B.z1)/C), seen=new Uint8Array(nx*nz), id=(x,z)=>Math.floor((x-B.x1)/C)*nz+Math.floor((z-B.z1)/C);
+  const goal=id(x1,z1), q=[id(x0,z0)]; if(!(goal>=0&&goal<nx*nz&&q[0]>=0&&q[0]<nx*nz)) return false; seen[q[0]]=1;
+  for(let h=0;h<q.length;h++){ const c=q[h]; if(c===goal) return true; const i=c/nz|0, j=c%nz;
+    for(const [a,b] of [[i+1,j],[i-1,j],[i,j+1],[i,j-1]]){ if(a<0||b<0||a>=nx||b>=nz) continue; const k=a*nz+b; if(seen[k]) continue; seen[k]=1; if(k!==goal&&blocked(B.x1+(a+.5)*C,B.z1+(b+.5)*C)) continue; q.push(k); } }
+  return false; }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 setInterval(saveGame,3000); addEventListener('pagehide',saveGame);
 async function runCheckpoint(key){ const c=CHECKPOINTS.find(c=>c.key===key); if(!c) return;
   while($('#mono').classList.contains('on')) monoNext(); document.querySelectorAll('.ov.on').forEach(el=>{ if(el.id!=='start') ov('#'+el.id,false); });
   camAnim=null; await ensureNight(); while($('#mono').classList.contains('on')) monoNext();
-  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); if(RESUME&&SAVE){ timeLeft=SAVE.t; try{ history.replaceState(null,'',location.pathname); }catch(e){} } toast((RESUME?'이어하기 · ':'디버그 · '+key+'. ')+c.name); }
+  $('#fade').classList.add('clear'); $('#card').classList.remove('on'); setGoal(null); await c.go(); if(RESUME&&SAVE){ timeLeft=SAVE.t; const p=SAVE.p; if(p&&p.lv===SAVE.lv&&!blocked(p.x,p.z)&&reachable(P.x,P.z,p.x,p.z)){ warp(p.x,p.z); P.yaw=p.yaw; } try{ history.replaceState(null,'',location.pathname); }catch(e){} } S.cpReady=true; toast((RESUME?'이어하기 · ':'디버그 · '+key+'. ')+c.name); }
 function checkpointList(){ showMsg('디버그 · 방 바로 가기',CHECKPOINTS.slice().sort((a,b)=>a.key.localeCompare(b.key)).map(c=>'<b>Shift+'+c.key+'</b> &nbsp;'+c.name).join('<br>')+'<br><br><span style="opacity:.6">Alt+숫자 : 구역(놀이기구) 위치로만 이동</span>'); }
 const DBG={on:false};
 function dbgKey(e){ const d=(e.code.match(/Digit(\d)/)||[])[1];
