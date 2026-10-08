@@ -207,6 +207,8 @@ body.midnight #vignette{background:radial-gradient(ellipse at center,rgba(0,0,0,
 .mode{display:flex;gap:10px;margin:0 0 18px;}
 .mode button{min-height:48px;padding:8px 16px;border:2px solid rgba(244,234,210,.5);border-radius:4px;background:rgba(20,10,25,.55);color:#f4ead2;font:400 16px/1.2 var(--sign);letter-spacing:2px;}
 .mode button.on{background:#f4ead2;color:#2a1a14;border-color:#f4ead2;}
+.resume{min-height:48px;margin-top:14px;padding:8px 18px;border:2px solid #f4ead2;border-radius:4px;background:rgba(20,10,25,.7);color:#f4ead2;font:400 16px/1.2 var(--sign);letter-spacing:2px;}
+.resume[hidden]{display:none;}
 .guide{margin-top:24px;font-size:12px;line-height:1.7;color:rgba(255,235,220,.75);background:rgba(20,10,25,.45);padding:8px 12px;border-radius:3px;max-width:520px;}
 @media (max-width:700px){
   #start .tcontent{padding:0 16px;align-items:center;text-align:center;}
