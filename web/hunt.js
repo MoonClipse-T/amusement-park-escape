@@ -88,7 +88,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
   start(){ if(this.on) return;
     if(!this.rab){ const o=MOONRABBIT.make('Walk'); MOONRABBIT.face(o,1); o.traverse(m=>{ if(m.material){ m.material=m.material.clone(); m.material.transparent=true; } });      // 사라질 때 투명해지므로 재질을 따로
       o.visible=false; o.userData.mixer.timeScale=0; o.userData.mouth=[]; o.traverse(m=>{ if(m.morphTargetInfluences) o.userData.mouth.push(m); }); scene.add(o); this.rab=o; }
-    this.on=true; this.goAway(); this.tOut=6; this.beams.forEach(b=>b.g.visible=true); },
+    if(!this.occ) this.buildOcc(); this.on=true; this.goAway(); this.tOut=6; this.beams.forEach(b=>b.g.visible=true); },
   stop(){ this.on=false; if(this.rab) this.rab.visible=false; this.beams.forEach(b=>b.g.visible=false); },
   setFade(a){ this.fade=a; this.rab.traverse(m=>{ if(m.material) m.material.opacity=a; }); },
   setMouth(k){ this.rab.userData.mouth.forEach(m=>m.morphTargetInfluences[0]=k); },
@@ -101,7 +101,33 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
   appear(x,z){ const r=this.rab; r.position.set(x,floorAt(x,z),z); r.rotation.y=Math.atan2(P.x-x,P.z-z); this.setFade(1); r.visible=true; this.phase='approach'; this.near=false; this.stuck=0; },
   // 손전등 불빛 안에 있는가
   lit(dx,dz,d){ if(!S.torch||d>this.LIGHT_R) return false; const cp=Math.cos(P.pitch), fx=-Math.sin(P.yaw)*cp, fy=Math.sin(P.pitch), fz=-Math.cos(P.yaw)*cp;
-    const vy=this.rab.position.y+1.3-(P.y+P.eye), L=Math.hypot(dx,vy,dz)||1; return (-fx*dx+fy*vy-fz*dz)/L>Math.cos(this.LIGHT_A); },
+    const vy=this.rab.position.y+1.3-(P.y+P.eye), L=Math.hypot(dx,vy,dz)||1; return (-fx*dx+fy*vy-fz*dz)/L>Math.cos(this.LIGHT_A)&&(!!this.win||this.seen()); },
+  // 벽에 가렸는가 : 눈 → 달토끼 몸(왼쪽 · 가운데 · 오른쪽 × 배 · 가슴 · 머리 — 철문 살 하나에 다 가리지 않게) 사이에 불투명한 배경(합쳐진 정적 메시 — 유리 같은 투명 재질은 원래 빠져 있다)이 있으면 비춘 것이 아니다
+  //   움직이지 않는 맵(놀이기구 축 ANIM_ · GONDOLA_ 밖)의 불투명한 메시 전부 — 압축된 좌표는 qv 로 풀어서. 추격이 시작될 때 세로로 선 삼각형만 GRID m 칸에 나눠 담아 두고, 선이 지나는 칸의 삼각형만 검사한다 (태블릿에서도 가볍게) · 0.2초마다 한 번
+  GRID:2,
+  buildOcc(){ const C=this.GRID, B=PARK.bounds, nx=Math.ceil((B.x2-B.x1)/C)+1, nz=Math.ceil((B.z2-B.z1)/C)+1, cells=Array.from({length:nx*nz},()=>[]), T=[], v=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+    WORLD.updateMatrixWorld(true); WORLD.traverseVisible(m=>{ const M=m.material; if(!m.isMesh||m.isSkinnedMesh||Array.isArray(M)||M.transparent||M.opacity<1||M.alphaTest>0||!m.geometry.attributes.position) return;
+      for(let p=m.parent;p&&p!==WORLD;p=p.parent) if(/^(ANIM_|GONDOLA_)/.test(p.name)) return;
+      const p=m.geometry.attributes.position, ix=m.geometry.index?m.geometry.index.array:null, N=ix?ix.length:p.count;
+      for(let t=0;t+2<N;t+=3){ for(let j=0;j<3;j++){ const i=ix?ix[t+j]:t+j; v[j].set(qv(p,i,0),qv(p,i,1),qv(p,i,2)).applyMatrix4(m.matrixWorld); } const [a,b,c]=v;
+        const ux=b.x-a.x, uy=b.y-a.y, uz=b.z-a.z, wx=c.x-a.x, wy=c.y-a.y, wz=c.z-a.z, ny=uz*wx-ux*wz, nn=Math.hypot(uy*wz-uz*wy,ny,ux*wy-uy*wx);
+        if(!nn||Math.abs(ny)/nn>.7||Math.max(a.y,b.y,c.y)<.4||Math.min(a.y,b.y,c.y)>6) continue;      // 바닥 · 지붕 · 너무 낮거나 높은 것은 빼고
+        const k=T.length/9; T.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);
+        const i0=Math.max(0,Math.floor((Math.min(a.x,b.x,c.x)-B.x1)/C)), i1=Math.min(nx-1,Math.floor((Math.max(a.x,b.x,c.x)-B.x1)/C)), j0=Math.max(0,Math.floor((Math.min(a.z,b.z,c.z)-B.z1)/C)), j1=Math.min(nz-1,Math.floor((Math.max(a.z,b.z,c.z)-B.z1)/C));
+        for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++) cells[i*nz+j].push(k); } });
+    this.occ={T:new Float32Array(T),cells,nx,nz}; },
+  // (ex,ey,ez) → (tx,ty,tz) 선분이 벽에 막히는가 (Möller–Trumbore)
+  hits(ex,ey,ez,tx,ty,tz){ const O=this.occ, C=this.GRID, B=PARK.bounds, T=O.T, dx=tx-ex, dy=ty-ey, dz=tz-ez, n=Math.ceil(Math.hypot(dx,dz)/(C*.25))+1, done=new Set();
+    for(let s=0;s<=n;s++){ const i=Math.floor((ex+dx*s/n-B.x1)/C), j=Math.floor((ez+dz*s/n-B.z1)/C); if(i<0||j<0||i>=O.nx||j>=O.nz) continue;
+      for(const k of O.cells[i*O.nz+j]){ if(done.has(k)) continue; done.add(k); const q=k*9, ax=T[q], ay=T[q+1], az=T[q+2];
+        const e1x=T[q+3]-ax, e1y=T[q+4]-ay, e1z=T[q+5]-az, e2x=T[q+6]-ax, e2y=T[q+7]-ay, e2z=T[q+8]-az;
+        const px=dy*e2z-dz*e2y, py=dz*e2x-dx*e2z, pz=dx*e2y-dy*e2x, det=e1x*px+e1y*py+e1z*pz; if(Math.abs(det)<1e-9) continue;
+        const f=1/det, sx=ex-ax, sy=ey-ay, sz=ez-az, u=(sx*px+sy*py+sz*pz)*f; if(u<0||u>1) continue;
+        const qx=sy*e1z-sz*e1y, qy=sz*e1x-sx*e1z, qz=sx*e1y-sy*e1x, w=(dx*qx+dy*qy+dz*qz)*f; if(w<0||u+w>1) continue;
+        const t=(e2x*qx+e2y*qy+e2z*qz)*f; if(t>.02&&t<.97) return true; } } return false; },
+  seen(){ const now=performance.now(); if(now<this.seenAt) return this.seenV; this.seenAt=now+200; if(!this.occ) this.buildOcc();
+    const r=this.rab.position, ex=P.x, ey=P.y+P.eye, ez=P.z, dx=r.x-ex, dz=r.z-ez, L=Math.hypot(dx,dz)||1, sx=-dz/L*.35, sz=dx/L*.35;
+    return this.seenV=[1.3,.8,1.8].some(h=>[0,1,-1].some(k=>!this.hits(ex,ey,ez,r.x+sx*k,r.y+h,r.z+sz*k))); },
   laugh(d){ AUDIO.sfx(this.LAUGH,clamp(1.25-d/30,.45,1.1),.96+Math.random()*.08); const fx=$('#thumpfx'); fx.classList.add('hit'); setTimeout(()=>fx.classList.remove('hit'),140); },      // 킥킥 — 가까울수록 크게 · 화면 가장자리가 붉게
   vanish(quiet){ this.phase='fade'; this.near=false; this.rab.userData.mixer.timeScale=0; if(!quiet) toast('…어둠 속으로 천천히 사라진다',2400); },
 
@@ -209,6 +235,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
 ROOMS.push({id:'hunt', build(){
     const fx=document.createElement('div'); fx.id='thumpfx'; document.body.appendChild(fx);
     const wn=document.createElement('div'); wn.id='huntwarn'; wn.textContent='⚠ 달토끼 접근 중'; document.body.appendChild(wn); HUNT.warn=wn;
+    ROOMS.push({id:'hunt_occ',build(){ HUNT.buildOcc(); }});      // 벽 칸은 모든 방을 지은 뒤, 불러오는 화면에서 만든다 (추격이 시작될 때 멈칫하지 않게)
     // 달빛 (추격이 시작되면 보인다 · 붉은 달 뒤에는 붉게)
     const glow=cvs(128,128,(g,w,h)=>{ const gr=g.createRadialGradient(64,64,0,64,64,64); [[0,1],[.35,.7],[.65,.3],[.85,.08],[1,0]].forEach(([s,a])=>gr.addColorStop(s,`rgba(255,255,255,${a})`)); g.fillStyle=gr; g.fillRect(0,0,w,h); });
     const dot=cvs(32,32,(g)=>{ const gr=g.createRadialGradient(16,16,0,16,16,16); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,32,32); });
