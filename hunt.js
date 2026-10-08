@@ -83,6 +83,7 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
   // (x1,z1) 에서 (x2,z2) 쪽으로 곧장 걸어갈 수 있는가 (끝의 stop m 는 보지 않는다 — 목표가 조작실 안일 수 있다)
   clear(x1,z1,x2,z2,stop=2.5){ const len=Math.hypot(x2-x1,z2-z1), n=Math.ceil(len/1.2); for(let i=1;i<n;i++){ const t=i/n; if(len*(1-t)<stop) break; if(this.blk(x1+(x2-x1)*t,z1+(z2-z1)*t)) return false; } return true; },
   rnd(a){ return a[0]+Math.random()*(a[1]-a[0]); },
+  pace(){ return this.near?1:this.FAR_SPEED/this.SPEED; },      // 걷기 동작 빠르기 : 이동 빠르기에 맞춘다
   goAway(){ this.phase='away'; this.el=0; this.litT=0; this.tOut=this.rnd(this.AWAY); this.tIn=this.rnd(this.BOOTH_AWAY); this.near=false; },
   start(){ if(this.on) return;
     if(!this.rab){ const o=MOONRABBIT.make('Walk'); MOONRABBIT.face(o,1); o.traverse(m=>{ if(m.material){ m.material=m.material.clone(); m.material.transparent=true; } });      // 사라질 때 투명해지므로 재질을 따로
@@ -187,13 +188,13 @@ const HUNT={on:false, rab:null, phase:'away', el:0, tOut:6, tIn:40, near:false, 
         if(!W.at){ W.at=true; this.peekT=0; r.position.set(W.x,floorAt(W.x,W.z),W.z); this.anim('Idle'); if(!this.near){ this.near=true; this.laughT=this.LAUGH_GAP; this.laugh(d); } }
         mx.timeScale=isLit?0:1; if(!isLit){ this.peekT+=dt; if(this.peekT>=this.PEEK) return this.bite(W); } return; }
       if(isLit){ mx.timeScale=0; return; }
-      const moved=this.step(W.x,W.z,dt,0); mx.timeScale=moved?1:0;
+      const moved=this.step(W.x,W.z,dt,0); mx.timeScale=moved?this.pace():0;
       if(!moved){ this.stuck+=dt; if(this.stuck>4){ this.stuck=0; const n=this.winSpots(bz).filter(q=>q.x!==W.x||q.z!==W.z); if(n.length) this.win=n[0]; else return this.vanish(true); } } else this.stuck=0;
       return; }
     // ---- 밖 : 나를 향해 걸어온다. 반경 안에서 GRACE 초 동안 비추지 않으면 달려들어 삼킨다
     if(this.near&&!isLit){ if(moon) this.darkT=0; else { this.darkT+=dt; if(this.darkT>=this.GRACE) return this.bite(); } }
     if(isLit){ mx.timeScale=0; return; }                                       // 불빛 안에서는 굳는다
-    const moved=d>this.CATCH*.8&&this.step(P.x,P.z,dt,this.CATCH*.8); mx.timeScale=moved?1:0;
+    const moved=d>this.CATCH*.8&&this.step(P.x,P.z,dt,this.CATCH*.8); mx.timeScale=moved?this.pace():0;
     if(!moved){ this.stuck+=dt; if(this.stuck>(this.near?7:8)&&(moon||!this.near)) return this.vanish(!this.near); } else this.stuck=0;      // 내가 달빛 안이거나, 막혀서 다가오지 못하면 — 스스로 물러난다
     if(!moon&&d<this.CATCH) this.bite(); },
 
